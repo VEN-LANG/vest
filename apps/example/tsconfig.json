@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "useDefineForClassFields": false,
+    "baseUrl": ".",
+    "paths": {
+      "@app/*": ["src/app/*"],
+      "@config/*": ["src/config/*"],
+      "@database/*": ["src/database/*"],
+      "@routes/*": ["src/routes/*"],
+      "@bootstrap/*": ["src/bootstrap/*"],
+      "@vest/core": ["../../packages/core/src/index.ts"],
+      "@vest/db": ["../../packages/db/src/index.ts"],
+      "@vest/cache": ["../../packages/cache/src/index.ts"],
+      "@vest/events": ["../../packages/events/src/index.ts"],
+      "@vest/queue": ["../../packages/queue/src/index.ts"],
+      "@vest/mail": ["../../packages/mail/src/index.ts"],
+      "@vest/router": ["../../packages/router/src/index.ts"],
+      "@vest/auth": ["../../packages/auth/src/index.ts"],
+      "@vest/console": ["../../packages/console/src/index.ts"],
+      "@vest/horizon": ["../../packages/horizon/src/index.ts"],
+      "@vest/telescope": ["../../packages/telescope/src/index.ts"]
+    }
+  },
+  "include": ["src", "config"],
+  "exclude": ["dist", "node_modules"]
+}

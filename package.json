@@ -1,0 +1,37 @@
+{
+  "name": "vest",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vest — a Laravel-inspired Node.js framework powered by Vite+",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r --filter './packages/*' build",
+    "dev": "pnpm -r --filter './packages/*' dev",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "oxlint packages apps",
+    "typecheck": "pnpm -r --filter './packages/*' typecheck",
+    "format": "oxfmt packages apps",
+    "format:check": "oxfmt --check packages apps",
+    "clean": "pnpm -r --filter './packages/*' clean",
+    "create-vest": "node packages/create-vest/dist/index.js"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^3.2.3",
+    "@types/node": "^24.12.2",
+    "oxfmt": "^0.47.0",
+    "oxlint": "^0.16.6",
+    "rimraf": "^6.0.1",
+    "tsdown": "^0.12.9",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["bcrypt", "esbuild", "sharp"]
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

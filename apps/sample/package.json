@@ -1,0 +1,45 @@
+{
+  "name": "@vest/sample",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsdown src/server.ts src/artisan.ts --format esm --out-dir dist",
+    "artisan": "tsx src/artisan.ts",
+    "migrate": "tsx src/artisan.ts migrate",
+    "migrate:fresh": "tsx src/artisan.ts migrate:fresh",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@vest/auth": "workspace:*",
+    "@vest/cache": "workspace:*",
+    "@vest/console": "workspace:*",
+    "@vest/core": "workspace:*",
+    "@vest/db": "workspace:*",
+    "@vest/events": "workspace:*",
+    "@vest/mail": "workspace:*",
+    "@vest/queue": "workspace:*",
+    "@vest/router": "workspace:*",
+    "@vest/telescope": "workspace:*",
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "^7.0.0",
+    "reflect-metadata": "^0.2.2",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.12.2",
+    "@types/yargs": "^17.0.35",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.3"
+  }
+}
