@@ -1,5 +1,5 @@
 {
-  "name": "@vest/console",
+  "name": "@venomous-maker-org/vest-console",
   "version": "0.1.0",
   "description": "Vest Artisan CLI — commands, kernel, and scheduler",
   "bin": {
@@ -17,6 +17,13 @@
     },
     "./artisan": "./dist/artisan.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
@@ -25,13 +32,13 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vest/cache": "workspace:*",
-    "@vest/core": "workspace:*",
-    "@vest/db": "workspace:*",
-    "@vest/events": "workspace:*",
-    "@vest/horizon": "workspace:*",
-    "@vest/queue": "workspace:*",
-    "@vest/router": "workspace:*",
+    "@venomous-maker-org/vest-cache": "workspace:*",
+    "@venomous-maker-org/vest-core": "workspace:*",
+    "@venomous-maker-org/vest-db": "workspace:*",
+    "@venomous-maker-org/vest-events": "workspace:*",
+    "@venomous-maker-org/vest-horizon": "workspace:*",
+    "@venomous-maker-org/vest-queue": "workspace:*",
+    "@venomous-maker-org/vest-router": "workspace:*",
     "dotenv": "^17.2.3",
     "reflect-metadata": "^0.2.2",
     "yargs": "^17.7.2"

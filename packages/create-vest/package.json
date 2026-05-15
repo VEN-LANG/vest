@@ -10,6 +10,13 @@
   "exports": {
     ".": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsdown src/index.ts --format esm --out-dir dist",
     "dev": "tsdown src/index.ts --format esm --out-dir dist --watch",

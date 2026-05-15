@@ -1,5 +1,5 @@
 {
-  "name": "@vest/core",
+  "name": "@venomous-maker-org/vest-core",
   "version": "0.1.0",
   "description": "Vest IoC container, Application, and ServiceProvider",
   "type": "module",
@@ -12,6 +12,13 @@
       "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
     }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown",

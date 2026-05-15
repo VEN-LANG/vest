@@ -1,5 +1,5 @@
 {
-  "name": "@vest/auth",
+  "name": "@venomous-maker-org/vest-auth",
   "version": "0.1.0",
   "description": "Vest JWT authentication helpers",
   "type": "module",
@@ -13,6 +13,13 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
@@ -21,8 +28,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vest/core": "workspace:*",
-    "@vest/router": "workspace:*",
+    "@venomous-maker-org/vest-core": "workspace:*",
+    "@venomous-maker-org/vest-router": "workspace:*",
     "bcrypt": "^6.0.0",
     "jsonwebtoken": "^9.0.3"
   },

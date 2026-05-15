@@ -1,5 +1,5 @@
 {
-  "name": "@vest/events",
+  "name": "@venomous-maker-org/vest-events",
   "version": "0.1.0",
   "description": "Vest event dispatcher, listeners, decorators, and WebSocket broadcasting",
   "type": "module",
@@ -13,6 +13,13 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
@@ -21,8 +28,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vest/core": "workspace:*",
-    "@vest/queue": "workspace:*",
+    "@venomous-maker-org/vest-core": "workspace:*",
+    "@venomous-maker-org/vest-queue": "workspace:*",
     "reflect-metadata": "^0.2.2",
     "ws": "^8.19.0"
   },
