@@ -102,7 +102,6 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
     "src/app/Events",
     "src/app/Http/Controllers/User",
     "src/app/Http/Controllers/File",
-    "src/app/Http/Docs",
     "src/app/Jobs",
     "src/app/Listeners",
     "src/app/Mail",
@@ -308,51 +307,6 @@ export {};
 `,
   );
 
-  // ── src/app/Http/Docs/decorators.ts ──────────────────────────────────────────
-  w(
-    dir,
-    "src/app/Http/Docs/decorators.ts",
-    `import 'reflect-metadata';
-
-export const DOC_META = 'lara:doc:method';
-
-export interface DocMethodOptions {
-  summary: string;
-  description?: string;
-  tags?: string[];
-  auth?: boolean;
-  deprecated?: boolean;
-  body?: Record<string, { type: string; required?: boolean; description?: string }>;
-  params?: Record<string, { type?: string; description?: string }>;
-  query?: Record<string, { type?: string; description?: string }>;
-  responses?: Record<number, { description: string }>;
-}
-
-/*
-|--------------------------------------------------------------------------
-| @Doc — OpenAPI metadata decorator
-|--------------------------------------------------------------------------
-|
-| Place on controller methods to describe them in the Swagger UI (/docs).
-|
-| @Doc({
-|   summary: 'List all users',
-|   tags: ['Users'],
-|   auth: true,
-|   query: { page: { type: 'integer', description: 'Page number' } },
-|   responses: { 200: { description: 'Paginated list' }, 404: { description: 'Not found' } },
-| })
-|
-*/
-export function Doc(options: DocMethodOptions): MethodDecorator {
-  return function (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
-    Reflect.defineMetadata(DOC_META, options, target, propertyKey as string);
-    return descriptor;
-  };
-}
-`,
-  );
-
   // ── src/app/Models/ModelRegistry.ts ──────────────────────────────────────────
   w(
     dir,
@@ -384,165 +338,6 @@ export const ModelRegistry = new Map<string, typeof Model>([
   ['permission', Permission as unknown as typeof Model],
   ['file', File as unknown as typeof Model],
 ]);
-`,
-  );
-
-  // ── src/app/Providers/DocServiceProvider.ts ───────────────────────────────────
-  w(
-    dir,
-    "src/app/Providers/DocServiceProvider.ts",
-    `import { ServiceProvider } from '@lara-node/core';
-import { Router } from 'express';
-import { DOC_META } from '../Http/Docs/decorators';
-import { AuthController } from '../Http/Controllers/User/AuthController';
-import { UserController } from '../Http/Controllers/User/UserController';
-import { RoleController } from '../Http/Controllers/User/RoleController';
-import { PermissionController } from '../Http/Controllers/User/PermissionController';
-import { FileController } from '../Http/Controllers/File/FileController';
-
-type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
-
-interface RouteEntry { method: HttpMethod; path: string; ctor: any; action: string; middleware?: string[] }
-
-/*
-|--------------------------------------------------------------------------
-| DocServiceProvider
-|--------------------------------------------------------------------------
-|
-| Serves:
-|   GET /docs      → Swagger UI (disabled in production unless ENABLE_DOCS=true)
-|   GET /docs.json → OpenAPI 3.0 JSON spec
-|
-| Add new controllers here to auto-document their @Doc-decorated methods.
-|
-*/
-const ROUTE_REGISTRY: RouteEntry[] = [
-  { method: 'post', path: '/api/auth/register', ctor: AuthController, action: 'register' },
-  { method: 'post', path: '/api/auth/login', ctor: AuthController, action: 'login' },
-  { method: 'get', path: '/api/auth/me', ctor: AuthController, action: 'me', middleware: ['auth'] },
-
-  { method: 'get', path: '/api/users', ctor: UserController, action: 'index', middleware: ['auth', 'can:view_users'] },
-  { method: 'get', path: '/api/users/{id}', ctor: UserController, action: 'show', middleware: ['auth'] },
-  { method: 'post', path: '/api/users', ctor: UserController, action: 'store', middleware: ['auth', 'can:create_users'] },
-  { method: 'put', path: '/api/users/{id}', ctor: UserController, action: 'update', middleware: ['auth', 'can:update_users'] },
-  { method: 'delete', path: '/api/users/{id}', ctor: UserController, action: 'destroy', middleware: ['auth', 'can:delete_users'] },
-  { method: 'patch', path: '/api/users/{id}/status', ctor: UserController, action: 'toggleStatus', middleware: ['auth'] },
-  { method: 'post', path: '/api/users/{id}/roles', ctor: UserController, action: 'addRole', middleware: ['auth'] },
-  { method: 'delete', path: '/api/users/{id}/roles/{roleId}', ctor: UserController, action: 'removeRole', middleware: ['auth'] },
-
-  { method: 'get', path: '/api/roles', ctor: RoleController, action: 'index', middleware: ['auth'] },
-  { method: 'get', path: '/api/roles/{role}', ctor: RoleController, action: 'show', middleware: ['auth'] },
-  { method: 'post', path: '/api/roles', ctor: RoleController, action: 'store', middleware: ['auth'] },
-  { method: 'put', path: '/api/roles/{id}', ctor: RoleController, action: 'update', middleware: ['auth'] },
-  { method: 'delete', path: '/api/roles/{id}', ctor: RoleController, action: 'destroy', middleware: ['auth'] },
-  { method: 'post', path: '/api/roles/{id}/permissions', ctor: RoleController, action: 'syncPermissions', middleware: ['auth'] },
-
-  { method: 'get', path: '/api/permissions', ctor: PermissionController, action: 'index', middleware: ['auth'] },
-  { method: 'get', path: '/api/permissions/{id}', ctor: PermissionController, action: 'show', middleware: ['auth'] },
-
-  { method: 'get', path: '/api/files', ctor: FileController, action: 'index', middleware: ['auth'] },
-  { method: 'get', path: '/api/files/{id}', ctor: FileController, action: 'show', middleware: ['auth'] },
-  { method: 'get', path: '/api/files/{id}/download', ctor: FileController, action: 'download', middleware: ['auth'] },
-  { method: 'post', path: '/api/files', ctor: FileController, action: 'store', middleware: ['auth'] },
-  { method: 'delete', path: '/api/files/{id}', ctor: FileController, action: 'destroy', middleware: ['auth'] },
-];
-
-export class DocServiceProvider extends ServiceProvider {
-  register(): void {}
-
-  boot(): void {
-    if (process.env.APP_ENV === 'production' && process.env.ENABLE_DOCS !== 'true') return;
-
-    const router = Router();
-    const spec = this.buildSpec();
-
-    router.get('/docs.json', (_req: any, res: any) => res.json(spec));
-    router.get('/docs', (_req: any, res: any) => {
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.send(this.swaggerHtml(spec.info.title));
-    });
-
-    this.app.mountRoutes('/', router);
-    console.log('[DocServiceProvider] Swagger UI → /docs  |  OpenAPI JSON → /docs.json');
-  }
-
-  private buildSpec() {
-    const paths: Record<string, any> = {};
-
-    for (const route of ROUTE_REGISTRY) {
-      const meta = Reflect.getMetadata(DOC_META, route.ctor.prototype, route.action);
-      if (!paths[route.path]) paths[route.path] = {};
-      const hasAuth = (route.middleware || []).some((m) => m === 'auth' || m.startsWith('can:'));
-
-      const operation: any = {
-        summary: meta?.summary || route.action,
-        tags: meta?.tags || [route.ctor.name.replace('Controller', '')],
-        ...(meta?.description ? { description: meta.description } : {}),
-        ...(meta?.deprecated ? { deprecated: true } : {}),
-        ...(hasAuth ? { security: [{ bearerAuth: [] }] } : {}),
-        responses: {
-          200: { description: 'Success' },
-          ...(hasAuth ? { 401: { description: 'Unauthorized' }, 403: { description: 'Forbidden' } } : {}),
-          ...(meta?.responses || {}),
-        },
-      };
-
-      if (meta?.body) {
-        const properties: Record<string, any> = {};
-        const required: string[] = [];
-        for (const [k, v] of Object.entries(meta.body) as [string, any][]) {
-          properties[k] = { type: v.type, ...(v.description ? { description: v.description } : {}) };
-          if (v.required !== false) required.push(k);
-        }
-        operation.requestBody = {
-          required: true,
-          content: { 'application/json': { schema: { type: 'object', properties, ...(required.length ? { required } : {}) } } },
-        };
-      }
-
-      const parameters: any[] = [];
-      for (const [name, cfg] of Object.entries(meta?.params || {}) as [string, any][]) {
-        parameters.push({ name, in: 'path', required: true, schema: { type: cfg.type || 'string' }, ...(cfg.description ? { description: cfg.description } : {}) });
-      }
-      for (const [name, cfg] of Object.entries(meta?.query || {}) as [string, any][]) {
-        parameters.push({ name, in: 'query', required: false, schema: { type: cfg.type || 'string' }, ...(cfg.description ? { description: cfg.description } : {}) });
-      }
-      if (parameters.length) operation.parameters = parameters;
-
-      paths[route.path][route.method] = operation;
-    }
-
-    return {
-      openapi: '3.0.0',
-      info: {
-        title: (process.env.APP_NAME || '${name}') + ' API',
-        version: '1.0.0',
-        description: 'REST API — auto-generated by DocServiceProvider',
-      },
-      servers: [{ url: process.env.APP_URL || 'http://localhost:3000', description: 'Server' }],
-      components: { securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } } },
-      paths,
-    };
-  }
-
-  private swaggerHtml(title: string): string {
-    const cdn = 'https://unpkg.com/swagger-ui-dist@5/';
-    return '<!DOCTYPE html>' +
-      '<html lang="en"><head>' +
-      '<meta charset="UTF-8" />' +
-      '<title>' + title + ' — Docs</title>' +
-      '<link rel="stylesheet" href="' + cdn + 'swagger-ui.css" />' +
-      '<style>body{margin:0}</style>' +
-      '</head><body>' +
-      '<div id="swagger-ui"></div>' +
-      '<script src="' + cdn + 'swagger-ui-bundle.js"></script>' +
-      '<script>' +
-      'SwaggerUIBundle({url:"/docs.json",dom_id:"#swagger-ui",' +
-      'presets:[SwaggerUIBundle.presets.apis,SwaggerUIBundle.SwaggerUIStandalonePreset],' +
-      'layout:"StandaloneLayout"});' +
-      '</script></body></html>';
-  }
-}
 `,
   );
 
@@ -1203,7 +998,7 @@ export { FileService } from './FileService';
     "src/app/Http/Controllers/User/AuthController.ts",
     `import { Request, Response } from 'express';
 import { Injectable } from '@lara-node/core';
-import { Doc } from '../Docs/decorators';
+import { Doc } from '@lara-node/router';
 import { AuthService } from '@app/Services/index';
 import { UserService } from '@app/Services/index';
 
@@ -1222,7 +1017,7 @@ export class AuthController {
       email: { type: 'string', description: 'Email address' },
       password: { type: 'string', description: 'Password (min 8 chars)' },
     },
-    responses: { 201: { description: 'User created' }, 422: { description: 'Validation error' } },
+    responses: [{ status: 201, description: 'User created' }, { status: 422, description: 'Validation error' }],
   })
   async register(req: Request, res: Response): Promise<void> {
     const data = await req.validate({
@@ -1241,7 +1036,7 @@ export class AuthController {
       email: { type: 'string', description: 'Email address' },
       password: { type: 'string', description: 'Password' },
     },
-    responses: { 200: { description: 'JWT token and user' }, 401: { description: 'Invalid credentials' } },
+    responses: [{ status: 200, description: 'JWT token and user' }, { status: 401, description: 'Invalid credentials' }],
   })
   async login(req: Request, res: Response): Promise<void> {
     const { email, password } = await req.validate({
@@ -1271,20 +1066,20 @@ export class AuthController {
     "src/app/Http/Controllers/User/UserController.ts",
     `import { Request, Response } from 'express';
 import { Injectable } from '@lara-node/core';
-import { Doc } from '../Docs/decorators';
+import { Doc } from '@lara-node/router';
 import { UserService } from '@app/Services/index';
 
 @Injectable()
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Doc({ summary: 'List all users (paginated)', tags: ['Users'], auth: true, query: { page: { type: 'integer', description: 'Page number' }, per_page: { type: 'integer', description: 'Items per page' } } })
+  @Doc({ summary: 'List all users (paginated)', tags: ['Users'], auth: true, params: [{ name: 'page', in: 'query', type: 'integer', description: 'Page number' }, { name: 'per_page', in: 'query', type: 'integer', description: 'Items per page' }] })
   async index(req: Request, res: Response): Promise<void> {
     const data = await this.userService.index(Number(req.query.page) || 1);
     res.json({ success: true, data });
   }
 
-  @Doc({ summary: 'Get a user by ID', tags: ['Users'], auth: true, params: { id: { type: 'integer', description: 'User ID' } } })
+  @Doc({ summary: 'Get a user by ID', tags: ['Users'], auth: true, params: [{ name: 'id', in: 'path', type: 'integer', description: 'User ID' }] })
   async show(req: Request, res: Response): Promise<void> {
     const user = await this.userService.find(req.params.id);
     if (!user) { res.status(404).json({ success: false, message: 'Not found' }); return; }
@@ -1352,7 +1147,7 @@ export class UserController {
     res.json({ success: true, message: 'Role removed' });
   }
 
-  @Doc({ summary: 'Delete a user (soft delete)', tags: ['Users'], auth: true, responses: { 200: { description: 'User deleted' }, 404: { description: 'Not found' } } })
+  @Doc({ summary: 'Delete a user (soft delete)', tags: ['Users'], auth: true, responses: [{ status: 200, description: 'User deleted' }, { status: 404, description: 'Not found' }] })
   async destroy(req: Request, res: Response): Promise<void> {
     await this.userService.destroy(req.params.id);
     res.json({ success: true, message: 'User deleted' });
@@ -1372,7 +1167,7 @@ export class UserController {
     "src/app/Http/Controllers/User/RoleController.ts",
     `import { Request, Response } from 'express';
 import { Injectable } from '@lara-node/core';
-import { Doc } from '../Docs/decorators';
+import { Doc } from '@lara-node/router';
 import { RoleService } from '@app/Services/index';
 
 @Injectable()
@@ -1389,8 +1184,8 @@ export class RoleController {
     description: 'The :role parameter is automatically resolved to a Role model instance via ModelRegistry.',
     tags: ['Roles'],
     auth: true,
-    params: { role: { type: 'integer', description: 'Role ID — auto-bound to Role model' } },
-    responses: { 200: { description: 'Role with permissions' }, 404: { description: 'Not found' } },
+    params: [{ name: 'role', in: 'path', type: 'integer', description: 'Role ID — auto-bound to Role model' }],
+    responses: [{ status: 200, description: 'Role with permissions' }, { status: 404, description: 'Not found' }],
   })
   async show(req: Request, res: Response): Promise<void> {
     // req.params.role is already a loaded Role model instance (route-model binding via ModelRegistry)
@@ -1452,7 +1247,7 @@ export class RoleController {
     "src/app/Http/Controllers/User/PermissionController.ts",
     `import { Request, Response } from 'express';
 import { Injectable } from '@lara-node/core';
-import { Doc } from '../Docs/decorators';
+import { Doc } from '@lara-node/router';
 import { PermissionService } from '@app/Services/index';
 
 @Injectable()
@@ -1464,7 +1259,7 @@ export class PermissionController {
     res.json({ success: true, data: await this.permissionService.index() });
   }
 
-  @Doc({ summary: 'Get a permission by ID', tags: ['Permissions'], auth: true, params: { id: { type: 'integer' } } })
+  @Doc({ summary: 'Get a permission by ID', tags: ['Permissions'], auth: true, params: [{ name: 'id', in: 'path', type: 'integer' }] })
   async show(req: Request, res: Response): Promise<void> {
     const p = await this.permissionService.find(req.params.id);
     if (!p) { res.status(404).json({ success: false, message: 'Not found' }); return; }
@@ -1481,7 +1276,7 @@ export class PermissionController {
 import multer from 'multer';
 import path from 'path';
 import { Injectable } from '@lara-node/core';
-import { Doc } from '../Docs/decorators';
+import { Doc } from '@lara-node/router';
 import { FileService } from '@app/Services/index';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || 'uploads/files';
@@ -1505,14 +1300,14 @@ export class FileController {
     res.json({ success: true, data: await this.fileService.index() });
   }
 
-  @Doc({ summary: 'Get file metadata by ID', tags: ['Files'], auth: true, params: { id: { type: 'integer' } } })
+  @Doc({ summary: 'Get file metadata by ID', tags: ['Files'], auth: true, params: [{ name: 'id', in: 'path', type: 'integer' }] })
   async show(req: Request, res: Response): Promise<void> {
     const file = await this.fileService.find(req.params.id);
     if (!file) { res.status(404).json({ success: false, message: 'Not found' }); return; }
     res.json({ success: true, data: file });
   }
 
-  @Doc({ summary: 'Upload a file (multipart/form-data, field: file)', tags: ['Files'], auth: true, responses: { 201: { description: 'File uploaded' } } })
+  @Doc({ summary: 'Upload a file (multipart/form-data, field: file)', tags: ['Files'], auth: true, responses: [{ status: 201, description: 'File uploaded' }] })
   async store(req: Request, res: Response): Promise<void> {
     if (!req.file) { res.status(400).json({ success: false, message: 'No file uploaded' }); return; }
     res.status(201).json({ success: true, data: await this.fileService.store(req.file, req.user!.id) });
@@ -1551,7 +1346,7 @@ import { PermissionController } from '../Http/Controllers/User/PermissionControl
 import { FileController } from '../Http/Controllers/File/FileController';
 import { PermissionsSyncCommand } from '../Console/Commands/PermissionCommands';
 import { PermissionsListCommand } from '../Console/Commands/PermissionCommands';
-import { DocServiceProvider } from './DocServiceProvider';
+import { DocServiceProvider } from '@lara-node/router';
 
 export class AppServiceProvider extends ServiceProvider {
   register(): void {
