@@ -1,4 +1,4 @@
-import { Model } from "@vest/db";
+import { Model } from "@vest-ts/db";
 
 export class Cache extends Model {
   static table = "cache_store";

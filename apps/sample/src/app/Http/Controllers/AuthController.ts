@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import { generateToken } from "@vest/auth";
+import { generateToken } from "@vest-ts/auth";
 import { User } from "../../Models/User.js";
 
 export class AuthController {

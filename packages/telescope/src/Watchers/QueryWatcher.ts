@@ -1,5 +1,5 @@
-import { getEventDispatcher } from "@vest/events";
-import { TELESCOPE_QUERY_CACHE_KEY } from "@vest/db";
+import { getEventDispatcher } from "@vest-ts/events";
+import { TELESCOPE_QUERY_CACHE_KEY } from "@vest-ts/db";
 import { TelescopeStore } from "../TelescopeStore.js";
 
 /*

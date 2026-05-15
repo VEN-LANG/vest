@@ -1,4 +1,4 @@
-import { HttpKernel } from "@vest/router";
+import { HttpKernel } from "@vest-ts/router";
 import { authMiddleware } from "./Middleware/auth.js";
 
 export class Kernel extends HttpKernel {

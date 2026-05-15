@@ -9,7 +9,7 @@
 |
 */
 
-import RouterBuilder from "@vest/router";
+import RouterBuilder from "@vest-ts/router";
 import { FileController } from "@app/Http/Controllers/File/FileController";
 
 export const webRoutesBuilder = new RouterBuilder();

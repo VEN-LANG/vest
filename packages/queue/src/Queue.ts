@@ -2,7 +2,7 @@ import { QueueDriverInterface, FailedJobsInterface, SerializedJob } from "./type
 import { SyncDriver, DatabaseDriver, RedisDriver } from "./Drivers/index.js";
 import { Job } from "./Job.js";
 import queueConfig from "./queue.config.js";
-import { Cache } from "@vest/cache";
+import { Cache } from "@vest-ts/cache";
 
 /*
 |--------------------------------------------------------------------------

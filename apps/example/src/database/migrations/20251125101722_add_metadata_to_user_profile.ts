@@ -1,4 +1,4 @@
-import { MigrationSchema, TableBuilder } from "@vest/db";
+import { MigrationSchema, TableBuilder } from "@vest-ts/db";
 import UserProfile from "@app/Models/User/UserProfile";
 
 type QueryFn = (sql: string, params?: any[]) => Promise<any>;

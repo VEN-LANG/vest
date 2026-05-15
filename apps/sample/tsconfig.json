@@ -14,16 +14,16 @@
     "paths": {
       "@app/*": ["src/app/*"],
       "@config/*": ["src/config/*"],
-      "@vest/core": ["../../packages/core/src/index.ts"],
-      "@vest/db": ["../../packages/db/src/index.ts"],
-      "@vest/cache": ["../../packages/cache/src/index.ts"],
-      "@vest/events": ["../../packages/events/src/index.ts"],
-      "@vest/queue": ["../../packages/queue/src/index.ts"],
-      "@vest/mail": ["../../packages/mail/src/index.ts"],
-      "@vest/router": ["../../packages/router/src/index.ts"],
-      "@vest/auth": ["../../packages/auth/src/index.ts"],
-      "@vest/console": ["../../packages/console/src/index.ts"],
-      "@vest/telescope": ["../../packages/telescope/src/index.ts"]
+      "@vest-ts/core": ["../../packages/core/src/index.ts"],
+      "@vest-ts/db": ["../../packages/db/src/index.ts"],
+      "@vest-ts/cache": ["../../packages/cache/src/index.ts"],
+      "@vest-ts/events": ["../../packages/events/src/index.ts"],
+      "@vest-ts/queue": ["../../packages/queue/src/index.ts"],
+      "@vest-ts/mail": ["../../packages/mail/src/index.ts"],
+      "@vest-ts/router": ["../../packages/router/src/index.ts"],
+      "@vest-ts/auth": ["../../packages/auth/src/index.ts"],
+      "@vest-ts/console": ["../../packages/console/src/index.ts"],
+      "@vest-ts/telescope": ["../../packages/telescope/src/index.ts"]
     }
   },
   "include": ["src"],

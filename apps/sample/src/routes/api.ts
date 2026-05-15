@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import RouterBuilder from "@vest/router";
+import RouterBuilder from "@vest-ts/router";
 import { AuthController } from "@app/Http/Controllers/AuthController.js";
 import { PostController } from "@app/Http/Controllers/PostController.js";
 

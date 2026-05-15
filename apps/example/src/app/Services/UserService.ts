@@ -1,10 +1,10 @@
-import { ModelAttributes } from "@vest/db";
+import { ModelAttributes } from "@vest-ts/db";
 import { TProfile, TRequest } from "@app/Http/types";
 import User from "@app/Models/User/User";
 import UserProfile from "@app/Models/User/UserProfile";
 import Role from "@app/Models/User/Role";
 import { RolesUsers } from "@app/Models/User/RolesUsers";
-import { event } from "@vest/events";
+import { event } from "@vest-ts/events";
 
 /*
 |--------------------------------------------------------------------------

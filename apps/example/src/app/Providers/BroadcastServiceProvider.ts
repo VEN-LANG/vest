@@ -1,4 +1,4 @@
-import { BroadcastServiceProvider as BaseProvider, Broadcast } from "@vest/events";
+import { BroadcastServiceProvider as BaseProvider, Broadcast } from "@vest-ts/events";
 import jwt from "jsonwebtoken";
 import User from "../Models/User/User.js";
 
@@ -6,7 +6,7 @@ import User from "../Models/User/User.js";
  * BroadcastServiceProvider
  *
  * Define channel authorization logic here. The framework (BroadcastManager setup,
- * WebSocket initialization) is handled in @vest/events BroadcastServiceProvider.
+ * WebSocket initialization) is handled in @vest-ts/events BroadcastServiceProvider.
  */
 export class BroadcastServiceProvider extends BaseProvider {
   async boot(): Promise<void> {

@@ -3,7 +3,7 @@ import "reflect-metadata";
 import "dotenv/config";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { Kernel } from "@vest/console";
+import { Kernel } from "@vest-ts/console";
 
 async function main() {
   const kernel = new Kernel();

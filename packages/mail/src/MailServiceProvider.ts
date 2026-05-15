@@ -1,4 +1,4 @@
-import { ServiceProvider } from "@vest/core";
+import { ServiceProvider } from "@vest-ts/core";
 
 export class MailServiceProvider extends ServiceProvider {
   register(): void {

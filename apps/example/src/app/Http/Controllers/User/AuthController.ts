@@ -4,7 +4,7 @@ import { ValidationError } from "@app/Helpers/validator";
 import { TProfile } from "@app/Http/types";
 import { UserService } from "@app/Services/UserService";
 import { UserRegistered } from "@app/Events";
-import { Doc } from "@vest/router";
+import { Doc } from "@vest-ts/router";
 import { auth } from "@app/Helpers/auth";
 
 export class AuthController {

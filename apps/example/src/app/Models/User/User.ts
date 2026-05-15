@@ -1,11 +1,11 @@
-import { Model, use } from "@vest/db";
+import { Model, use } from "@vest-ts/db";
 import Role from "./Role";
 import FileModel from "@app/Models/File/File";
 import UserProfile from "@app/Models/User/UserProfile";
 import { EUserType } from "@app/Enums";
 import { RolesUsers } from "@app/Models/User/RolesUsers";
-import { Cacheable, Sortable, Timestamps } from "@vest/db";
-import { SoftDeletes } from "@vest/db";
+import { Cacheable, Sortable, Timestamps } from "@vest-ts/db";
+import { SoftDeletes } from "@vest-ts/db";
 
 /*
 |--------------------------------------------------------------------------

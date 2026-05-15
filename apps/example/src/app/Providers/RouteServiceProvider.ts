@@ -1,5 +1,5 @@
-import { ServiceProvider } from "@vest/core";
-import { middlewareStack } from "@vest/router";
+import { ServiceProvider } from "@vest-ts/core";
+import { middlewareStack } from "@vest-ts/router";
 
 export class RouteServiceProvider extends ServiceProvider {
   /*

@@ -2,7 +2,7 @@ import { Queue } from "./Queue.js";
 import { Job } from "./Job.js";
 import { SerializedJob, WorkerOptions } from "./types.js";
 import queueConfig from "./queue.config.js";
-import { Cache } from "@vest/cache";
+import { Cache } from "@vest-ts/cache";
 import { EventEmitter } from "events";
 
 /*

@@ -1,5 +1,5 @@
 {
-  "name": "@venomous-maker-org/vest-mail",
+  "name": "@vest-ts/mail",
   "version": "0.1.0",
   "description": "Vest mail manager with SMTP, log, and array drivers",
   "type": "module",
@@ -28,9 +28,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@venomous-maker-org/vest-core": "workspace:*",
-    "@venomous-maker-org/vest-events": "workspace:*",
-    "@venomous-maker-org/vest-queue": "workspace:*",
+    "@vest-ts/core": "workspace:*",
+    "@vest-ts/events": "workspace:*",
+    "@vest-ts/queue": "workspace:*",
     "nodemailer": "^8.0.1"
   },
   "devDependencies": {

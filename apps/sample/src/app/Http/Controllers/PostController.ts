@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import { event } from "@vest/events";
-import { dispatch } from "@vest/queue";
+import { event } from "@vest-ts/events";
+import { dispatch } from "@vest-ts/queue";
 import { Post } from "../../Models/Post.js";
 import { ProcessPostAnalytics } from "../../Jobs/ProcessPostAnalytics.js";
 

@@ -7,8 +7,8 @@
 |
 */
 
-import { Event } from "@vest/events";
-import { ShouldBroadcast, BroadcastAs } from "@vest/events";
+import { Event } from "@vest-ts/events";
+import { ShouldBroadcast, BroadcastAs } from "@vest-ts/events";
 
 /**
  * Event broadcast when a new notification is created.

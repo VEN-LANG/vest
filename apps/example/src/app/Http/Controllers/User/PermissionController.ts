@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { PermissionService } from "@app/Services/PermissionService";
 import { ValidationError } from "@app/Helpers/validator";
-import { Doc } from "@vest/router";
+import { Doc } from "@vest-ts/router";
 
 export class PermissionController {
   public constructor(public permissionService: PermissionService) {}

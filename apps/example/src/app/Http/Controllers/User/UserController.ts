@@ -5,7 +5,7 @@ import { parseRequest } from "@app/Helpers/auth";
 import { ValidationError } from "@app/Helpers/validator";
 import User from "@app/Models/User/User";
 import { TProfile, TUser } from "@app/Http/types";
-import { Doc } from "@vest/router";
+import { Doc } from "@vest-ts/router";
 
 /*
 |--------------------------------------------------------------------------

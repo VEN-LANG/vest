@@ -1,4 +1,4 @@
-import { HttpKernel } from "@vest/router";
+import { HttpKernel } from "@vest-ts/router";
 import { asyncContextMiddleware } from "./Middleware/asyncContext.js";
 import requestLoggerMiddleware from "./Middleware/requestLogger.js";
 import validatorMiddleware from "./Middleware/validator.js";
@@ -7,13 +7,13 @@ import modelRegisterMiddleware from "./Middleware/modelRegister.js";
 import { authMiddleware, authorizePermissions, authorizeRoles } from "./Middleware/auth.js";
 import authorizeByStatus from "./Middleware/authorizeByStatus.js";
 import errorHandler from "./Middleware/errorHandler.js";
-import { ThrottleMiddleware } from "@vest/router";
+import { ThrottleMiddleware } from "@vest-ts/router";
 
 /**
  * HTTP Kernel
  *
  * Configure global middleware, named aliases, and middleware groups for your app.
- * Framework internals (boot, configureErrorHandling, etc.) live in @vest/router.
+ * Framework internals (boot, configureErrorHandling, etc.) live in @vest-ts/router.
  */
 export class Kernel extends HttpKernel {
   /**

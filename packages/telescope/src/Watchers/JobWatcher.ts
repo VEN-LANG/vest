@@ -1,5 +1,5 @@
-import { getEventDispatcher } from "@vest/events";
-import { horizonMetrics } from "@vest/horizon";
+import { getEventDispatcher } from "@vest-ts/events";
+import { horizonMetrics } from "@vest-ts/horizon";
 import { TelescopeStore } from "../TelescopeStore.js";
 
 /*

@@ -1,4 +1,4 @@
-import { ServiceProvider } from "@vest/core";
+import { ServiceProvider } from "@vest-ts/core";
 import { AuthService } from "../Services/AuthService.js";
 import { UserService } from "../Services/UserService.js";
 import { RoleService } from "../Services/RoleService.js";

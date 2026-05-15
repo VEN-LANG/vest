@@ -1,7 +1,7 @@
-import { Model, use } from "@vest/db";
+import { Model, use } from "@vest-ts/db";
 import Role from "./Role";
 import Permission from "./Permission";
-import { SoftDeletes } from "@vest/db";
+import { SoftDeletes } from "@vest-ts/db";
 
 @use(SoftDeletes)
 export class PermissionsRoles extends Model {

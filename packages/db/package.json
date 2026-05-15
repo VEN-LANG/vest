@@ -1,5 +1,5 @@
 {
-  "name": "@venomous-maker-org/vest-db",
+  "name": "@vest-ts/db",
   "version": "0.1.0",
   "description": "Vest ORM — Eloquent-style models, migrations, schema builder",
   "type": "module",
@@ -28,7 +28,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@venomous-maker-org/vest-core": "workspace:*",
+    "@vest-ts/core": "workspace:*",
     "mongodb": "^7.0.0",
     "mysql2": "^3.16.0",
     "reflect-metadata": "^0.2.2"

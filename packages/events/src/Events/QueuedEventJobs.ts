@@ -9,7 +9,7 @@
 |
 */
 
-import { Job, Queueable } from "@vest/queue";
+import { Job, Queueable } from "@vest-ts/queue";
 
 /*
 |--------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { ServiceProvider } from "@vest/core";
+import { ServiceProvider } from "@vest-ts/core";
 import { initDatabase, query, getDbType } from "./connection.js";
 
 export class DatabaseServiceProvider extends ServiceProvider {

@@ -1,17 +1,17 @@
 import "reflect-metadata";
-import { container, Application } from "@vest/core";
+import { container, Application } from "@vest-ts/core";
 
 // ---------------------------------------------------------------------------
-// Framework service providers — from @vest/* packages
+// Framework service providers — from @vest-ts/* packages
 // ---------------------------------------------------------------------------
-import { DatabaseServiceProvider } from "@vest/db";
-import { CacheServiceProvider } from "@vest/cache";
-import { EventServiceProvider, BroadcastServiceProvider } from "@vest/events";
-import { QueueServiceProvider } from "@vest/queue";
-import { MailServiceProvider } from "@vest/mail";
-import { DocServiceProvider } from "@vest/router";
-import { HorizonServiceProvider } from "@vest/horizon";
-import { TelescopeServiceProvider } from "@vest/telescope";
+import { DatabaseServiceProvider } from "@vest-ts/db";
+import { CacheServiceProvider } from "@vest-ts/cache";
+import { EventServiceProvider, BroadcastServiceProvider } from "@vest-ts/events";
+import { QueueServiceProvider } from "@vest-ts/queue";
+import { MailServiceProvider } from "@vest-ts/mail";
+import { DocServiceProvider } from "@vest-ts/router";
+import { HorizonServiceProvider } from "@vest-ts/horizon";
+import { TelescopeServiceProvider } from "@vest-ts/telescope";
 
 // ---------------------------------------------------------------------------
 // App-level providers — YOUR providers (edit these freely)

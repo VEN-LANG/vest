@@ -1,6 +1,6 @@
 import { Command } from "../Command.js";
 import { ArgumentsCamelCase } from "yargs";
-import { runSeeders } from "@vest/db";
+import { runSeeders } from "@vest-ts/db";
 import fs from "fs";
 import path from "path";
 

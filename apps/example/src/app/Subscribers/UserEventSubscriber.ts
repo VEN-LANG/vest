@@ -11,8 +11,8 @@
 |
 */
 
-import { EventDispatcher, EventSubscriber } from "@vest/events";
-import { Subscriber } from "@vest/events";
+import { EventDispatcher, EventSubscriber } from "@vest-ts/events";
+import { Subscriber } from "@vest-ts/events";
 
 @Subscriber()
 export class UserEventSubscriber implements EventSubscriber {

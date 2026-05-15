@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { verifyToken } from "@vest/auth";
+import { verifyToken } from "@vest-ts/auth";
 import { User } from "../../Models/User.js";
 
 export async function authMiddleware(

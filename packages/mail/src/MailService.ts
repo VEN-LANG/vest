@@ -10,7 +10,7 @@ import {
 } from "./types.js";
 import { ArrayDriver, FailoverDriver, LogDriver, SmtpDriver } from "./Drivers/index.js";
 import mailConfig, { MailerConfig } from "./mail.config.js";
-import { getEventDispatcher } from "@vest/events";
+import { getEventDispatcher } from "@vest-ts/events";
 
 /** Optional SendMailJob class — registered by the app to avoid circular deps. */
 let _sendMailJobClass: (new () => any) | null = null;
@@ -252,7 +252,7 @@ export class Mailer implements MailerInterface {
    * Queue a mailable for background sending.
    */
   async queue(mailable: MailableInterface, queue?: string): Promise<string> {
-    const { dispatch } = await import("@vest/queue");
+    const { dispatch } = await import("@vest-ts/queue");
     const message = mailable.toMailMessage();
     const SendMailJobClass = _sendMailJobClass;
     if (!SendMailJobClass) {
@@ -269,7 +269,7 @@ export class Mailer implements MailerInterface {
    * Queue a mailable with delay.
    */
   async later(mailable: MailableInterface, delay: number, queue?: string): Promise<string> {
-    const { dispatch } = await import("@vest/queue");
+    const { dispatch } = await import("@vest-ts/queue");
 
     const message = mailable.toMailMessage();
     const SendMailJobClass = _sendMailJobClass;

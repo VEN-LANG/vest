@@ -1,4 +1,4 @@
-import { Event } from "@vest/events";
+import { Event } from "@vest-ts/events";
 
 /*
 |--------------------------------------------------------------------------

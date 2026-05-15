@@ -1,4 +1,4 @@
-import { EventServiceProvider as BaseProvider } from "@vest/events";
+import { EventServiceProvider as BaseProvider } from "@vest-ts/events";
 
 /**
  * EventServiceProvider

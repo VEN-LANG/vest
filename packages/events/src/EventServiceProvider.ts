@@ -1,4 +1,4 @@
-import { ServiceProvider } from "@vest/core";
+import { ServiceProvider } from "@vest-ts/core";
 import { getEventDispatcher } from "./Events/EventDispatcher.js";
 import type { ListenerRegistration } from "./Events/EventDispatcher.js";
 import { getRegisteredListeners, getRegisteredSubscribers } from "./Events/EventDecorators.js";
@@ -12,7 +12,7 @@ import { getRegisteredListeners, getRegisteredSubscribers } from "./Events/Event
  *
  * @example
  * // app/Providers/EventServiceProvider.ts
- * import { EventServiceProvider as BaseProvider } from '@vest/events';
+ * import { EventServiceProvider as BaseProvider } from '@vest-ts/events';
  * import { UserRegisteredListener } from '../Listeners/UserRegisteredListener.js';
  *
  * export class EventServiceProvider extends BaseProvider {

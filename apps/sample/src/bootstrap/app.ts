@@ -1,12 +1,12 @@
 import "reflect-metadata";
-import { container, Application } from "@vest/core";
-import { DatabaseServiceProvider } from "@vest/db";
-import { CacheServiceProvider } from "@vest/cache";
-import { EventServiceProvider } from "@vest/events";
-import { QueueServiceProvider } from "@vest/queue";
-import { MailServiceProvider } from "@vest/mail";
-import { DocServiceProvider } from "@vest/router";
-import { TelescopeServiceProvider } from "@vest/telescope";
+import { container, Application } from "@vest-ts/core";
+import { DatabaseServiceProvider } from "@vest-ts/db";
+import { CacheServiceProvider } from "@vest-ts/cache";
+import { EventServiceProvider } from "@vest-ts/events";
+import { QueueServiceProvider } from "@vest-ts/queue";
+import { MailServiceProvider } from "@vest-ts/mail";
+import { DocServiceProvider } from "@vest-ts/router";
+import { TelescopeServiceProvider } from "@vest-ts/telescope";
 
 import { AppServiceProvider } from "../app/Providers/AppServiceProvider.js";
 import { RouteServiceProvider } from "../app/Providers/RouteServiceProvider.js";

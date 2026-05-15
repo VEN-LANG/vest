@@ -1,7 +1,7 @@
 import { Argv } from "yargs";
 import { Command } from "../Command.js";
 import * as SystemCommands from "../Commands/index.js";
-import { scheduler, Schedule } from "@vest/queue";
+import { scheduler, Schedule } from "@vest-ts/queue";
 
 export class Kernel {
   /** Additional commands registered by the app. Override via addCommand() or subclass. */

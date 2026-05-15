@@ -1,4 +1,4 @@
-import { MigrationSchema } from "@vest/db";
+import { MigrationSchema } from "@vest-ts/db";
 type QueryFn = (sql: string, params?: any[]) => Promise<any>;
 // Migration: add original_width & original_height to files table
 module.exports.up = async function (schema: MigrationSchema, _query: QueryFn) {

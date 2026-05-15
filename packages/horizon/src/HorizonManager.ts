@@ -1,10 +1,10 @@
-import { Worker } from "@vest/queue";
-import { scheduler } from "@vest/queue";
-import { Queue } from "@vest/queue";
+import { Worker } from "@vest-ts/queue";
+import { scheduler } from "@vest-ts/queue";
+import { Queue } from "@vest-ts/queue";
 import { horizonMetrics, writeHorizonSignal } from "./HorizonMetrics.js";
-import { WorkerOptions } from "@vest/queue";
-import { getEventDispatcher } from "@vest/events";
-import { queueConfig } from "@vest/queue";
+import { WorkerOptions } from "@vest-ts/queue";
+import { getEventDispatcher } from "@vest-ts/events";
+import { queueConfig } from "@vest-ts/queue";
 
 /*
 |--------------------------------------------------------------------------

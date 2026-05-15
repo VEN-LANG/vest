@@ -1,5 +1,5 @@
 import Role from "@app/Models/User/Role";
-import { ModelAttributes } from "@vest/db";
+import { ModelAttributes } from "@vest-ts/db";
 import PermissionsRoles from "@app/Models/User/PermissionsRoles";
 
 export class RoleService {

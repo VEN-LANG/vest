@@ -1,5 +1,5 @@
 {
-  "name": "@venomous-maker-org/vest-queue",
+  "name": "@vest-ts/queue",
   "version": "0.1.0",
   "description": "Vest job queue, worker, and scheduler",
   "type": "module",
@@ -28,9 +28,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@venomous-maker-org/vest-cache": "workspace:*",
-    "@venomous-maker-org/vest-core": "workspace:*",
-    "@venomous-maker-org/vest-db": "workspace:*",
+    "@vest-ts/cache": "workspace:*",
+    "@vest-ts/core": "workspace:*",
+    "@vest-ts/db": "workspace:*",
     "cron-parser": "^5.5.0",
     "redis": "^5.10.0",
     "reflect-metadata": "^0.2.2"

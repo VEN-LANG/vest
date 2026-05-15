@@ -21,17 +21,17 @@ export default defineConfig({
   // ---------------------------------------------------------------------------
   resolve: {
     alias: {
-      '@vest/core': resolve(__dirname, 'packages/core/src'),
-      '@vest/cache': resolve(__dirname, 'packages/cache/src'),
-      '@vest/db': resolve(__dirname, 'packages/db/src'),
-      '@vest/events': resolve(__dirname, 'packages/events/src'),
-      '@vest/queue': resolve(__dirname, 'packages/queue/src'),
-      '@vest/mail': resolve(__dirname, 'packages/mail/src'),
-      '@vest/router': resolve(__dirname, 'packages/router/src'),
-      '@vest/auth': resolve(__dirname, 'packages/auth/src'),
-      '@vest/console': resolve(__dirname, 'packages/console/src'),
-      '@vest/horizon': resolve(__dirname, 'packages/horizon/src'),
-      '@vest/telescope': resolve(__dirname, 'packages/telescope/src'),
+      '@vest-ts/core': resolve(__dirname, 'packages/core/src'),
+      '@vest-ts/cache': resolve(__dirname, 'packages/cache/src'),
+      '@vest-ts/db': resolve(__dirname, 'packages/db/src'),
+      '@vest-ts/events': resolve(__dirname, 'packages/events/src'),
+      '@vest-ts/queue': resolve(__dirname, 'packages/queue/src'),
+      '@vest-ts/mail': resolve(__dirname, 'packages/mail/src'),
+      '@vest-ts/router': resolve(__dirname, 'packages/router/src'),
+      '@vest-ts/auth': resolve(__dirname, 'packages/auth/src'),
+      '@vest-ts/console': resolve(__dirname, 'packages/console/src'),
+      '@vest-ts/horizon': resolve(__dirname, 'packages/horizon/src'),
+      '@vest-ts/telescope': resolve(__dirname, 'packages/telescope/src'),
     },
   },
 

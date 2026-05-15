@@ -1,5 +1,5 @@
 import type { RequestHandler } from "express";
-import type { Application } from "@vest/core";
+import type { Application } from "@vest-ts/core";
 import { registerMiddleware, middlewareStack } from "../Middleware/middleware.js";
 import type {
   MiddlewareEntry,
@@ -19,7 +19,7 @@ export type RouteMiddleware = Record<
  *
  * @example
  * // app/Http/Kernel.ts
- * import { HttpKernel } from '@vest/router';
+ * import { HttpKernel } from '@vest-ts/router';
  * import { authMiddleware } from './Middleware/auth.js';
  *
  * export class Kernel extends HttpKernel {

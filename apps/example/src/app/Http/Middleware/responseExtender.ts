@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
-import { Model } from "@vest/db";
-import { QueryResult } from "@vest/db";
+import { Model } from "@vest-ts/db";
+import { QueryResult } from "@vest-ts/db";
 
 declare global {
   namespace Express {

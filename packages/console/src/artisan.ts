@@ -10,7 +10,7 @@
  *   artisan queue:work
  *
  * In an app's package.json:
- *   "artisan": "node node_modules/@vest/console/dist/artisan.js"
+ *   "artisan": "node node_modules/@vest-ts/console/dist/artisan.js"
  */
 
 import "dotenv/config";

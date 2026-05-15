@@ -1,4 +1,4 @@
-import { Model, use, Timestamps, SoftDeletes } from "@vest/db";
+import { Model, use, Timestamps, SoftDeletes } from "@vest-ts/db";
 
 @use(Timestamps, SoftDeletes)
 export class User extends Model {

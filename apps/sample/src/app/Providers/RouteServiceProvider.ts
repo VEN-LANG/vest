@@ -1,4 +1,4 @@
-import { ServiceProvider } from "@vest/core";
+import { ServiceProvider } from "@vest-ts/core";
 
 export class RouteServiceProvider extends ServiceProvider {
   register(): void {}

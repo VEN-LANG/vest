@@ -1,5 +1,5 @@
 import Permission from "@app/Models/User/Permission";
-import { ModelAttributes } from "@vest/db";
+import { ModelAttributes } from "@vest-ts/db";
 
 export class PermissionService {
   async list() {

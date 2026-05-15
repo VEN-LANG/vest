@@ -10,4 +10,4 @@
 export { SendWelcomeEmail, LogUserLogin, NotifyAdminOnRegistration } from "./UserListeners";
 
 // Re-export base class for convenience
-export { Listener } from "@vest/events";
+export { Listener } from "@vest-ts/events";

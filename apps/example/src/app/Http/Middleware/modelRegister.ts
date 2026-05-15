@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
-import { cacheSet, generateCacheKey } from "@vest/cache";
-import RouterBuilder from "@vest/router";
-import { Model } from "@vest/db";
+import { cacheSet, generateCacheKey } from "@vest-ts/cache";
+import RouterBuilder from "@vest-ts/router";
+import { Model } from "@vest-ts/db";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

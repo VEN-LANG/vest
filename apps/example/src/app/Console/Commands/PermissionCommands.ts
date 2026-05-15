@@ -1,4 +1,4 @@
-import { Command } from "@vest/console";
+import { Command } from "@vest-ts/console";
 import { ArgumentsCamelCase } from "yargs";
 import { initDatabase } from "../../../config/db.config.js";
 

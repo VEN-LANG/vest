@@ -1,5 +1,5 @@
 {
-  "name": "@venomous-maker-org/vest-auth",
+  "name": "@vest-ts/auth",
   "version": "0.1.0",
   "description": "Vest JWT authentication helpers",
   "type": "module",
@@ -28,8 +28,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@venomous-maker-org/vest-core": "workspace:*",
-    "@venomous-maker-org/vest-router": "workspace:*",
+    "@vest-ts/core": "workspace:*",
+    "@vest-ts/router": "workspace:*",
     "bcrypt": "^6.0.0",
     "jsonwebtoken": "^9.0.3"
   },

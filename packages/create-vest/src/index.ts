@@ -44,11 +44,11 @@ async function main() {
         name: "packages",
         message: "Optional packages:",
         choices: [
-          { title: "@vest/events  (events + broadcasting)", value: "events", selected: true },
-          { title: "@vest/queue   (job queue + scheduler)", value: "queue", selected: true },
-          { title: "@vest/mail    (mail drivers)", value: "mail", selected: true },
-          { title: "@vest/horizon (queue dashboard)", value: "horizon", selected: false },
-          { title: "@vest/telescope (debug dashboard)", value: "telescope", selected: false },
+          { title: "@vest-ts/events  (events + broadcasting)", value: "events", selected: true },
+          { title: "@vest-ts/queue   (job queue + scheduler)", value: "queue", selected: true },
+          { title: "@vest-ts/mail    (mail drivers)", value: "mail", selected: true },
+          { title: "@vest-ts/horizon (queue dashboard)", value: "horizon", selected: false },
+          { title: "@vest-ts/telescope (debug dashboard)", value: "telescope", selected: false },
         ],
       },
     ],
@@ -86,15 +86,15 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
 
   const extraDeps: Record<string, string> = {};
   const vestDeps: string[] = [
-    "@vest/core",
-    "@vest/db",
-    "@vest/router",
-    "@vest/auth",
-    "@vest/console",
+    "@vest-ts/core",
+    "@vest-ts/db",
+    "@vest-ts/router",
+    "@vest-ts/auth",
+    "@vest-ts/console",
   ];
 
   for (const pkg of opts.packages) {
-    vestDeps.push(`@vest/${pkg}`);
+    vestDeps.push(`@vest-ts/${pkg}`);
   }
 
   const packageJson = {
@@ -234,7 +234,7 @@ import 'reflect-metadata';
 import 'dotenv/config';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { Kernel } from '@vest/console';
+import { Kernel } from '@vest-ts/console';
 
 async function main() {
   const kernel = new Kernel();
@@ -264,7 +264,7 @@ main().catch((err) => {
   // bootstrap/app.ts
   writeFileSync(
     join(dir, "src/bootstrap/app.ts"),
-    `import { container, Application } from '@vest/core';
+    `import { container, Application } from '@vest-ts/core';
 import { AppServiceProvider } from '../app/Providers/AppServiceProvider.js';
 import { RouteServiceProvider } from '../app/Providers/RouteServiceProvider.js';
 
@@ -294,7 +294,7 @@ export default app;
   // AppServiceProvider
   writeFileSync(
     join(dir, "src/app/Providers/AppServiceProvider.ts"),
-    `import { ServiceProvider } from '@vest/core';
+    `import { ServiceProvider } from '@vest-ts/core';
 
 export class AppServiceProvider extends ServiceProvider {
   register(): void {
@@ -311,7 +311,7 @@ export class AppServiceProvider extends ServiceProvider {
   // RouteServiceProvider
   writeFileSync(
     join(dir, "src/app/Providers/RouteServiceProvider.ts"),
-    `import { ServiceProvider } from '@vest/core';
+    `import { ServiceProvider } from '@vest-ts/core';
 import { apiRouter } from '../routes/api.js';
 
 export class RouteServiceProvider extends ServiceProvider {

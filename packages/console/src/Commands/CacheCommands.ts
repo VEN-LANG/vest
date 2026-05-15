@@ -8,7 +8,7 @@ import {
   cacheClear,
   cacheKeys,
   generateCacheKey,
-} from "@vest/cache";
+} from "@vest-ts/cache";
 
 export class CacheClearCommand extends Command {
   protected signature = "cache:clear";

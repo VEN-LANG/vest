@@ -53,18 +53,18 @@ API docs at `http://localhost:3000/docs`.
 
 | Package | Description |
 |---------|-------------|
-| `@vest/core` | IoC container, Application, ServiceProvider |
-| `@vest/db` | ORM models, relationships, migrations, schema builder |
-| `@vest/router` | Route builder, middleware stack, HTTP kernel, OpenAPI |
-| `@vest/auth` | JWT auth, bcrypt helpers |
-| `@vest/cache` | Cache drivers (file, Redis, DB, memory), rate limiter |
-| `@vest/events` | Event dispatcher, listeners, subscribers, broadcasting |
-| `@vest/queue` | Job queue, scheduler, workers |
-| `@vest/mail` | Mailers, drivers (SMTP, Mailgun, log, array) |
-| `@vest/console` | Artisan CLI kernel, 50+ commands |
-| `@vest/horizon` | Queue supervisor + dashboard |
-| `@vest/telescope` | Debug & observability dashboard |
-| `@vest/create-vest` | Project scaffolding (`pnpm create vest`) |
+| `@vest-ts/core` | IoC container, Application, ServiceProvider |
+| `@vest-ts/db` | ORM models, relationships, migrations, schema builder |
+| `@vest-ts/router` | Route builder, middleware stack, HTTP kernel, OpenAPI |
+| `@vest-ts/auth` | JWT auth, bcrypt helpers |
+| `@vest-ts/cache` | Cache drivers (file, Redis, DB, memory), rate limiter |
+| `@vest-ts/events` | Event dispatcher, listeners, subscribers, broadcasting |
+| `@vest-ts/queue` | Job queue, scheduler, workers |
+| `@vest-ts/mail` | Mailers, drivers (SMTP, Mailgun, log, array) |
+| `@vest-ts/console` | Artisan CLI kernel, 50+ commands |
+| `@vest-ts/horizon` | Queue supervisor + dashboard |
+| `@vest-ts/telescope` | Debug & observability dashboard |
+| `@vest-ts/create-vest` | Project scaffolding (`pnpm create vest`) |
 
 ---
 
@@ -110,7 +110,7 @@ Service providers bootstrap your application. Register bindings in `register()`,
 
 ```typescript
 // src/app/Providers/AppServiceProvider.ts
-import { ServiceProvider } from '@vest/core';
+import { ServiceProvider } from '@vest-ts/core';
 import { PaymentService } from '../Services/PaymentService.js';
 
 export class AppServiceProvider extends ServiceProvider {
@@ -140,7 +140,7 @@ Routes are defined with a fluent `RouterBuilder`. Middleware aliases are registe
 
 ```typescript
 // src/routes/api.ts
-import RouterBuilder from '@vest/router';
+import RouterBuilder from '@vest-ts/router';
 import { PostController } from '@app/Http/Controllers/PostController.js';
 import { UserController } from '@app/Http/Controllers/UserController.js';
 
@@ -179,7 +179,7 @@ async boot(): Promise<void> {
 Models extend the `Model` base class. Define your collection/table name, fillable fields, and relationships.
 
 ```typescript
-import { Model, HasMany, SoftDeletes, Timestamps, applyTraits } from '@vest/db';
+import { Model, HasMany, SoftDeletes, Timestamps, applyTraits } from '@vest-ts/db';
 import type { Post } from './Post.js';
 
 @applyTraits(Timestamps, SoftDeletes)
@@ -222,7 +222,7 @@ Dispatch events synchronously or queue them.
 
 ```typescript
 // src/app/Events/PostCreated.ts
-import { Event } from '@vest/events';
+import { Event } from '@vest-ts/events';
 
 export class PostCreated extends Event {
   constructor(public post: Record<string, any>) { super(); }
@@ -231,7 +231,7 @@ export class PostCreated extends Event {
 
 ```typescript
 // src/app/Listeners/NotifyFollowers.ts
-import { Listener, ListensTo } from '@vest/events';
+import { Listener, ListensTo } from '@vest-ts/events';
 import type { PostCreated } from '../Events/PostCreated.js';
 
 @ListensTo(PostCreated)
@@ -245,7 +245,7 @@ export class NotifyFollowers extends Listener<PostCreated> {
 Dispatch from anywhere:
 
 ```typescript
-import { event } from '@vest/events';
+import { event } from '@vest-ts/events';
 
 await event(new PostCreated(post));
 ```
@@ -258,7 +258,7 @@ Define a job class, dispatch it, and run a worker.
 
 ```typescript
 // src/app/Jobs/SendWelcomeEmail.ts
-import { Job } from '@vest/queue';
+import { Job } from '@vest-ts/queue';
 
 export class SendWelcomeEmail extends Job {
   constructor(public userId: string) { super(); }
@@ -271,7 +271,7 @@ export class SendWelcomeEmail extends Job {
 
 ```typescript
 // dispatch
-import { dispatch } from '@vest/queue';
+import { dispatch } from '@vest-ts/queue';
 await dispatch(new SendWelcomeEmail(user.id));
 ```
 
@@ -286,7 +286,7 @@ pnpm artisan queue:work
 Define scheduled tasks in your `QueueServiceProvider`:
 
 ```typescript
-import { Scheduler } from '@vest/queue';
+import { Scheduler } from '@vest-ts/queue';
 
 Scheduler.call(() => cleanupExpiredSessions(), '0 2 * * *')
          .description('Clean expired sessions')
@@ -306,7 +306,7 @@ pnpm artisan schedule:run    # run due tasks once (for cron tab)
 
 ```typescript
 // src/app/Mail/WelcomeMail.ts
-import { Mailable } from '@vest/mail';
+import { Mailable } from '@vest-ts/mail';
 
 export class WelcomeMail extends Mailable {
   constructor(private name: string) { super(); }
@@ -319,7 +319,7 @@ export class WelcomeMail extends Mailable {
 ```
 
 ```typescript
-import { Mail } from '@vest/mail';
+import { Mail } from '@vest-ts/mail';
 await Mail.to('user@example.com').send(new WelcomeMail(user.name));
 ```
 
@@ -328,7 +328,7 @@ await Mail.to('user@example.com').send(new WelcomeMail(user.name));
 ### Cache
 
 ```typescript
-import { Cache } from '@vest/cache';
+import { Cache } from '@vest-ts/cache';
 
 await Cache.put('user:1', userData, 300);    // 300 seconds TTL
 const user = await Cache.get('user:1');
@@ -343,7 +343,7 @@ await Cache.remember('user:1', 300, () => User.find(1));
 Register global middleware and named aliases in `app/Http/Kernel.ts`:
 
 ```typescript
-import { HttpKernel } from '@vest/router';
+import { HttpKernel } from '@vest-ts/router';
 import { authMiddleware } from './Middleware/auth.js';
 
 export class Kernel extends HttpKernel {
@@ -423,7 +423,7 @@ pnpm artisan <your-command>
 
 ```typescript
 // src/app/Console/Commands/GreetCommand.ts
-import { Command } from '@vest/console';
+import { Command } from '@vest-ts/console';
 
 export class GreetCommand extends Command {
   protected signature = 'greet <name>';
@@ -438,7 +438,7 @@ export class GreetCommand extends Command {
 Register in your kernel:
 
 ```typescript
-import { Kernel } from '@vest/console';
+import { Kernel } from '@vest-ts/console';
 import { GreetCommand } from './app/Console/Commands/GreetCommand.js';
 
 const kernel = new Kernel();
@@ -498,7 +498,7 @@ Request, query, job, log, cache, and exception watcher with a live dashboard.
 Enable in `bootstrap/app.ts`:
 
 ```typescript
-import { TelescopeServiceProvider } from '@vest/telescope';
+import { TelescopeServiceProvider } from '@vest-ts/telescope';
 app.register(TelescopeServiceProvider);
 ```
 

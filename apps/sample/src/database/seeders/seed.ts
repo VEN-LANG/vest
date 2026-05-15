@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { initDatabase } from "@vest/db";
+import { initDatabase } from "@vest-ts/db";
 import { User } from "../../../src/app/Models/User.js";
 import { Post } from "../../../src/app/Models/Post.js";
 

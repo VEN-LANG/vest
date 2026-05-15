@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { ServiceProvider } from "@vest/core";
+import { ServiceProvider } from "@vest-ts/core";
 import { TelescopeStore } from "./TelescopeStore.js";
 import { renderTelescopeDashboard } from "./TelescopeDashboard.js";
 import {
@@ -11,7 +11,7 @@ import {
   activateLogWatcher,
   QueryWatcher,
 } from "./Watchers/index.js";
-import { OpenApiGenerator } from "@vest/router";
+import { OpenApiGenerator } from "@vest-ts/router";
 import telescopeConfig from "./telescope.config.js";
 
 /*

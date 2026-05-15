@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import { ModelAttributes } from "@vest/db";
+import { ModelAttributes } from "@vest-ts/db";
 import File from "@app/Models/File/File";
 import { TRequest } from "@app/Http/types";
 import sharp from "sharp";

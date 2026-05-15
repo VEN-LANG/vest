@@ -1,8 +1,8 @@
 import { Router, RequestHandler, Request, Response } from "express";
 import { resolveMiddleware } from "./Middleware/middleware.js";
-import { Model } from "@vest/db";
-import { EloquentBuilder } from "@vest/db";
-import { container } from "@vest/core";
+import { Model } from "@vest-ts/db";
+import { EloquentBuilder } from "@vest-ts/db";
+import { container } from "@vest-ts/core";
 
 // Type for controller method with model injection
 type ControllerMethod =

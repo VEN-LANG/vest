@@ -1,7 +1,7 @@
-import { Mail, mail } from "@vest/mail";
+import { Mail, mail } from "@vest-ts/mail";
 import { WelcomeEmail } from "@app/Mail";
-import { ListensTo, ShouldQueue } from "@vest/events";
-import { Listener } from "@vest/events";
+import { ListensTo, ShouldQueue } from "@vest-ts/events";
+import { Listener } from "@vest-ts/events";
 import { UserLoggedIn, UserRegistered } from "@app/Events";
 
 /*

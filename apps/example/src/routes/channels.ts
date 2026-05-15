@@ -9,7 +9,7 @@
 |
 */
 
-import { Broadcast } from "@vest/events";
+import { Broadcast } from "@vest-ts/events";
 
 /*
 |--------------------------------------------------------------------------

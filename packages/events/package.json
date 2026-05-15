@@ -1,5 +1,5 @@
 {
-  "name": "@venomous-maker-org/vest-events",
+  "name": "@vest-ts/events",
   "version": "0.1.0",
   "description": "Vest event dispatcher, listeners, decorators, and WebSocket broadcasting",
   "type": "module",
@@ -28,8 +28,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@venomous-maker-org/vest-core": "workspace:*",
-    "@venomous-maker-org/vest-queue": "workspace:*",
+    "@vest-ts/core": "workspace:*",
+    "@vest-ts/queue": "workspace:*",
     "reflect-metadata": "^0.2.2",
     "ws": "^8.19.0"
   },

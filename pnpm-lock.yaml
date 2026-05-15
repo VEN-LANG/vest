@@ -38,37 +38,37 @@ importers:
       '@types/yargs':
         specifier: ^17.0.35
         version: 17.0.35
-      '@venomous-maker-org/vest-auth':
+      '@vest-ts/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@venomous-maker-org/vest-cache':
+      '@vest-ts/cache':
         specifier: workspace:*
         version: link:../../packages/cache
-      '@venomous-maker-org/vest-console':
+      '@vest-ts/console':
         specifier: workspace:*
         version: link:../../packages/console
-      '@venomous-maker-org/vest-core':
+      '@vest-ts/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@venomous-maker-org/vest-db':
+      '@vest-ts/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@venomous-maker-org/vest-events':
+      '@vest-ts/events':
         specifier: workspace:*
         version: link:../../packages/events
-      '@venomous-maker-org/vest-horizon':
+      '@vest-ts/horizon':
         specifier: workspace:*
         version: link:../../packages/horizon
-      '@venomous-maker-org/vest-mail':
+      '@vest-ts/mail':
         specifier: workspace:*
         version: link:../../packages/mail
-      '@venomous-maker-org/vest-queue':
+      '@vest-ts/queue':
         specifier: workspace:*
         version: link:../../packages/queue
-      '@venomous-maker-org/vest-router':
+      '@vest-ts/router':
         specifier: workspace:*
         version: link:../../packages/router
-      '@venomous-maker-org/vest-telescope':
+      '@vest-ts/telescope':
         specifier: workspace:*
         version: link:../../packages/telescope
       bcrypt:
@@ -156,34 +156,34 @@ importers:
 
   apps/sample:
     dependencies:
-      '@venomous-maker-org/vest-auth':
+      '@vest-ts/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@venomous-maker-org/vest-cache':
+      '@vest-ts/cache':
         specifier: workspace:*
         version: link:../../packages/cache
-      '@venomous-maker-org/vest-console':
+      '@vest-ts/console':
         specifier: workspace:*
         version: link:../../packages/console
-      '@venomous-maker-org/vest-core':
+      '@vest-ts/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@venomous-maker-org/vest-db':
+      '@vest-ts/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@venomous-maker-org/vest-events':
+      '@vest-ts/events':
         specifier: workspace:*
         version: link:../../packages/events
-      '@venomous-maker-org/vest-mail':
+      '@vest-ts/mail':
         specifier: workspace:*
         version: link:../../packages/mail
-      '@venomous-maker-org/vest-queue':
+      '@vest-ts/queue':
         specifier: workspace:*
         version: link:../../packages/queue
-      '@venomous-maker-org/vest-router':
+      '@vest-ts/router':
         specifier: workspace:*
         version: link:../../packages/router
-      '@venomous-maker-org/vest-telescope':
+      '@vest-ts/telescope':
         specifier: workspace:*
         version: link:../../packages/telescope
       bcrypt:
@@ -235,10 +235,10 @@ importers:
 
   packages/auth:
     dependencies:
-      '@venomous-maker-org/vest-core':
+      '@vest-ts/core':
         specifier: workspace:*
         version: link:../core
-      '@venomous-maker-org/vest-router':
+      '@vest-ts/router':
         specifier: workspace:*
         version: link:../router
       bcrypt:
@@ -275,10 +275,10 @@ importers:
 
   packages/cache:
     dependencies:
-      '@venomous-maker-org/vest-core':
+      '@vest-ts/core':
         specifier: workspace:*
         version: link:../core
-      '@venomous-maker-org/vest-db':
+      '@vest-ts/db':
         specifier: workspace:*
         version: link:../db
       redis:
@@ -303,25 +303,25 @@ importers:
 
   packages/console:
     dependencies:
-      '@venomous-maker-org/vest-cache':
+      '@vest-ts/cache':
         specifier: workspace:*
         version: link:../cache
-      '@venomous-maker-org/vest-core':
+      '@vest-ts/core':
         specifier: workspace:*
         version: link:../core
-      '@venomous-maker-org/vest-db':
+      '@vest-ts/db':
         specifier: workspace:*
         version: link:../db
-      '@venomous-maker-org/vest-events':
+      '@vest-ts/events':
         specifier: workspace:*
         version: link:../events
-      '@venomous-maker-org/vest-horizon':
+      '@vest-ts/horizon':
         specifier: workspace:*
         version: link:../horizon
-      '@venomous-maker-org/vest-queue':
+      '@vest-ts/queue':
         specifier: workspace:*
         version: link:../queue
-      '@venomous-maker-org/vest-router':
+      '@vest-ts/router':
         specifier: workspace:*
         version: link:../router
       dotenv:
@@ -414,7 +414,7 @@ importers:
 
   packages/db:
     dependencies:
-      '@venomous-maker-org/vest-core':
+      '@vest-ts/core':
         specifier: workspace:*
         version: link:../core
       mongodb:
@@ -445,10 +445,10 @@ importers:
 
   packages/events:
     dependencies:
-      '@venomous-maker-org/vest-core':
+      '@vest-ts/core':
         specifier: workspace:*
         version: link:../core
-      '@venomous-maker-org/vest-queue':
+      '@vest-ts/queue':
         specifier: workspace:*
         version: link:../queue
       reflect-metadata:
@@ -479,19 +479,19 @@ importers:
 
   packages/horizon:
     dependencies:
-      '@venomous-maker-org/vest-cache':
+      '@vest-ts/cache':
         specifier: workspace:*
         version: link:../cache
-      '@venomous-maker-org/vest-core':
+      '@vest-ts/core':
         specifier: workspace:*
         version: link:../core
-      '@venomous-maker-org/vest-events':
+      '@vest-ts/events':
         specifier: workspace:*
         version: link:../events
-      '@venomous-maker-org/vest-queue':
+      '@vest-ts/queue':
         specifier: workspace:*
         version: link:../queue
-      '@venomous-maker-org/vest-router':
+      '@vest-ts/router':
         specifier: workspace:*
         version: link:../router
       express:
@@ -519,13 +519,13 @@ importers:
 
   packages/mail:
     dependencies:
-      '@venomous-maker-org/vest-core':
+      '@vest-ts/core':
         specifier: workspace:*
         version: link:../core
-      '@venomous-maker-org/vest-events':
+      '@vest-ts/events':
         specifier: workspace:*
         version: link:../events
-      '@venomous-maker-org/vest-queue':
+      '@vest-ts/queue':
         specifier: workspace:*
         version: link:../queue
       nodemailer:
@@ -553,13 +553,13 @@ importers:
 
   packages/queue:
     dependencies:
-      '@venomous-maker-org/vest-cache':
+      '@vest-ts/cache':
         specifier: workspace:*
         version: link:../cache
-      '@venomous-maker-org/vest-core':
+      '@vest-ts/core':
         specifier: workspace:*
         version: link:../core
-      '@venomous-maker-org/vest-db':
+      '@vest-ts/db':
         specifier: workspace:*
         version: link:../db
       cron-parser:
@@ -590,13 +590,13 @@ importers:
 
   packages/router:
     dependencies:
-      '@venomous-maker-org/vest-cache':
+      '@vest-ts/cache':
         specifier: workspace:*
         version: link:../cache
-      '@venomous-maker-org/vest-core':
+      '@vest-ts/core':
         specifier: workspace:*
         version: link:../core
-      '@venomous-maker-org/vest-db':
+      '@vest-ts/db':
         specifier: workspace:*
         version: link:../db
       express:
@@ -627,25 +627,25 @@ importers:
 
   packages/telescope:
     dependencies:
-      '@venomous-maker-org/vest-cache':
+      '@vest-ts/cache':
         specifier: workspace:*
         version: link:../cache
-      '@venomous-maker-org/vest-core':
+      '@vest-ts/core':
         specifier: workspace:*
         version: link:../core
-      '@venomous-maker-org/vest-db':
+      '@vest-ts/db':
         specifier: workspace:*
         version: link:../db
-      '@venomous-maker-org/vest-events':
+      '@vest-ts/events':
         specifier: workspace:*
         version: link:../events
-      '@venomous-maker-org/vest-horizon':
+      '@vest-ts/horizon':
         specifier: workspace:*
         version: link:../horizon
-      '@venomous-maker-org/vest-queue':
+      '@vest-ts/queue':
         specifier: workspace:*
         version: link:../queue
-      '@venomous-maker-org/vest-router':
+      '@vest-ts/router':
         specifier: workspace:*
         version: link:../router
       express:

@@ -1,5 +1,5 @@
-import { Job, Queueable } from "@vest/queue";
-import { Mail, MailMessage } from "@vest/mail";
+import { Job, Queueable } from "@vest-ts/queue";
+import { Mail, MailMessage } from "@vest-ts/mail";
 
 /*
 |--------------------------------------------------------------------------

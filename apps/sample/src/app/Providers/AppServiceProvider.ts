@@ -1,5 +1,5 @@
-import { ServiceProvider } from "@vest/core";
-import { scheduler } from "@vest/queue";
+import { ServiceProvider } from "@vest-ts/core";
+import { scheduler } from "@vest-ts/queue";
 
 export class AppServiceProvider extends ServiceProvider {
   register(): void {}

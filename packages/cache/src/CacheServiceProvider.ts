@@ -1,4 +1,4 @@
-import { ServiceProvider } from "@vest/core";
+import { ServiceProvider } from "@vest-ts/core";
 import { initCache, getCacheDriver as getCache, getCacheDriverName } from "./CacheManager.js";
 
 export class CacheServiceProvider extends ServiceProvider {

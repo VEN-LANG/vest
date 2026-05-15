@@ -1,4 +1,4 @@
-import { Mailable } from "@vest/mail";
+import { Mailable } from "@vest-ts/mail";
 
 /*
 |--------------------------------------------------------------------------

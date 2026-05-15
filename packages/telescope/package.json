@@ -1,5 +1,5 @@
 {
-  "name": "@venomous-maker-org/vest-telescope",
+  "name": "@vest-ts/telescope",
   "version": "0.1.0",
   "description": "Vest Telescope — request and query debug dashboard",
   "type": "module",
@@ -28,13 +28,13 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@venomous-maker-org/vest-cache": "workspace:*",
-    "@venomous-maker-org/vest-core": "workspace:*",
-    "@venomous-maker-org/vest-db": "workspace:*",
-    "@venomous-maker-org/vest-events": "workspace:*",
-    "@venomous-maker-org/vest-horizon": "workspace:*",
-    "@venomous-maker-org/vest-queue": "workspace:*",
-    "@venomous-maker-org/vest-router": "workspace:*",
+    "@vest-ts/cache": "workspace:*",
+    "@vest-ts/core": "workspace:*",
+    "@vest-ts/db": "workspace:*",
+    "@vest-ts/events": "workspace:*",
+    "@vest-ts/horizon": "workspace:*",
+    "@vest-ts/queue": "workspace:*",
+    "@vest-ts/router": "workspace:*",
     "express": "^5.2.1"
   },
   "devDependencies": {

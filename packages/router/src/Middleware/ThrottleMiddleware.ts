@@ -19,7 +19,7 @@
  */
 
 import { Request, Response, NextFunction, RequestHandler } from "express";
-import { RateLimiter, RateLimitExceededException, getNamedLimiter } from "@vest/cache";
+import { RateLimiter, RateLimitExceededException, getNamedLimiter } from "@vest-ts/cache";
 import { registerMiddleware } from "./middleware.js";
 
 const rateLimiter = new RateLimiter();

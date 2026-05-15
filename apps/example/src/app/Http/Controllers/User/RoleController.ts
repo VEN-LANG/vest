@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { RoleService } from "@app/Services/RoleService";
 import { ValidationError } from "@app/Helpers/validator";
 import { Role } from "@app/Models/User";
-import { Doc } from "@vest/router";
+import { Doc } from "@vest-ts/router";
 
 const roleFields = ["name", "slug", "description"];
 

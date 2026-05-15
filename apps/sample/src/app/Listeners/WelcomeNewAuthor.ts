@@ -1,5 +1,5 @@
-import { Listener, ListensTo } from "@vest/events";
-import { Mail, HtmlMailable } from "@vest/mail";
+import { Listener, ListensTo } from "@vest-ts/events";
+import { Mail, HtmlMailable } from "@vest-ts/mail";
 
 interface PostCreatedPayload {
   post: { title: string };

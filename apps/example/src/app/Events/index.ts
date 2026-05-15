@@ -17,7 +17,7 @@ export {
 } from "./UserEvents";
 
 // Re-export base classes for convenience
-export { Event, Listener } from "@vest/events";
+export { Event, Listener } from "@vest-ts/events";
 
 // Broadcast Events
 export { NotificationCreatedEvent, AnnouncementEvent, UserJoinedEvent } from "./BroadcastEvents";

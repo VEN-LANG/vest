@@ -1,5 +1,5 @@
-import { Cache } from "@vest/cache";
-import type { SerializedJob } from "@vest/queue";
+import { Cache } from "@vest-ts/cache";
+import type { SerializedJob } from "@vest-ts/queue";
 
 /*
 |--------------------------------------------------------------------------

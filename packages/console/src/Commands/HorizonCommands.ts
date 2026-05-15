@@ -1,7 +1,7 @@
 import { Command } from "../Command.js";
 import { ArgumentsCamelCase } from "yargs";
-import { HorizonManager, horizonMetrics, horizonConfig } from "@vest/horizon";
-import type { HorizonSupervisor } from "@vest/horizon";
+import { HorizonManager, horizonMetrics, horizonConfig } from "@vest-ts/horizon";
+import type { HorizonSupervisor } from "@vest-ts/horizon";
 
 export class HorizonWorkCommand extends Command {
   protected signature = "horizon:work";

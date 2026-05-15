@@ -1,5 +1,5 @@
-import { ServiceProvider } from "@vest/core";
-import { getEventDispatcher } from "@vest/events";
+import { ServiceProvider } from "@vest-ts/core";
+import { getEventDispatcher } from "@vest-ts/events";
 import { WelcomeNewAuthor } from "../Listeners/WelcomeNewAuthor.js";
 
 export class EventServiceProvider extends ServiceProvider {

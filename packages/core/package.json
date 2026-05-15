@@ -1,5 +1,5 @@
 {
-  "name": "@venomous-maker-org/vest-core",
+  "name": "@vest-ts/core",
   "version": "0.1.0",
   "description": "Vest IoC container, Application, and ServiceProvider",
   "type": "module",

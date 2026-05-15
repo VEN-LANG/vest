@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import { CronExpressionParser as parser } from "cron-parser";
-import { Cache } from "@vest/cache";
+import { Cache } from "@vest-ts/cache";
 
 /*
 |--------------------------------------------------------------------------

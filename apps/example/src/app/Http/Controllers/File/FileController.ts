@@ -7,7 +7,7 @@ import { FileService } from "@app/Services/FileService";
 import File from "@app/Models/File/File";
 import { ValidationError } from "@app/Helpers/validator";
 import { parseRequest } from "@app/Helpers/auth";
-import { Doc } from "@vest/router";
+import { Doc } from "@vest-ts/router";
 
 type MulterFile = Express.Multer.File;
 

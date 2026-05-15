@@ -1,5 +1,5 @@
-import { scheduler } from "@vest/queue";
-import { getEventDispatcher } from "@vest/events";
+import { scheduler } from "@vest-ts/queue";
+import { getEventDispatcher } from "@vest-ts/events";
 import { TelescopeStore } from "../TelescopeStore.js";
 
 /*

@@ -1,6 +1,6 @@
-import { Model, use } from "@vest/db";
+import { Model, use } from "@vest-ts/db";
 import User from "@app/Models/User/User";
-import { SoftDeletes } from "@vest/db";
+import { SoftDeletes } from "@vest-ts/db";
 
 @use(SoftDeletes)
 export class File extends Model {

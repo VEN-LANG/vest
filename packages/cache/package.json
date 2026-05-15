@@ -1,5 +1,5 @@
 {
-  "name": "@venomous-maker-org/vest-cache",
+  "name": "@vest-ts/cache",
   "version": "0.1.0",
   "description": "Vest cache manager — file, database, and Redis drivers",
   "type": "module",
@@ -28,8 +28,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@venomous-maker-org/vest-core": "workspace:*",
-    "@venomous-maker-org/vest-db": "workspace:*",
+    "@vest-ts/core": "workspace:*",
+    "@vest-ts/db": "workspace:*",
     "redis": "^5.10.0"
   },
   "devDependencies": {
