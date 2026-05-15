@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/validator",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Laravel-inspired validation engine for Lara-Node",
   "type": "module",
   "main": "./dist/index.js",
