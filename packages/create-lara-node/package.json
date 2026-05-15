@@ -1,0 +1,37 @@
+{
+  "name": "create-lara-node",
+  "version": "0.1.2",
+  "description": "Scaffold a new Lara-Node application — pnpm create lara-node",
+  "bin": {
+    "create-lara-node": "./dist/index.js"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --format esm --out-dir dist",
+    "dev": "tsdown src/index.ts --format esm --out-dir dist --watch",
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.1",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.2",
+    "@types/prompts": "^2.4.9",
+    "rimraf": "^6.0.1",
+    "tsdown": "^0.12.9",
+    "typescript": "^5.9.3"
+  }
+}

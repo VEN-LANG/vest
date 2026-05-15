@@ -1,0 +1,38 @@
+{
+  "name": "@lara-node/middlewares",
+  "version": "0.1.1",
+  "description": "Predefined class-based middleware for Lara-Node applications",
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --format esm --out-dir dist --dts",
+    "dev": "tsdown src/index.ts --format esm --out-dir dist --dts --watch",
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lara-node/validator": "workspace:*",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^24.12.2",
+    "rimraf": "^6.0.1",
+    "tsdown": "^0.12.9",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "express": "^5.2.1"
+  }
+}
