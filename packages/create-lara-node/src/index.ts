@@ -96,6 +96,32 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
   const hasHorizon = opts.packages.includes("horizon");
   const hasTelescope = opts.packages.includes("telescope");
 
+  // ── Directories (must come first so all file writes succeed) ──────────────────
+  for (const dd of [
+    "src/app/Console/Commands",
+    "src/app/Events",
+    "src/app/Http/Controllers/User",
+    "src/app/Http/Controllers/File",
+    "src/app/Http/Docs",
+    "src/app/Jobs",
+    "src/app/Listeners",
+    "src/app/Mail",
+    "src/app/Middleware",
+    "src/app/Models/User",
+    "src/app/Models/File",
+    "src/app/Observers",
+    "src/app/Providers",
+    "src/app/Services",
+    "src/app/Subscribers",
+    "src/bootstrap",
+    "src/config",
+    "src/database/migrations",
+    "src/database/seeders",
+    "src/routes",
+    "src/types",
+    "uploads/files",
+  ]) d(dir, dd);
+
   const coreDeps = new Set(["core", "db", "router", "auth", "console", "validator", "middlewares"]);
 
   const laraNodeDeps: string[] = [
@@ -248,32 +274,6 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
   );
 
   w(dir, ".gitignore", "node_modules\ndist\n.env\n*.log\nuploads/\n");
-
-  // ── Directories ───────────────────────────────────────────────────────────────
-  for (const dd of [
-    "src/app/Console/Commands",
-    "src/app/Events",
-    "src/app/Http/Controllers/User",
-    "src/app/Http/Controllers/File",
-    "src/app/Http/Docs",
-    "src/app/Jobs",
-    "src/app/Listeners",
-    "src/app/Mail",
-    "src/app/Middleware",
-    "src/app/Models/User",
-    "src/app/Models/File",
-    "src/app/Observers",
-    "src/app/Providers",
-    "src/app/Services",
-    "src/app/Subscribers",
-    "src/bootstrap",
-    "src/config",
-    "src/database/migrations",
-    "src/database/seeders",
-    "src/routes",
-    "src/types",
-    "uploads/files",
-  ]) d(dir, dd);
 
   // ── src/types/express.d.ts ────────────────────────────────────────────────────
   w(
