@@ -141,6 +141,24 @@ The route files (`src/routes/api.ts`) and `@Route` controllers are complementary
 
 ---
 
+## `registerRouteBuilder(builder, source, prefix?, app?)`
+
+Registers a RouterBuilder for OpenAPI scanning. Pass `app` as the fourth argument to also mount the router in one call — eliminating the separate `app.mountRoutes()` call.
+
+```typescript
+import { registerRouteBuilder } from '@lara-node/router';
+
+// ✅ New — single call: scans routes AND mounts them
+registerRouteBuilder(routesBuilder, 'api', '/api', this.app);
+registerRouteBuilder(webRoutesBuilder, 'web', '/', this.app);
+
+// ⚠️  Old — two calls (still works, not deprecated from Application):
+registerRouteBuilder(routesBuilder, 'api', '/api');
+this.app.mountRoutes('/api', routesBuilder.build());
+```
+
+---
+
 ## Route Builder
 
 ```typescript

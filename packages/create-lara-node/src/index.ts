@@ -14,7 +14,7 @@ import prompts from "prompts";
 
 const VERSIONS: Record<string, string> = {
   "@lara-node/core":        "0.1.6",
-  "@lara-node/router":      "0.2.1",
+  "@lara-node/router":      "0.2.3",
   "@lara-node/db":          "0.1.10",
   "@lara-node/auth":        "0.1.6",
   "@lara-node/console":     "0.1.9",
@@ -375,7 +375,9 @@ main().catch((err) => {
   w(
     dir,
     "src/bootstrap/app.ts",
-    `import { container, Application } from '@lara-node/core';
+    `import path from 'path';
+import { container, Application } from '@lara-node/core';
+import { modelRegistryMiddleware } from '@lara-node/router';
 import { Kernel } from '../app/Http/Kernel';
 import { AppServiceProvider } from '../app/Providers/AppServiceProvider';
 
@@ -406,8 +408,10 @@ export async function bootForConsole(): Promise<void> {
 |      so that when RouteServiceProvider.boot() lazily loads routes,
 |      string aliases like 'auth' are already resolved.
 |   3. configureBaseMiddleware (cors, json, urlencoded)
-|   4. app.boot() — boots all providers (RouteServiceProvider mounts routes)
-|   5. configureErrorHandling — must come after routes are mounted
+|   4. modelRegistryMiddleware — scans Models/ on the first request so that
+|      route-model binding (:user → User instance) is ready before handlers run.
+|   5. app.boot() — boots all providers (RouteServiceProvider mounts routes)
+|   6. configureErrorHandling — must come after routes are mounted
 |--------------------------------------------------------------------------
 */
 export async function startApplication(): Promise<void> {
@@ -419,6 +423,11 @@ export async function startApplication(): Promise<void> {
   kernel.boot();
 
   app.configureBaseMiddleware();
+
+  // Auto-load all Model subclasses so route-model binding resolves :param → model instance.
+  // @Bind() decorators on each model fire when the file is required.
+  app.useMiddleware(modelRegistryMiddleware(path.join(__dirname, '../app/Models')));
+
   await app.boot();
 
   kernel.configureErrorHandling(kernel.errorHandler);
@@ -1497,57 +1506,40 @@ export class AppServiceProvider extends ServiceProvider {
     dir,
     "src/app/Providers/RouteServiceProvider.ts",
     `import { ServiceProvider } from '@lara-node/core';
-import { registerRouteBuilder, autoRegisterModels } from '@lara-node/router';
-import path from 'path';
+import RouterBuilder, { registerRouteBuilder } from '@lara-node/router';
 
 /*
 |--------------------------------------------------------------------------
 | RouteServiceProvider
 |--------------------------------------------------------------------------
 |
-| register() — scans src/app/Models and auto-registers every Model subclass
-|              for route-model binding (:user, :role → auto-resolved).
+| Route-model binding is handled automatically by modelRegistryMiddleware
+| in bootstrap/app.ts — every Model decorated with @Bind() is registered
+| when src/app/Models/ is first scanned on the initial request.
 |
-|              Override registerModels() to add extra manual registrations.
+| To register additional models manually (e.g. from outside Models/):
 |
-| boot()     — lazily loads route files (AFTER the HTTP Kernel has booted
-|              and registered middleware aliases like 'auth', 'can').
+|   register(): void {
+|     super.register();
+|     RouterBuilder.registerModel('product', Product);
+|   }
+|
+| boot() — lazily loads route files AFTER the HTTP Kernel has registered
+|          all named middleware aliases (auth, can, role, etc.).
 |
 | Route-model binding example:
-|   g.get('/:role', 'can:view_roles', [RoleController, 'show']);
+|   g.get('/:user', 'auth', [UserController, 'show']);
 |
 |   async show(req: Request, res: Response) {
-|     const role = req.params.role as unknown as Role; // auto-loaded
-|     res.json({ success: true, data: role });
+|     const user = req.params.user as unknown as User; // auto-loaded
+|     res.json({ success: true, data: user });
 |   }
 |
 */
 export class RouteServiceProvider extends ServiceProvider {
   protected apiPrefix = '/api';
 
-  register(): void {
-    void this.registerModels();
-  }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Register Models
-  |--------------------------------------------------------------------------
-  | All Model subclasses in src/app/Models are registered automatically.
-  | You can override this method to add additional registrations:
-  |
-  |   import RouterBuilder from '@lara-node/router';
-  |   import { Product } from '../Models/Product';
-  |
-  |   protected async registerModels(): Promise<void> {
-  |     await super.registerModels();
-  |     RouterBuilder.registerModel('product', Product);
-  |   }
-  */
-  protected async registerModels(): Promise<void> {
-    const modelsRoot = path.resolve(__dirname, '../Models');
-    await autoRegisterModels(modelsRoot);
-  }
+  register(): void {}
 
   boot(): void {
     this.mapApiRoutes();
@@ -1557,14 +1549,13 @@ export class RouteServiceProvider extends ServiceProvider {
 
   protected mapApiRoutes(): void {
     const { routesBuilder } = require('@routes/api');
-    registerRouteBuilder(routesBuilder, 'api', this.apiPrefix);
-    this.app.mountRoutes(this.apiPrefix, routesBuilder.build());
+    // registerRouteBuilder scans routes for OpenAPI and mounts them in one call.
+    registerRouteBuilder(routesBuilder, 'api', this.apiPrefix, this.app);
   }
 
   protected mapWebRoutes(): void {
     const { webRoutesBuilder } = require('@routes/web');
-    registerRouteBuilder(webRoutesBuilder, 'web');
-    this.app.mountRoutes('/', webRoutesBuilder.build());
+    registerRouteBuilder(webRoutesBuilder, 'web', '/', this.app);
   }
   ${hasEvents ? `
   protected mapChannelRoutes(): void {

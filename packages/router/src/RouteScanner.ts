@@ -40,6 +40,11 @@ type RouteBuilderEntry = {
   source: "api" | "web";
 };
 
+/** Minimal surface of Application that registerRouteBuilder needs for mounting. */
+interface Mountable {
+  mountRoutes(prefix: string, router: unknown): void;
+}
+
 const _BUILDERS_KEY = "__lara_node_route_builders__";
 if (!(globalThis as Record<string, unknown>)[_BUILDERS_KEY]) {
   (globalThis as Record<string, unknown>)[_BUILDERS_KEY] = [];
@@ -49,12 +54,36 @@ const _routeBuilders: RouteBuilderEntry[] = (
   globalThis as Record<string, unknown>
 )[_BUILDERS_KEY] as RouteBuilderEntry[];
 
+/**
+ * Register a RouterBuilder for OpenAPI scanning and — optionally — mount it
+ * on the application in one call.
+ *
+ * Passing `app` eliminates the need for a separate `app.mountRoutes()` call:
+ *
+ * @example
+ * // Old pattern (two calls — still works):
+ * registerRouteBuilder(routesBuilder, 'api', this.apiPrefix);
+ * this.app.mountRoutes(this.apiPrefix, routesBuilder.build());
+ *
+ * // New pattern (single call):
+ * registerRouteBuilder(routesBuilder, 'api', this.apiPrefix, this.app);
+ *
+ * @param builder - The RouterBuilder instance for this route group.
+ * @param source  - `'api'` or `'web'` — used for OpenAPI tag inference.
+ * @param prefix  - URL prefix (e.g. `'/api'`). Defaults to `'/'` for web.
+ * @param app     - Application instance. When provided, mounts the built router
+ *                  via `app.mountRoutes(prefix, builder.build())` automatically.
+ */
 export function registerRouteBuilder(
-  builder: { getRoutes(): any[] },
+  builder: { getRoutes(): any[]; build(): unknown },
   source: "api" | "web" = "api",
   prefix?: string,
+  app?: Mountable,
 ): void {
   _routeBuilders.push({ builder, prefix, source });
+  if (app) {
+    app.mountRoutes(prefix ?? "/", builder.build());
+  }
 }
 
 export class RouteScanner {

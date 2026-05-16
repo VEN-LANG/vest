@@ -7,7 +7,9 @@ export { RouteScanner, registerRouteBuilder } from "./RouteScanner.js";
 export { MiddlewareStack, middlewareStack } from "./Middleware/MiddlewareStack.js";
 export type {
   MiddlewareEntry,
-  Middleware,
+  // Renamed to MiddlewareClass to avoid clash with the @Middleware() decorator below.
+  // Use IMiddleware for the handler interface, MiddlewareClass for the constructor type.
+  Middleware as MiddlewareClass,
   IMiddleware,
   MiddlewareGroupConfig,
 } from "./Middleware/MiddlewareStack.js";
