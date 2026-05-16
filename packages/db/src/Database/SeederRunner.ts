@@ -50,8 +50,11 @@ function makeSeederContext(): SeederCtx {
 
 async function loadAndRunSeeder(filePath: string) {
   const mod = await loadFile(filePath);
-  const fn = mod && (mod.seed || mod.default || mod.run || mod);
-  if (typeof fn === "function") {
+  if (!mod || typeof mod !== "object") return false;
+
+  // Plain function export: seed(), default(), run(), or the module itself
+  const fn = (mod as any).seed || (mod as any).default || (mod as any).run;
+  if (typeof fn === "function" && !fn.prototype?.run) {
     const wantsArg = fn.length >= 1;
     let arg: any = undefined;
     if (wantsArg) {
@@ -63,6 +66,18 @@ async function loadAndRunSeeder(filePath: string) {
     if (res && typeof res.then === "function") await res;
     return true;
   }
+
+  // Class-based seeder: export class DatabaseSeeder { async run() {} }
+  const allExports = Object.values(mod as Record<string, unknown>);
+  for (const val of allExports) {
+    if (typeof val === "function" && typeof (val as any).prototype?.run === "function") {
+      const inst = new (val as new () => { run(): unknown })();
+      const res = inst.run();
+      if (res && typeof (res as any).then === "function") await res;
+      return true;
+    }
+  }
+
   return false;
 }
 
