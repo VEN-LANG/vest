@@ -12,6 +12,7 @@ export {
   HasManyThrough,
 } from "./relationships.js";
 export { Observer } from "./Observers/Observer.js";
+export { Observe } from "./decorators.js";
 export {
   SoftDeletes,
   Timestamps,

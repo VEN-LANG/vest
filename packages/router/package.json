@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/router",
-  "version": "0.1.9",
+  "version": "0.2.1",
   "description": "Lara-Node Express router builder, middleware stack, and OpenAPI generator",
   "type": "module",
   "main": "./dist/index.cjs",

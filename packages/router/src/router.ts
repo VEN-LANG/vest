@@ -3,6 +3,7 @@ import { resolveMiddleware } from "./Middleware/middleware.js";
 import { Model } from "@lara-node/db";
 import { EloquentBuilder } from "@lara-node/db";
 import { container } from "@lara-node/core";
+import { getRegisteredControllers } from "./ControllerDecorators.js";
 
 // Type for controller method with model injection
 type ControllerMethod =
@@ -968,6 +969,56 @@ export class RouterBuilder {
   // Get only named routes
   getNamedRoutes(): NamedRoute[] {
     return Array.from(this.namedRoutes.values());
+  }
+
+  /**
+   * Add all routes declared via @Route decorators on the given controller class
+   * to this RouterBuilder instance.
+   *
+   * @example
+   * const router = new RouterBuilder();
+   * router.addController(UserController);
+   * router.addController(AuthController);
+   * this.app.mountRoutes('/api', router.build());
+   */
+  addController(cls: new (...args: any[]) => any): this {
+    const meta = getRegisteredControllers().get(cls);
+    if (!meta) return this;
+
+    const classMw = meta.classMiddleware as HandlerOrAlias[];
+    this.group({ prefix: meta.prefix, middleware: classMw }, (g) => {
+      for (const route of meta.routes) {
+        const handlers: HandlerOrAlias[] = [
+          ...(route.middleware as HandlerOrAlias[]),
+          [cls, route.handlerKey as any] as HandlerOrAlias,
+        ];
+        g[route.method](route.path, ...handlers);
+      }
+    });
+
+    return this;
+  }
+
+  /**
+   * Build a new RouterBuilder pre-loaded with every controller decorated via @Route().
+   * If `classes` is provided, only those controllers are included (in order).
+   * Otherwise all controllers in the global registry are included.
+   *
+   * @example
+   * // All registered controllers:
+   * const router = RouterBuilder.fromControllers();
+   * this.app.mountRoutes('/', router.build());
+   *
+   * // Selective:
+   * const router = RouterBuilder.fromControllers([UserController, AuthController]);
+   */
+  static fromControllers(classes?: Array<new (...args: any[]) => any>): RouterBuilder {
+    const router = new RouterBuilder();
+    const targets = classes ?? Array.from(getRegisteredControllers().keys());
+    for (const cls of targets) {
+      router.addController(cls);
+    }
+    return router;
   }
 
   // Build router

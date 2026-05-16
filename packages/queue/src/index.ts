@@ -26,6 +26,7 @@ export {
   encryptPayload,
   decryptPayload,
 } from "./Job.js";
+export type { QueueableOptions } from "./Job.js";
 export { Queue, QueueManager } from "./Queue.js";
 export { Worker } from "./Worker.js";
 export { Schedule, ScheduledTaskBuilder, scheduler } from "./Scheduler.js";

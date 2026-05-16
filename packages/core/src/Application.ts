@@ -3,6 +3,7 @@ import { createServer, Server as HttpServer } from "http";
 import cors from "cors";
 import { Container } from "./Container.js";
 import type { ServiceProvider, ServiceProviderClass } from "./ServiceProvider.js";
+import { getRegisteredProviders } from "./decorators.js";
 
 export class Application {
   private providers: ServiceProvider[] = [];
@@ -74,6 +75,16 @@ export class Application {
 
   protected async bootProvider(provider: ServiceProvider): Promise<void> {
     await provider.boot();
+  }
+
+  /**
+   * Register all service providers decorated with @Provider() in the order
+   * their modules were first loaded (i.e. import order in bootstrap).
+   */
+  discoverProviders(): void {
+    for (const provider of getRegisteredProviders()) {
+      this.register(provider);
+    }
   }
 
   getProviders(): ServiceProvider[] {

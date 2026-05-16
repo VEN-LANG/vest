@@ -119,14 +119,145 @@ pnpm dev                    # start on http://localhost:3000
 
 ## Decorator Support
 
-Uses `@swc-node/register` (not tsx) for full decorator metadata:
+Uses `@swc-node/register` for full decorator metadata (`emitDecoratorMetadata: true`). No `.js` extensions required in imports (`moduleResolution: "bundler"`).
 
-- `@Injectable()` → IoC auto-resolution (no manual wiring)
-- `@use(SoftDeletes, Timestamps)` → model traits
-- `@ListensTo('user.registered')` → auto-registered listeners
-- `@Queueable({ queue: 'emails' })` → queue routing
+### IoC & Providers — `@lara-node/core`
 
-No `.js` extensions required in imports (`moduleResolution: "bundler"`).
+| Decorator | Effect |
+|-----------|--------|
+| `@Injectable()` | Marks a class for auto IoC resolution — constructor deps injected automatically |
+| `@Provider()` | Registers a ServiceProvider for `app.discoverProviders()` |
+
+```typescript
+import { ServiceProvider, Provider } from '@lara-node/core';
+
+@Provider()
+export class AppServiceProvider extends ServiceProvider {
+  register() { this.singleton(AuthService); }
+}
+```
+
+### Route-Model Binding & Controller Routing — `@lara-node/router`
+
+| Decorator | Effect |
+|-----------|--------|
+| `@Bind(name?)` | Registers a Model for route-model binding — `:user` param auto-resolves to a loaded User instance |
+| `@Middleware(alias)` | Registers an IMiddleware class under a named alias (e.g. `'auth'`) |
+| `@Route(prefix, ...mw)` | Marks a controller class with a base route prefix (and optional class-level middleware) |
+| `@Route.get(path, ...mw)` | Registers a `GET` route on a controller method |
+| `@Route.post / .put / .patch / .delete` | Same for other HTTP verbs |
+
+```typescript
+import { Bind, Middleware, Route } from '@lara-node/router';
+
+// Model — auto-resolves :user route params
+@Bind()
+export class User extends Model { ... }
+
+// Middleware — self-registers as 'auth' alias
+@Middleware('auth')
+export class AuthMiddleware implements IMiddleware { ... }
+
+// Controller — declarative routing
+@Route('/api/users', 'auth')
+export class UserController {
+  @Route.get('/')                            // GET /api/users
+  async index(req: Request, res: Response) { ... }
+
+  @Route.get('/:user')                       // GET /api/users/:user (auto-bound)
+  async show(req: Request, res: Response) { ... }
+
+  @Route.post('/', 'can:create_users')       // POST /api/users
+  async store(req: Request, res: Response) { ... }
+
+  @Route.put('/:user', 'can:update_users')   // PUT /api/users/:user
+  async update(req: Request, res: Response) { ... }
+
+  @Route.delete('/:user', 'can:delete_users')
+  async destroy(req: Request, res: Response) { ... }
+}
+
+// In RouteServiceProvider.boot():
+const router = RouterBuilder.fromControllers();  // all @Route controllers
+this.app.mountRoutes('/', router.build());
+```
+
+### Model Observers — `@lara-node/db`
+
+| Decorator | Effect |
+|-----------|--------|
+| `@Observe(ModelClass)` | Auto-wires the decorated Observer to ModelClass — no `User.observe(UserObserver)` bootstrap call needed |
+
+```typescript
+import { Observer, Observe } from '@lara-node/db';
+import { User } from '../Models/User';
+
+@Observe(User)
+export class UserObserver extends Observer<User> {
+  created(user: User) { console.log('User created:', user.getAttribute('email')); }
+  deleting(user: User) { console.log('User deleting:', user.getAttribute('id')); }
+}
+```
+
+### Queue Jobs — `@lara-node/queue`
+
+| Decorator / Method | Effect |
+|-------------------|--------|
+| `@Queueable(opts?)` | Registers the job and sets class-level `queue`, `tries`, `timeout`, `connection` defaults |
+| `shouldQueue()` | Override to conditionally skip dispatch — return `false` to discard silently |
+
+```typescript
+import { Job, Queueable } from '@lara-node/queue';
+
+@Queueable({ queue: 'reports', tries: 2, timeout: 300 })
+export class GenerateReportJob extends Job {
+  constructor(private config: ReportConfig) { super(); }
+
+  // Conditionally skip dispatch
+  shouldQueue(): boolean {
+    return !this.config.skipQueue;
+  }
+
+  async handle(): Promise<void> { ... }
+}
+
+// Class-level defaults applied automatically — no boilerplate:
+await GenerateReportJob.dispatch().dispatch();
+// Override per-dispatch when needed:
+await GenerateReportJob.dispatch().onQueue('priority').tries(5).dispatch();
+```
+
+### Events — `@lara-node/events`
+
+| Decorator | Effect |
+|-----------|--------|
+| `@ListensTo(event)` | Registers listener for auto-discovery by EventServiceProvider |
+| `@ShouldQueue(opts?)` | Marks listener to be processed on a queue |
+| `@AfterCommit()` | Dispatches queued listener only after DB transaction commits |
+| `@Subscriber()` | Marks class as event subscriber for auto-discovery |
+| `@EventName(name)` | Sets custom event name on an Event class |
+
+```typescript
+import { ListensTo, ShouldQueue } from '@lara-node/events';
+
+@ListensTo('user.registered')
+@ShouldQueue({ queue: 'notifications', tries: 3 })
+export class SendWelcomeEmail extends Listener<UserRegisteredPayload> {
+  async handle(payload: UserRegisteredPayload): Promise<void> {
+    await Mail.send(new WelcomeEmail(payload.email));
+  }
+}
+```
+
+### Model Traits — `@lara-node/db`
+
+```typescript
+import { use } from '@lara-node/db';
+import { SoftDeletes, Timestamps, Sluggable, Searchable } from '@lara-node/db';
+
+@use(SoftDeletes, Timestamps)
+export class Post extends Model { ... }
+```
 
 ## Default Seeded Accounts
 

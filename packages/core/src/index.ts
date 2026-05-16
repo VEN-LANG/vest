@@ -19,3 +19,4 @@ export {
   getMiddlewareStack,
 } from "./middleware.js";
 export { config, setConfig, hasConfig, allConfig } from "./Config.js";
+export { Provider, getRegisteredProviders } from "./decorators.js";

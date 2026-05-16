@@ -13,15 +13,15 @@ import pc from "picocolors";
 import prompts from "prompts";
 
 const VERSIONS: Record<string, string> = {
-  "@lara-node/core":        "0.1.5",
-  "@lara-node/router":      "0.1.9",
-  "@lara-node/db":          "0.1.9",
+  "@lara-node/core":        "0.1.6",
+  "@lara-node/router":      "0.2.1",
+  "@lara-node/db":          "0.1.10",
   "@lara-node/auth":        "0.1.6",
   "@lara-node/console":     "0.1.9",
   "@lara-node/validator":   "0.1.8",
   "@lara-node/middlewares": "0.1.9",
   "@lara-node/events":      "0.1.7",
-  "@lara-node/queue":       "0.1.7",
+  "@lara-node/queue":       "0.1.8",
   "@lara-node/mail":        "0.1.7",
   "@lara-node/horizon":     "0.1.8",
   "@lara-node/telescope":   "0.1.8",
@@ -596,6 +596,7 @@ ${configRegistrations.join("\n")}
     dir,
     "src/app/Middleware/ThrottleMiddleware.ts",
     `import { Request, Response, NextFunction } from 'express';
+import { Middleware } from '@lara-node/router';
 
 const requestCounts = new Map<string, { count: number; resetAt: number }>();
 
@@ -604,15 +605,14 @@ const requestCounts = new Map<string, { count: number; resetAt: number }>();
 | ThrottleMiddleware — rate limiting per IP
 |--------------------------------------------------------------------------
 |
-| Usage in Kernel:
-|   protected namedMiddleware = {
-|     throttle: (...args) => new ThrottleMiddleware(Number(args[0]) || 60).toHandler(),
-|   };
+| @Middleware('throttle') registers this class under the 'throttle' alias
+| automatically — no manual registration in MiddlewareServiceProvider.
 |
 | Usage on route:
 |   g.post('/login', 'throttle:10', [AuthController, 'login']);
 |
 */
+@Middleware('throttle')
 export class ThrottleMiddleware {
   constructor(
     private readonly maxRequests: number = 60,
@@ -653,11 +653,12 @@ export class ThrottleMiddleware {
     `import { Model, use } from '@lara-node/db';
 import { SoftDeletes, Timestamps } from '@lara-node/db';
 import { Injectable } from '@lara-node/core';
+import { Bind } from '@lara-node/router';
 import Role from './Role';
 import UserProfile from './UserProfile';
 import { RolesUsers } from './RolesUsers';
-import { UserObserver } from '../../Observers/UserObserver';
 
+@Bind()            // registers 'user' for route-model binding — :user param auto-resolves
 @Injectable()
 @use(SoftDeletes, Timestamps)
 export class User extends Model {
@@ -672,7 +673,6 @@ export class User extends Model {
     created_at: 'datetime', updated_at: 'datetime', deleted_at: 'datetime',
     last_login: 'datetime', last_seen_at: 'datetime',
   };
-  static observer = UserObserver;
 
   roles() {
     return this.belongsToMany(Role, RolesUsers.getTable(), 'users_id', 'roles_id');
@@ -697,8 +697,10 @@ export default User;
     "src/app/Models/User/Role.ts",
     `import { Model, use } from '@lara-node/db';
 import { SoftDeletes } from '@lara-node/db';
+import { Bind } from '@lara-node/router';
 import Permission from './Permission';
 
+@Bind()            // registers 'role' for route-model binding
 @use(SoftDeletes)
 export class Role extends Model {
   static fillable: string[] = ['name', 'slug', 'description', 'created_at', 'updated_at', 'deleted_at'];
@@ -825,19 +827,19 @@ export default File;
   w(
     dir,
     "src/app/Observers/UserObserver.ts",
-    `import { Observer } from '@lara-node/db';
+    `import { Observer, Observe } from '@lara-node/db';
+import User from '../Models/User/User';
 
 /*
 |--------------------------------------------------------------------------
 | UserObserver
 |--------------------------------------------------------------------------
 |
-| Intercepts lifecycle events on the User model.
-| Register via: static observer = UserObserver; on the model.
+| Intercepts lifecycle events on the User model. @Observe(User) wires
+| this class automatically — no manual User.observe(UserObserver) needed.
 |
 */
-import User from '../Models/User/User';
-
+@Observe(User)
 export class UserObserver extends Observer<User> {
   creating(user: User): void {
     if (!user.getAttribute('status')) user.setAttribute('status', 'active');
@@ -1763,15 +1765,15 @@ export class BroadcastServiceProvider extends ServiceProvider {
 | SendMailJob
 |--------------------------------------------------------------------------
 |
-| Dispatching:
-|   import { Queue } from '@lara-node/queue';
-|   await Queue.push(new SendMailJob({ to: 'user@example.com', subject: 'Hello', body: 'World' }));
+| @Queueable sets the default queue and retry count for every dispatch.
+| Override per-dispatch with fluent methods:
+|   SendMailJob.dispatch().onQueue('urgent').tries(5).dispatch();
 |
-| With delay:
-|   await Queue.later(60, new SendMailJob({ ... }));
+| Conditional dispatch via shouldQueue():
+|   shouldQueue() { return !this.payload.suppressEmail; }
 |
 */
-@Queueable({ queue: 'emails', tries: 3, backoff: 60 })
+@Queueable({ queue: 'emails', tries: 3 })
 export class SendMailJob extends Job {
   constructor(
     private readonly payload: {
@@ -1813,6 +1815,8 @@ export class SendMailJob extends Job {
 */
 @Queueable({ queue: 'default', tries: 1 })
 export class CleanupJob extends Job {
+  // Override shouldQueue() to conditionally dispatch:
+  // shouldQueue(): boolean { return someCondition; }
   async handle(): Promise<void> {
     console.log('[CleanupJob] Running cleanup tasks...');
 

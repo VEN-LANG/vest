@@ -57,6 +57,17 @@ export function decryptPayload(data: string): string {
 // Global job registry
 const jobRegistry: Map<string, new () => Job> = new Map();
 
+// Internal helper: applies @Queueable class-level defaults to a job instance.
+// Must live before the Job class definition (forward-reference free via hoisting).
+function applyQueueableDefaults(ctor: new () => Job, job: Job): void {
+  const opts = (ctor as any).__queueableOpts__ as QueueableOptions | undefined;
+  if (!opts) return;
+  if (opts.queue) job.queue = opts.queue;
+  if (opts.tries !== undefined) job.tries = opts.tries;
+  if (opts.timeout !== undefined) job.timeout = opts.timeout;
+  if (opts.connection) job.connection = opts.connection;
+}
+
 export function registerJob(name: string, jobClass: new () => Job): void {
   jobRegistry.set(name, jobClass);
 }
@@ -69,11 +80,55 @@ export function getRegisteredJobs(): Map<string, new () => Job> {
   return jobRegistry;
 }
 
-// Decorator to auto-register jobs
-export function Queueable(name?: string) {
-  return function <T extends new (...args: any[]) => Job>(constructor: T) {
-    const jobName = name || constructor.name;
+/**
+ * Options accepted by the @Queueable decorator.
+ */
+export interface QueueableOptions {
+  /** Custom job name used for serialization / registry lookup. Defaults to class name. */
+  name?: string;
+  /** Target queue. Overrides the instance-level `queue` property. */
+  queue?: string;
+  /** Max attempt count. Overrides the instance-level `tries` property. */
+  tries?: number;
+  /** Execution timeout in seconds. Overrides the instance-level `timeout` property. */
+  timeout?: number;
+  /** Queue connection name. Overrides the instance-level `connection` property. */
+  connection?: string;
+}
+
+/**
+ * @Queueable(nameOrOptions?)
+ *
+ * Class decorator that registers a Job subclass in the global job registry so
+ * the queue worker can deserialize and execute it. Optionally sets class-level
+ * defaults for queue, tries, timeout, and connection — applied automatically
+ * on every `Job.dispatch()` call without per-dispatch boilerplate.
+ *
+ * @example
+ * // Named registration only:
+ * @Queueable()
+ * export class SendMailJob extends Job { ... }
+ *
+ * // With class-level queue options (no `.onQueue()` / `.withTries()` needed):
+ * @Queueable({ queue: 'reports', tries: 2, timeout: 300 })
+ * export class GenerateReportJob extends Job { ... }
+ *
+ * // Override a single option per-dispatch (still works):
+ * GenerateReportJob.dispatch().tries(5).dispatch();
+ *
+ * @param nameOrOptions - A string name OR a QueueableOptions object.
+ */
+export function Queueable(nameOrOptions?: string | QueueableOptions) {
+  return function <T extends new (...args: any[]) => Job>(constructor: T): T {
+    const opts: QueueableOptions =
+      typeof nameOrOptions === "string" ? { name: nameOrOptions } : (nameOrOptions ?? {});
+
+    const jobName = opts.name ?? constructor.name;
     registerJob(jobName, constructor as unknown as new () => Job);
+
+    // Attach class-level defaults so dispatch() can apply them
+    (constructor as any).__queueableOpts__ = opts;
+
     return constructor;
   };
 }
@@ -167,6 +222,20 @@ export abstract class Job {
    */
   failed(exception: Error): void {
     // Override in subclass to handle failures
+  }
+
+  /**
+   * Determine whether the job should actually be pushed onto the queue.
+   * Return false to silently discard the dispatch (useful for conditional
+   * queueing without wrapping the dispatch call in an if-statement).
+   *
+   * @example
+   * shouldQueue(): boolean {
+   *   return this.user.isActive();
+   * }
+   */
+  shouldQueue(): boolean {
+    return true;
   }
 
   /**
@@ -308,15 +377,18 @@ export abstract class Job {
     */
 
   /**
-   * Dispatch the job with the given arguments.
+   * Dispatch the job onto the queue.
+   * Class-level defaults from `@Queueable({ queue, tries, timeout, connection })`
+   * are applied automatically before any per-dispatch fluent overrides.
    */
-  static dispatch<T extends Job>(this: new () => T, ...args: any[]): PendingDispatch<T> {
+  static dispatch<T extends Job>(this: new () => T): PendingDispatch<T> {
     const job = new this();
+    applyQueueableDefaults(this as unknown as new () => Job, job);
     return new PendingDispatch(job);
   }
 
   /**
-   * Dispatch the job synchronously.
+   * Dispatch the job synchronously (bypasses the queue entirely).
    */
   static dispatchSync<T extends Job>(this: new () => T): Promise<void> {
     const job = new this();
@@ -324,10 +396,11 @@ export abstract class Job {
   }
 
   /**
-   * Dispatch the job after the response is sent.
+   * Dispatch the job after the HTTP response has been sent.
    */
   static dispatchAfterResponse<T extends Job>(this: new () => T): PendingDispatch<T> {
     const job = new this();
+    applyQueueableDefaults(this as unknown as new () => Job, job);
     return new PendingDispatch(job).afterResponse();
   }
 
@@ -424,6 +497,11 @@ export class PendingDispatch<T extends Job> {
   }
 
   async dispatch(): Promise<string> {
+    // Honour shouldQueue() — a false return silently discards the dispatch.
+    if (!this.job.shouldQueue()) {
+      return "";
+    }
+
     const { Queue } = await import("./Queue.js");
 
     if (this._afterResponse) {

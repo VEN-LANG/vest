@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/core",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Lara-Node IoC container, Application, and ServiceProvider",
   "type": "module",
   "main": "./dist/index.cjs",

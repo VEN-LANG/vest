@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/db",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Lara-Node ORM — Eloquent-style models, migrations, schema builder",
   "type": "module",
   "main": "./dist/index.cjs",
