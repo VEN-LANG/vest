@@ -1,11 +1,12 @@
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
+import { Injectable } from "@lara-node/core";
 import { UserService } from "@app/Services/UserService";
 import { parseRequest } from "@app/Helpers/auth";
 import { ValidationError } from "@app/Helpers/validator";
 import User from "@app/Models/User/User";
 import { TProfile, TUser } from "@app/Http/types";
-import { Doc } from "@vest-ts/router";
+import { Doc } from "@lara-node/router";
 
 /*
 |--------------------------------------------------------------------------
@@ -17,6 +18,7 @@ import { Doc } from "@vest-ts/router";
 |
 */
 
+@Injectable()
 export class UserController {
   public constructor(public userService: UserService) {}
 

@@ -1,4 +1,4 @@
-import { MigrationSchema, TableBuilder } from "@vest-ts/db";
+import { MigrationSchema, TableBuilder } from "@lara-node/db";
 import UserProfile from "@app/Models/User/UserProfile";
 
 type QueryFn = (sql: string, params?: any[]) => Promise<any>;

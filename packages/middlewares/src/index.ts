@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from "async_hooks";
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { ValidationError, validate, RuleFn, RuleSpec } from "@lara-node/validator";
+import { Model, QueryResult } from "@lara-node/db";
 
 // ─── Shared async context storage ──────────────────────────────────────────────
 
@@ -14,8 +15,11 @@ declare global {
     interface Request {
       user?: {
         id: number | string;
+        email?: string;
+        name?: string;
         roles?: string[];
         permissions?: string[];
+        [key: string]: any;
       };
       validate: <T extends Record<string, any>>(
         payloadOrRules?: any,
@@ -105,7 +109,7 @@ export class ValidatorMiddleware {
 
 // ─── ResponseExtenderMiddleware ─────────────────────────────────────────────────
 
-function isQueryResult(obj: any): boolean {
+function isQueryResult(obj: any): obj is QueryResult<any> {
   return obj && typeof obj === "object" && Array.isArray(obj.data);
 }
 
@@ -114,23 +118,46 @@ async function serializeItem(item: any): Promise<any> {
   return item;
 }
 
+function containsModels(obj: any, visited = new WeakSet()): boolean {
+  if (obj === null || obj === undefined) return false;
+  const isObj = typeof obj === "object";
+  if (isObj && visited.has(obj)) return false;
+  if (isObj) visited.add(obj);
+  if (obj instanceof Model) return true;
+  if (Array.isArray(obj)) return obj.some((item) => containsModels(item, visited));
+  if (isQueryResult(obj)) return obj.data.some((item) => containsModels(item, visited));
+  if (isObj) return Object.values(obj).some((val) => containsModels(val, visited));
+  return false;
+}
+
 export class ResponseExtenderMiddleware {
   handle(_req: Request, res: Response, next: NextFunction): void {
     const originalJson = res.json.bind(res);
 
     res.jsonAsync = async function <T>(data: T): Promise<Response> {
-      if (data && typeof (data as any).toJSONAsync === "function") {
-        return originalJson(await (data as any).toJSONAsync());
-      }
+      if (data instanceof Model) return originalJson(await (data as any).toJSONAsync());
       if (Array.isArray(data)) {
+        if (data.length === 0) return originalJson(data);
         return originalJson(await Promise.all(data.map(serializeItem)));
       }
       if (isQueryResult(data)) {
-        const processed = await Promise.all((data as any).data.map(serializeItem));
-        return originalJson({ ...(data as any), data: processed });
+        if ((data as any).data.length > 0) {
+          const processed = await Promise.all((data as any).data.map(serializeItem));
+          return originalJson({ ...(data as any), data: processed });
+        }
+        return originalJson(data);
       }
       return originalJson(data);
     };
+
+    res.json = function <T>(this: Response, data?: T): Response {
+      if (data instanceof Model) return (res as any).jsonAsync(data);
+      if (Array.isArray(data) && data.length > 0 && data.some((item: any) => item instanceof Model))
+        return (res as any).jsonAsync(data);
+      if (isQueryResult(data)) return (res as any).jsonAsync(data);
+      if (containsModels(data)) return (res as any).jsonAsync(data);
+      return originalJson(data);
+    }.bind(res);
 
     next();
   }
@@ -139,7 +166,7 @@ export class ResponseExtenderMiddleware {
 // ─── AuthMiddleware ─────────────────────────────────────────────────────────────
 
 export interface AuthMiddlewareOptions {
-  userLoader?: (uid: string | number) => Promise<{ id: number | string; roles?: string[]; permissions?: string[] } | null>;
+  userLoader?: (uid: string | number) => Promise<{ id: number | string; roles?: string[]; permissions?: string[]; [key: string]: any } | null>;
   decryptToken?: (token: string) => string;
 }
 
@@ -195,12 +222,10 @@ export class AuthorizeByStatusMiddleware {
     const user = req.user as any;
     if (!user) { res.status(401).json({ message: "Unauthorized" }); return; }
     if (typeof user.isActive === "function" && !user.isActive()) {
-      res.status(401).json({ message: "Account Inactive" });
-      return;
+      res.status(401).json({ message: "Account Inactive" }); return;
     }
     if (user.status && user.status !== "active") {
-      res.status(401).json({ message: "Account Inactive" });
-      return;
+      res.status(401).json({ message: "Account Inactive" }); return;
     }
     next();
   }
@@ -240,8 +265,7 @@ export function authorizeRoles(...roles: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const userRoles = req.user?.roles || [];
     if (!roles.some((r) => userRoles.includes(r))) {
-      res.status(403).json({ message: "Forbidden" });
-      return;
+      res.status(403).json({ message: "Forbidden" }); return;
     }
     next();
   };
@@ -251,8 +275,7 @@ export function authorizePermissions(...perms: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const userPerms = req.user?.permissions || [];
     if (!perms.some((p) => userPerms.includes(p))) {
-      res.status(403).json({ message: "Forbidden" });
-      return;
+      res.status(403).json({ message: "Forbidden" }); return;
     }
     next();
   };

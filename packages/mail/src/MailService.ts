@@ -9,8 +9,13 @@ import {
   SendMailResult,
 } from "./types.js";
 import { ArrayDriver, FailoverDriver, LogDriver, SmtpDriver } from "./Drivers/index.js";
-import mailConfig, { MailerConfig } from "./mail.config.js";
-import { getEventDispatcher } from "@vest-ts/events";
+import defaultMailConfig, { MailConfig, MailerConfig } from "./mail.config.js";
+import { config } from "@lara-node/core";
+
+function getMailConfig(): MailConfig {
+  return config<MailConfig>("mail", defaultMailConfig);
+}
+import { getEventDispatcher } from "@lara-node/events";
 
 /** Optional SendMailJob class — registered by the app to avoid circular deps. */
 let _sendMailJobClass: (new () => any) | null = null;
@@ -52,7 +57,7 @@ export class MailManager implements MailManagerInterface {
    * Get a mailer instance.
    */
   mailer(name?: string): Mailer {
-    const mailerName = name || mailConfig.default;
+    const mailerName = name || getMailConfig().default;
 
     if (!this.mailers.has(mailerName)) {
       const driver = this.createDriver(mailerName);
@@ -70,12 +75,12 @@ export class MailManager implements MailManagerInterface {
       return this.drivers.get(name)!;
     }
 
-    const config = mailConfig.mailers[name];
-    if (!config) {
+    const mailerConfig = getMailConfig().mailers[name];
+    if (!mailerConfig) {
       throw new Error(`Mail driver [${name}] is not configured.`);
     }
 
-    return this.createDriverFromConfig(name, config);
+    return this.createDriverFromConfig(name, mailerConfig);
   }
 
   /**
@@ -124,7 +129,7 @@ export class MailManager implements MailManagerInterface {
    * Send a mailable using the default mailer.
    */
   async send(mailable: MailableInterface): Promise<SendMailResult> {
-    const mailerName = (mailable as any).getMailer?.() || mailConfig.default;
+    const mailerName = (mailable as any).getMailer?.() || getMailConfig().default;
     return this.mailer(mailerName).send(mailable);
   }
 
@@ -154,7 +159,7 @@ export class MailManager implements MailManagerInterface {
    * Get the default mailer name.
    */
   getDefaultDriver(): string {
-    return mailConfig.default;
+    return getMailConfig().default;
   }
 
   /**
@@ -162,7 +167,7 @@ export class MailManager implements MailManagerInterface {
    */
   async withConfig(config: Partial<MailerConfig>): Promise<Mailer> {
     const tempMailerName = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const baseConfig = mailConfig.mailers[mailConfig.default];
+    const baseConfig = getMailConfig().mailers[getMailConfig().default];
     const mergedConfig = { ...baseConfig, ...config } as MailerConfig;
 
     const driver = this.createDriverFromConfig(tempMailerName, mergedConfig);
@@ -252,7 +257,7 @@ export class Mailer implements MailerInterface {
    * Queue a mailable for background sending.
    */
   async queue(mailable: MailableInterface, queue?: string): Promise<string> {
-    const { dispatch } = await import("@vest-ts/queue");
+    const { dispatch } = await import("@lara-node/queue");
     const message = mailable.toMailMessage();
     const SendMailJobClass = _sendMailJobClass;
     if (!SendMailJobClass) {
@@ -269,7 +274,7 @@ export class Mailer implements MailerInterface {
    * Queue a mailable with delay.
    */
   async later(mailable: MailableInterface, delay: number, queue?: string): Promise<string> {
-    const { dispatch } = await import("@vest-ts/queue");
+    const { dispatch } = await import("@lara-node/queue");
 
     const message = mailable.toMailMessage();
     const SendMailJobClass = _sendMailJobClass;
@@ -415,7 +420,7 @@ export async function mail(
       ? typeof options.from === "string"
         ? { address: options.from }
         : options.from
-      : mailConfig.from,
+      : getMailConfig().from,
     cc: options?.cc
       ? Array.isArray(options.cc)
         ? options.cc.map((c) => ({ address: c }))

@@ -11,7 +11,7 @@ import {
   getDbType,
   getMongoDb,
   query,
-} from "@vest-ts/db";
+} from "@lara-node/db";
 
 export class MigrateCommand extends Command {
   protected signature = "migrate";
@@ -397,7 +397,7 @@ export class MakeMigrationCommand extends Command {
     const tbl = table || name.replace(/[^a-z0-9_]/gi, "_").toLowerCase();
 
     if (action === "drop") {
-      return `import type { Migration, MigrationSchema, TableBuilder, QueryFn } from '@vest-ts/db';
+      return `import type { Migration, MigrationSchema, TableBuilder, QueryFn } from '@lara-node/db';
 
 /**
  * Migration: ${name}
@@ -426,7 +426,7 @@ export default class ${className} implements Migration {
     }
 
     if (action === "alter") {
-      return `import type { Migration, MigrationSchema, TableBuilder, QueryFn } from '@vest-ts/db';
+      return `import type { Migration, MigrationSchema, TableBuilder, QueryFn } from '@lara-node/db';
 
 /**
  * Migration: ${name}
@@ -468,7 +468,7 @@ export default class ${className} implements Migration {
     }
 
     // Default: create table
-    return `import type { Migration, MigrationSchema, TableBuilder, QueryFn } from '@vest-ts/db';
+    return `import type { Migration, MigrationSchema, TableBuilder, QueryFn } from '@lara-node/db';
 
 /**
  * Migration: ${name}

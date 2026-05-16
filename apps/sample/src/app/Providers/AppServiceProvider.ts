@@ -1,5 +1,5 @@
-import { ServiceProvider } from "@vest-ts/core";
-import { scheduler } from "@vest-ts/queue";
+import { ServiceProvider } from "@lara-node/core";
+import { scheduler } from "@lara-node/queue";
 
 export class AppServiceProvider extends ServiceProvider {
   register(): void {}

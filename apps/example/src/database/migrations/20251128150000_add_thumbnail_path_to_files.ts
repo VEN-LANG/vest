@@ -1,4 +1,4 @@
-import { MigrationSchema } from "@vest-ts/db";
+import { MigrationSchema } from "@lara-node/db";
 
 type QueryFn = (sql: string, params?: any[]) => Promise<any>;
 // Migration: add thumbnail_path column to files table

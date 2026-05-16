@@ -1,7 +1,7 @@
 {
-  "name": "@vest-ts/horizon",
-  "version": "0.1.0",
-  "description": "Vest Horizon — queue monitoring dashboard",
+  "name": "@lara-node/horizon",
+  "version": "0.1.4",
+  "description": "Lara-Node Horizon — queue monitoring dashboard",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -15,8 +15,14 @@
   },
   "files": [
     "dist",
+    "config",
     "README.md"
   ],
+  "laraNode": {
+    "publish": [
+      { "tag": "config", "from": "config/horizon.config.ts", "to": "config/horizon.config.ts" }
+    ]
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -28,11 +34,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vest-ts/cache": "workspace:*",
-    "@vest-ts/core": "workspace:*",
-    "@vest-ts/events": "workspace:*",
-    "@vest-ts/queue": "workspace:*",
-    "@vest-ts/router": "workspace:*",
+    "@lara-node/cache": "workspace:^",
+    "@lara-node/core": "workspace:^",
+    "@lara-node/events": "workspace:^",
+    "@lara-node/queue": "workspace:^",
+    "@lara-node/router": "workspace:^",
     "express": "^5.2.1"
   },
   "devDependencies": {

@@ -103,7 +103,7 @@ export async function run(inputArgs?: MigrateFreshOptions) {
     console.log("Force flag provided; proceeding without confirmation");
   }
 
-  const lockName = process.env.MIGRATION_LOCK_NAME || "vest_migrations_lock";
+  const lockName = process.env.MIGRATION_LOCK_NAME || "lara_node_migrations_lock";
   try {
     const lrows: any = await query("SELECT GET_LOCK(?, 10) as got", [lockName]);
     const got = lrows && lrows[0] && (lrows[0].got === 1 || lrows[0].got === "1");

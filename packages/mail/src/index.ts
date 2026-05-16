@@ -7,6 +7,12 @@
 |
 */
 
+import { setConfig } from "@lara-node/core";
+import _mailConfig from "./mail.config.js";
+setConfig("mail", _mailConfig as unknown as Record<string, unknown>);
+export { default as mailConfig } from "./mail.config.js";
+export type { MailConfig, MailerConfig, MailAddress } from "./mail.config.js";
+
 // Types
 export * from "./types.js";
 

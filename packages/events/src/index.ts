@@ -1,3 +1,9 @@
+import { setConfig } from "@lara-node/core";
+import _broadcastingConfig from "./Broadcasting/broadcasting.config.js";
+setConfig("broadcasting", _broadcastingConfig as unknown as Record<string, unknown>);
+export { default as broadcastingConfig } from "./Broadcasting/broadcasting.config.js";
+export type { BroadcastingConfig } from "./Broadcasting/broadcasting.config.js";
+
 // Events
 export {
   EventDispatcher,

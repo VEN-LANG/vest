@@ -1,12 +1,14 @@
 import type { Request, Response } from "express";
+import { Injectable } from "@lara-node/core";
 import { AuthService } from "@app/Services/AuthService";
 import { ValidationError } from "@app/Helpers/validator";
 import { TProfile } from "@app/Http/types";
 import { UserService } from "@app/Services/UserService";
 import { UserRegistered } from "@app/Events";
-import { Doc } from "@vest-ts/router";
+import { Doc } from "@lara-node/router";
 import { auth } from "@app/Helpers/auth";
 
+@Injectable()
 export class AuthController {
   public constructor(
     public authService: AuthService,

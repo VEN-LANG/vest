@@ -1,5 +1,5 @@
-import { Job, Queueable } from "@vest-ts/queue";
-import { Mail, MailMessage } from "@vest-ts/mail";
+import { Job, Queueable } from "@lara-node/queue";
+import { Mail, MailMessage } from "@lara-node/mail";
 
 /*
 |--------------------------------------------------------------------------

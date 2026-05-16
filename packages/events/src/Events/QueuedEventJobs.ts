@@ -9,7 +9,7 @@
 |
 */
 
-import { Job, Queueable } from "@vest-ts/queue";
+import { Job, Queueable } from "@lara-node/queue";
 
 /*
 |--------------------------------------------------------------------------

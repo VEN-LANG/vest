@@ -1,5 +1,5 @@
-import { getEventDispatcher } from "@vest-ts/events";
-import { horizonMetrics } from "@vest-ts/horizon";
+import { getEventDispatcher } from "@lara-node/events";
+import { horizonMetrics } from "@lara-node/horizon";
 import { TelescopeStore } from "../TelescopeStore.js";
 
 /*
@@ -20,106 +20,105 @@ import { TelescopeStore } from "../TelescopeStore.js";
 */
 
 export function activateJobWatcher(): void {
-  // ── Strategy 1: in-process EventDispatcher ────────────────────────────────
-  const dispatcher = getEventDispatcher();
+    // ── Strategy 1: in-process EventDispatcher ────────────────────────────────
+    const dispatcher = getEventDispatcher();
 
-  dispatcher.listen("horizon:job.processing", (payload: any) => {
-    TelescopeStore.record(
-      "job",
-      {
-        name: payload.job?.displayName,
-        queue: payload.job?.queue,
-        connection: payload.job?.connection ?? payload.connection ?? "default",
-        status: "processing",
-        attempts: payload.job?.attempts,
-        uuid: payload.job?.uuid,
-      },
-      [payload.job?.displayName, `queue:${payload.job?.queue}`].filter(Boolean) as string[],
-    );
-  });
-
-  dispatcher.listen("horizon:job.processed", (payload: any) => {
-    TelescopeStore.record(
-      "job",
-      {
-        name: payload.job?.displayName,
-        queue: payload.job?.queue,
-        connection: payload.connection ?? "default",
-        status: "processed",
-        durationMs: payload.durationMs,
-        attempts: payload.job?.attempts,
-        uuid: payload.job?.uuid,
-      },
-      [payload.job?.displayName, `queue:${payload.job?.queue}`, "processed"].filter(
-        Boolean,
-      ) as string[],
-    );
-  });
-
-  dispatcher.listen("horizon:job.failed", (payload: any) => {
-    TelescopeStore.record(
-      "job",
-      {
-        name: payload.job?.displayName,
-        queue: payload.job?.queue,
-        connection: payload.connection ?? "default",
-        status: "failed",
-        durationMs: payload.durationMs,
-        exception: payload.exception,
-        attempts: payload.job?.attempts,
-        uuid: payload.job?.uuid,
-      },
-      [payload.job?.displayName, `queue:${payload.job?.queue}`, "failed"].filter(
-        Boolean,
-      ) as string[],
-    );
-  });
-
-  // ── Strategy 2: cross-process Cache poll ──────────────────────────────────
-  // Tracks the UUID of the most-recently-seen job so we don't re-record jobs.
-  let lastSeenUuid: string | null = null;
-
-  const pollJobs = async () => {
-    try {
-      const recent = await horizonMetrics.getRecentJobs(20);
-      if (!recent.length) return;
-
-      // Jobs are newest-first. Find where we left off.
-      const cutoffIdx = lastSeenUuid ? recent.findIndex((j) => j.uuid === lastSeenUuid) : -1;
-      // Everything before cutoffIdx is new (or all of them if lastSeen not found)
-      const newJobs = cutoffIdx === -1 ? recent : recent.slice(0, cutoffIdx);
-
-      for (const job of newJobs.reverse()) {
-        // record oldest→newest
-        // Skip if already recorded by the in-process dispatcher (same UUID in store)
-        const alreadyRecorded = TelescopeStore.getEntries({ type: "job", limit: 50 }).some(
-          (e) => e.content.uuid === job.uuid,
-        );
-        if (alreadyRecorded) continue;
-
+    dispatcher.listen("horizon:job.processing", (payload: any) => {
         TelescopeStore.record(
-          "job",
-          {
-            name: job.displayName,
-            queue: job.queue,
-            connection: job.connection,
-            status: job.status,
-            durationMs: job.durationMs,
-            exception: job.exception,
-            uuid: job.uuid,
-            completedAt: job.completedAt,
-          },
-          [job.displayName, `queue:${job.queue}`, job.status].filter(Boolean) as string[],
+            "job",
+            {
+                name: payload.job?.displayName,
+                queue: payload.job?.queue,
+                connection: payload.job?.connection ?? payload.connection ?? "default",
+                status: "processing",
+                attempts: payload.job?.attempts,
+                uuid: payload.job?.uuid,
+            },
+            [payload.job?.displayName, `queue:${payload.job?.queue}`].filter(Boolean) as string[],
         );
-      }
+    });
 
-      lastSeenUuid = recent[0].uuid;
-    } catch {
-      // best-effort — never break the dashboard
-    }
-  };
+    dispatcher.listen("horizon:job.processed", (payload: any) => {
+        TelescopeStore.record(
+            "job",
+            {
+                name: payload.job?.displayName,
+                queue: payload.job?.queue,
+                connection: payload.connection ?? "default",
+                status: "processed",
+                durationMs: payload.durationMs,
+                attempts: payload.job?.attempts,
+                uuid: payload.job?.uuid,
+            },
+            [payload.job?.displayName, `queue:${payload.job?.queue}`, "processed"].filter(
+                Boolean,
+            ) as string[],
+        );
+    });
 
-  // Poll every 3 s — aligns with the dashboard auto-refresh interval
-  setInterval(pollJobs, 3000);
-  pollJobs(); // immediate first poll
+    dispatcher.listen("horizon:job.failed", (payload: any) => {
+        TelescopeStore.record(
+            "job",
+            {
+                name: payload.job?.displayName,
+                queue: payload.job?.queue,
+                connection: payload.connection ?? "default",
+                status: "failed",
+                durationMs: payload.durationMs,
+                exception: payload.exception,
+                attempts: payload.job?.attempts,
+                uuid: payload.job?.uuid,
+            },
+            [payload.job?.displayName, `queue:${payload.job?.queue}`, "failed"].filter(
+                Boolean,
+            ) as string[],
+        );
+    });
+
+    // ── Strategy 2: cross-process Cache poll ──────────────────────────────────
+    // Tracks the UUID of the most-recently-seen job so we don't re-record jobs.
+    let lastSeenUuid: string | null = null;
+
+    const pollJobs = async () => {
+        try {
+            const recent = await horizonMetrics.getRecentJobs(20);
+            if (!recent.length) return;
+
+            // Jobs are newest-first. Find where we left off.
+            const cutoffIdx = lastSeenUuid ? recent.findIndex((j) => j.uuid === lastSeenUuid) : -1;
+            // Everything before cutoffIdx is new (or all of them if lastSeen not found)
+            const newJobs = cutoffIdx === -1 ? recent : recent.slice(0, cutoffIdx);
+
+            for (const job of newJobs.reverse()) { // record oldest→newest
+                // Skip if already recorded by the in-process dispatcher (same UUID in store)
+                const alreadyRecorded = TelescopeStore
+                    .getEntries({ type: "job", limit: 50 })
+                    .some((e) => e.content.uuid === job.uuid);
+                if (alreadyRecorded) continue;
+
+                TelescopeStore.record(
+                    "job",
+                    {
+                        name: job.displayName,
+                        queue: job.queue,
+                        connection: job.connection,
+                        status: job.status,
+                        durationMs: job.durationMs,
+                        exception: job.exception,
+                        uuid: job.uuid,
+                        completedAt: job.completedAt,
+                    },
+                    [job.displayName, `queue:${job.queue}`, job.status].filter(Boolean) as string[],
+                );
+            }
+
+            lastSeenUuid = recent[0].uuid;
+        } catch {
+            // best-effort — never break the dashboard
+        }
+    };
+
+    // Poll every 3 s — aligns with the dashboard auto-refresh interval
+    setInterval(pollJobs, 3000);
+    pollJobs(); // immediate first poll
 }

@@ -1,6 +1,6 @@
-import { Model, use } from "@vest-ts/db";
+import { Model, use } from "@lara-node/db";
 import User from "@app/Models/User/User";
-import { SoftDeletes } from "@vest-ts/db";
+import { SoftDeletes } from "@lara-node/db";
 
 @use(SoftDeletes)
 export class UserProfile extends Model {

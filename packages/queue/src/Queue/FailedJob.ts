@@ -1,4 +1,4 @@
-import { Model } from "@vest-ts/db";
+import { Model } from "@lara-node/db";
 
 /*
 |--------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { ServiceProvider } from "@vest-ts/core";
+import { ServiceProvider } from "@lara-node/core";
 import { initDatabase, query, getDbType } from "./connection.js";
 
 export class DatabaseServiceProvider extends ServiceProvider {

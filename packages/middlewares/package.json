@@ -1,14 +1,16 @@
 {
   "name": "@lara-node/middlewares",
-  "version": "0.1.4",
+  "version": "0.1.7",
   "description": "Predefined class-based middleware for Lara-Node applications",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
     }
   },
   "files": [
@@ -19,14 +21,14 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsdown src/index.ts --format esm --out-dir dist && tsc --emitDeclarationOnly",
-    "dev": "tsdown src/index.ts --format esm --out-dir dist --watch",
+    "build": "tsdown src/index.ts --format esm,cjs --out-dir dist && tsc --emitDeclarationOnly",
+    "dev": "tsdown src/index.ts --format esm,cjs --out-dir dist --watch",
     "clean": "rimraf dist",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@lara-node/validator": "workspace:*",
-    "@lara-node/db": "workspace:*",
+    "@lara-node/validator": "workspace:^",
+    "@lara-node/db": "workspace:^",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {

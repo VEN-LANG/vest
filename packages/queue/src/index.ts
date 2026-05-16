@@ -7,6 +7,10 @@
 |
 */
 
+import { setConfig } from "@lara-node/core";
+import _queueConfig from "./queue.config.js";
+setConfig("queue", _queueConfig as unknown as Record<string, unknown>);
+
 // Types
 export * from "./types.js";
 

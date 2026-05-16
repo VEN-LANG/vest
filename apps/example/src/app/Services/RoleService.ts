@@ -1,5 +1,5 @@
 import Role from "@app/Models/User/Role";
-import { ModelAttributes } from "@vest-ts/db";
+import { ModelAttributes } from "@lara-node/db";
 import PermissionsRoles from "@app/Models/User/PermissionsRoles";
 
 export class RoleService {

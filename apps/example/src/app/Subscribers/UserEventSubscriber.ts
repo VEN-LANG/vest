@@ -11,8 +11,8 @@
 |
 */
 
-import { EventDispatcher, EventSubscriber } from "@vest-ts/events";
-import { Subscriber } from "@vest-ts/events";
+import { EventDispatcher, EventSubscriber } from "@lara-node/events";
+import { Subscriber } from "@lara-node/events";
 
 @Subscriber()
 export class UserEventSubscriber implements EventSubscriber {

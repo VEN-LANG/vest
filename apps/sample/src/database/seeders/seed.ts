@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { initDatabase } from "@vest-ts/db";
+import { initDatabase } from "@lara-node/db";
 import { User } from "../../../src/app/Models/User.js";
 import { Post } from "../../../src/app/Models/Post.js";
 
@@ -21,14 +21,14 @@ export async function seed(): Promise<void> {
   const count = await Post.where("user_id", alice.id).count();
   if (count === 0) {
     await Post.create({
-      title: "Hello Vest!",
+      title: "Hello Lara-Node!",
       body: "This is my first post.",
       user_id: alice.id,
       published: true,
     });
     await Post.create({
       title: "Building APIs",
-      body: "Vest makes it easy to build REST APIs.",
+      body: "Lara-Node makes it easy to build REST APIs.",
       user_id: alice.id,
       published: true,
     });

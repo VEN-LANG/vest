@@ -13,7 +13,7 @@ import { AuthController } from "@app/Http/Controllers/User/AuthController";
 import { UserController } from "@app/Http/Controllers/User/UserController";
 import { RoleController } from "@app/Http/Controllers/User/RoleController";
 import { PermissionController } from "@app/Http/Controllers/User/PermissionController";
-import RouterBuilder from "@vest-ts/router";
+import RouterBuilder from "@lara-node/router";
 import { FileController, multerUpload } from "@app/Http/Controllers/File/FileController";
 
 export const routesBuilder = new RouterBuilder();

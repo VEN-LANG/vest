@@ -1,5 +1,5 @@
-import { Cache } from "@vest-ts/cache";
-import type { SerializedJob } from "@vest-ts/queue";
+import { Cache } from "@lara-node/cache";
+import type { SerializedJob } from "@lara-node/queue";
 
 /*
 |--------------------------------------------------------------------------
@@ -20,7 +20,6 @@ import type { SerializedJob } from "@vest-ts/queue";
 | snapshot.
 |
 */
-
 export interface CompletedJobRecord {
   uuid: string;
   displayName: string;
@@ -45,24 +44,31 @@ export interface WorkerSnapshot {
   pid: number;
 }
 
-const WORKER_TTL = 90; // seconds — individual snapshot TTL (refreshed by heartbeat)
-const JOBS_LIMIT = 500;
+const WORKER_TTL = 90;   // seconds — individual snapshot TTL (refreshed by heartbeat)
+const JOBS_LIMIT  = 500;
 
 /** Per-minute aggregation bucket for throughput and duration charts. */
 export interface JobMinuteBucket {
-  ts: number; // minute start timestamp (ms, floor to minute)
+  ts: number;        // minute start timestamp (ms, floor to minute)
   processed: number;
   failed: number;
-  totalMs: number; // sum of durations (for avg)
-  maxMs: number; // max single-job duration
+  totalMs: number;   // sum of durations (for avg)
+  maxMs: number;     // max single-job duration
 }
 
+const appName = () => process.env.APP_NAME || "app";
+
 const K = {
-  wids: "horizon:wids",
+  wids:       "horizon:wids",
   worker: (id: string) => `horizon:w:${id}`,
-  jobs: "horizon:jobs",
+  jobs:       "horizon:jobs",
   throughput: "horizon:throughput",
-  ctrl: (id: string) => `horizon:ctrl:${id}`,
+  // Must include the APP_NAME segment so the key matches what Worker.checkHorizonSignal
+  // constructs (it manually prepends "${APP_NAME}:horizon:ctrl" before calling Cache,
+  // and Cache then adds its own CACHE_PREFIX on top of both). Without the APP_NAME here
+  // the write goes to ${CACHE_PREFIX}:horizon:ctrl:{id} while the read hits
+  // ${CACHE_PREFIX}:${APP_NAME}:horizon:ctrl:{id} — a different key.
+  ctrl: (id: string) => `${appName()}:horizon:ctrl:${id}`,
 };
 
 class HorizonMetricsStore {
@@ -89,9 +95,7 @@ class HorizonMetricsStore {
       const ids: string[] = (await Cache.get(K.wids)) ?? [];
       if (!ids.includes(id)) ids.push(id);
       await Cache.set(K.wids, ids, null);
-    } catch {
-      /* metrics are best-effort */
-    }
+    } catch { /* metrics are best-effort */ }
   }
 
   /**
@@ -134,11 +138,7 @@ class HorizonMetricsStore {
     try {
       await Cache.del(K.worker(id));
       const ids: string[] = (await Cache.get(K.wids)) ?? [];
-      await Cache.set(
-        K.wids,
-        ids.filter((x) => x !== id),
-        null,
-      );
+      await Cache.set(K.wids, ids.filter((x) => x !== id), null);
     } catch {}
   }
 
@@ -166,11 +166,7 @@ class HorizonMetricsStore {
     const key = `horizon:mb:${minuteTs}`;
     try {
       const b: JobMinuteBucket = (await Cache.get(key)) ?? {
-        ts: minuteTs,
-        processed: 0,
-        failed: 0,
-        totalMs: 0,
-        maxMs: 0,
+        ts: minuteTs, processed: 0, failed: 0, totalMs: 0, maxMs: 0,
       };
       if (record.status === "processed") {
         b.processed++;
@@ -187,11 +183,11 @@ class HorizonMetricsStore {
   async getMetrics(minutes = 60): Promise<JobMinuteBucket[]> {
     const currentMinute = Math.floor(Date.now() / 60_000) * 60_000;
     const buckets = await Promise.all(
-      Array.from({ length: minutes }, async (_, i) => {
-        const ts = currentMinute - (minutes - 1 - i) * 60_000;
-        const b: JobMinuteBucket | null = await Cache.get(`horizon:mb:${ts}`).catch(() => null);
-        return b ?? { ts, processed: 0, failed: 0, totalMs: 0, maxMs: 0 };
-      }),
+        Array.from({ length: minutes }, async (_, i) => {
+          const ts = currentMinute - (minutes - 1 - i) * 60_000;
+          const b: JobMinuteBucket | null = await Cache.get(`horizon:mb:${ts}`).catch(() => null);
+          return b ?? { ts, processed: 0, failed: 0, totalMs: 0, maxMs: 0 };
+        }),
     );
     return buckets;
   }
@@ -210,7 +206,9 @@ class HorizonMetricsStore {
       const ids: string[] = (await Cache.get(K.wids)) ?? [];
       if (!ids.length) return [];
 
-      const snaps = await Promise.all(ids.map((id) => Cache.get(K.worker(id)).catch(() => null)));
+      const snaps = await Promise.all(
+          ids.map((id) => Cache.get(K.worker(id)).catch(() => null)),
+      );
       const valid = snaps.filter(Boolean) as WorkerSnapshot[];
 
       // Prune the IDs list if some snapshots expired (worker died)

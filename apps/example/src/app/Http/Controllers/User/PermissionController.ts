@@ -1,8 +1,10 @@
 import type { Request, Response } from "express";
+import { Injectable } from "@lara-node/core";
 import { PermissionService } from "@app/Services/PermissionService";
 import { ValidationError } from "@app/Helpers/validator";
-import { Doc } from "@vest-ts/router";
+import { Doc } from "@lara-node/router";
 
+@Injectable()
 export class PermissionController {
   public constructor(public permissionService: PermissionService) {}
 

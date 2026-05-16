@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import { CronExpressionParser as parser } from "cron-parser";
-import { Cache } from "@vest-ts/cache";
+import { Cache } from "@lara-node/cache";
 
 /*
 |--------------------------------------------------------------------------
@@ -98,7 +98,7 @@ export class Schedule {
       if (stderr) console.error(stderr);
     };
     const task = createObservableTask(
-      this.defaultTask(`command:${command}`, callback, `Artisan command: ${command}`),
+        this.defaultTask(`command:${command}`, callback, `Artisan command: ${command}`),
     );
     this.tasks.push(task);
     return new ScheduledTaskBuilder(task);
@@ -115,15 +115,15 @@ export class Schedule {
       if (stderr) console.error(stderr);
     };
     const task = createObservableTask(
-      this.defaultTask(`exec:${command.slice(0, 50)}`, callback, `Shell command: ${command}`),
+        this.defaultTask(`exec:${command.slice(0, 50)}`, callback, `Shell command: ${command}`),
     );
     this.tasks.push(task);
     return new ScheduledTaskBuilder(task);
   }
 
   job<T extends { dispatch: () => { dispatch: () => Promise<string> } }>(
-    JobClass: T,
-    queue?: string,
+      JobClass: T,
+      queue?: string,
   ): ScheduledTaskBuilder {
     const callback = async () => {
       const pending = JobClass.dispatch();
@@ -131,20 +131,20 @@ export class Schedule {
       await pending.dispatch();
     };
     const task = createObservableTask(
-      this.defaultTask(
-        `job:${(JobClass as any).name || "anonymous"}`,
-        callback,
-        `Dispatch job: ${(JobClass as any).name}`,
-      ),
+        this.defaultTask(
+            `job:${(JobClass as any).name || "anonymous"}`,
+            callback,
+            `Dispatch job: ${(JobClass as any).name}`,
+        ),
     );
     this.tasks.push(task);
     return new ScheduledTaskBuilder(task);
   }
 
   private defaultTask(
-    name: string,
-    callback: () => Promise<void> | void,
-    description?: string,
+      name: string,
+      callback: () => Promise<void> | void,
+      description?: string,
   ): ScheduledTask {
     return {
       name,
@@ -209,11 +209,11 @@ export class Schedule {
     }
     const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
     return (
-      this.matchCronPart(minute, date.getMinutes()) &&
-      this.matchCronPart(hour, date.getHours()) &&
-      this.matchCronPart(dayOfMonth, date.getDate()) &&
-      this.matchCronPart(month, date.getMonth() + 1) &&
-      this.matchCronPart(dayOfWeek, date.getDay())
+        this.matchCronPart(minute, date.getMinutes()) &&
+        this.matchCronPart(hour, date.getHours()) &&
+        this.matchCronPart(dayOfMonth, date.getDate()) &&
+        this.matchCronPart(month, date.getMonth() + 1) &&
+        this.matchCronPart(dayOfWeek, date.getDay())
     );
   }
 
@@ -285,12 +285,12 @@ export class Schedule {
       // Single-server lock (one cron tick ≈ 60s + 5s buffer)
       if (task.onOneServer) {
         const lockAcquired = await acquireLock(
-          `once:${task.name}:${Math.floor(Date.now() / 60000)}`,
-          65,
+            `once:${task.name}:${Math.floor(Date.now() / 60000)}`,
+            65,
         ).catch(() => false);
         if (!lockAcquired) {
           console.log(
-            `[Scheduler] Skipping task (onOneServer, another server has it): ${task.name}`,
+              `[Scheduler] Skipping task (onOneServer, another server has it): ${task.name}`,
           );
           continue;
         }
@@ -377,8 +377,8 @@ export class Schedule {
   }
 
   on(
-    event: "task:start" | "task:success" | "task:failed",
-    listener: (task: ScheduledTask, error?: any) => void,
+      event: "task:start" | "task:success" | "task:failed",
+      listener: (task: ScheduledTask, error?: any) => void,
   ): void {
     this.events.on(event, listener);
   }
@@ -477,10 +477,10 @@ export class ScheduledTaskBuilder {
   }
 
   twiceDailyAt(
-    firstHour: number,
-    firstMinute: number,
-    secondHour: number,
-    secondMinute: number,
+      firstHour: number,
+      firstMinute: number,
+      secondHour: number,
+      secondMinute: number,
   ): this {
     return this.cron(`${firstMinute} ${firstHour},${secondHour} * * *`);
   }
@@ -620,6 +620,12 @@ export class ScheduledTaskBuilder {
 
   cron(expression: string): this {
     this.task.expression = expression;
+    try {
+      const interval = parser.parse(expression, { tz: this.task.timezone || "UTC" });
+      this.task.nextRun = interval.next().toDate();
+    } catch {
+      // invalid expression — leave nextRun as-is
+    }
     return this;
   }
 
@@ -635,6 +641,12 @@ export class ScheduledTaskBuilder {
 
   timezone(timezone: string): this {
     this.task.timezone = timezone;
+    try {
+      const interval = parser.parse(this.task.expression, { tz: timezone });
+      this.task.nextRun = interval.next().toDate();
+    } catch {
+      // invalid expression — leave nextRun as-is
+    }
     return this;
   }
 

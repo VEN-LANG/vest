@@ -1,7 +1,7 @@
 {
-  "name": "@vest-ts/auth",
-  "version": "0.1.0",
-  "description": "Vest JWT authentication helpers",
+  "name": "@lara-node/auth",
+  "version": "0.1.2",
+  "description": "Lara-Node JWT authentication helpers",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -28,8 +28,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vest-ts/core": "workspace:*",
-    "@vest-ts/router": "workspace:*",
+    "@lara-node/core": "workspace:^",
+    "@lara-node/router": "workspace:^",
     "bcrypt": "^6.0.0",
     "jsonwebtoken": "^9.0.3"
   },

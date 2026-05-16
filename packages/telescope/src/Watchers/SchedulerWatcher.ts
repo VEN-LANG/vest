@@ -1,5 +1,5 @@
-import { scheduler } from "@vest-ts/queue";
-import { getEventDispatcher } from "@vest-ts/events";
+import { scheduler } from "@lara-node/queue";
+import { getEventDispatcher } from "@lara-node/events";
 import { TelescopeStore } from "../TelescopeStore.js";
 
 /*
@@ -19,66 +19,66 @@ import { TelescopeStore } from "../TelescopeStore.js";
 */
 
 export function activateSchedulerWatcher(): void {
-  const runTimes = new Map<string, number>();
-  const dispatcher = getEventDispatcher();
+    const runTimes = new Map<string, number>();
+    const dispatcher = getEventDispatcher();
 
-  scheduler.on("task:start", (task) => {
-    runTimes.set(task.name, Date.now());
-    dispatcher.dispatchNow("horizon:task.start", { task });
+    scheduler.on("task:start", (task) => {
+        runTimes.set(task.name, Date.now());
+        dispatcher.dispatchNow("horizon:task.start", { task });
 
-    TelescopeStore.record(
-      "schedule",
-      {
-        task: task.name,
-        expression: task.expression,
-        description: task.description,
-        status: "running",
-        ranAt: new Date(),
-      },
-      [task.name],
-    );
-  });
+        TelescopeStore.record(
+            "schedule",
+            {
+                task: task.name,
+                expression: task.expression,
+                description: task.description,
+                status: "running",
+                ranAt: new Date(),
+            },
+            [task.name],
+        );
+    });
 
-  scheduler.on("task:success", (task) => {
-    const started = runTimes.get(task.name);
-    const durationMs = started ? Date.now() - started : undefined;
-    runTimes.delete(task.name);
+    scheduler.on("task:success", (task) => {
+        const started = runTimes.get(task.name);
+        const durationMs = started ? Date.now() - started : undefined;
+        runTimes.delete(task.name);
 
-    dispatcher.dispatchNow("horizon:task.success", { task, durationMs });
+        dispatcher.dispatchNow("horizon:task.success", { task, durationMs });
 
-    TelescopeStore.record(
-      "schedule",
-      {
-        task: task.name,
-        expression: task.expression,
-        description: task.description,
-        status: "success",
-        durationMs,
-        ranAt: task.lastRun,
-      },
-      [task.name, "success"],
-    );
-  });
+        TelescopeStore.record(
+            "schedule",
+            {
+                task: task.name,
+                expression: task.expression,
+                description: task.description,
+                status: "success",
+                durationMs,
+                ranAt: task.lastRun,
+            },
+            [task.name, "success"],
+        );
+    });
 
-  scheduler.on("task:failed", (task, error) => {
-    const started = runTimes.get(task.name);
-    const durationMs = started ? Date.now() - started : undefined;
-    runTimes.delete(task.name);
+    scheduler.on("task:failed", (task, error) => {
+        const started = runTimes.get(task.name);
+        const durationMs = started ? Date.now() - started : undefined;
+        runTimes.delete(task.name);
 
-    dispatcher.dispatchNow("horizon:task.failed", { task, durationMs, error });
+        dispatcher.dispatchNow("horizon:task.failed", { task, durationMs, error });
 
-    TelescopeStore.record(
-      "schedule",
-      {
-        task: task.name,
-        expression: task.expression,
-        description: task.description,
-        status: "failed",
-        durationMs,
-        exception: error?.message,
-        ranAt: task.lastRun,
-      },
-      [task.name, "failed"],
-    );
-  });
+        TelescopeStore.record(
+            "schedule",
+            {
+                task: task.name,
+                expression: task.expression,
+                description: task.description,
+                status: "failed",
+                durationMs,
+                exception: error?.message,
+                ranAt: task.lastRun,
+            },
+            [task.name, "failed"],
+        );
+    });
 }

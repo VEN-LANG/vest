@@ -1,4 +1,4 @@
-import { MigrationSchema, TableBuilder } from "@vest-ts/db";
+import { MigrationSchema, TableBuilder } from "@lara-node/db";
 import { EUserType } from "@app/Enums";
 import { UserProfile } from "@app/Models/User/UserProfile";
 

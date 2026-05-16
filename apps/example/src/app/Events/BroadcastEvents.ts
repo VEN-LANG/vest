@@ -7,8 +7,8 @@
 |
 */
 
-import { Event } from "@vest-ts/events";
-import { ShouldBroadcast, BroadcastAs } from "@vest-ts/events";
+import { Event } from "@lara-node/events";
+import { ShouldBroadcast, BroadcastAs } from "@lara-node/events";
 
 /**
  * Event broadcast when a new notification is created.

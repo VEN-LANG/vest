@@ -1,8 +1,9 @@
 import type { Request, Response } from "express";
+import { Injectable } from "@lara-node/core";
 import { RoleService } from "@app/Services/RoleService";
 import { ValidationError } from "@app/Helpers/validator";
 import { Role } from "@app/Models/User";
-import { Doc } from "@vest-ts/router";
+import { Doc } from "@lara-node/router";
 
 const roleFields = ["name", "slug", "description"];
 
@@ -13,6 +14,7 @@ function makeSlug(name: string) {
     .replace(/^-|-$/g, "");
 }
 
+@Injectable()
 export class RoleController {
   public constructor(public roleService: RoleService) {}
 

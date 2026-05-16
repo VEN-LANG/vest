@@ -1,3 +1,7 @@
+import { setConfig } from "@lara-node/core";
+import _horizonConfig from "./horizon.config.js";
+setConfig("horizon", _horizonConfig as unknown as Record<string, unknown>);
+
 export { HorizonServiceProvider } from "./HorizonServiceProvider.js";
 export { HorizonManager } from "./HorizonManager.js";
 export { horizonMetrics } from "./HorizonMetrics.js";

@@ -1,7 +1,7 @@
 {
-  "name": "@vest-ts/router",
-  "version": "0.1.0",
-  "description": "Vest Express router builder, middleware stack, and OpenAPI generator",
+  "name": "@lara-node/router",
+  "version": "0.1.3",
+  "description": "Lara-Node Express router builder, middleware stack, and OpenAPI generator",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -28,9 +28,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vest-ts/cache": "workspace:*",
-    "@vest-ts/core": "workspace:*",
-    "@vest-ts/db": "workspace:*",
+    "@lara-node/cache": "workspace:^",
+    "@lara-node/core": "workspace:^",
+    "@lara-node/db": "workspace:^",
     "express": "^5.2.1",
     "reflect-metadata": "^0.2.2"
   },

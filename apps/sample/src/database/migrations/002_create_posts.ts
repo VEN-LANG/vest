@@ -1,4 +1,4 @@
-import type { MigrationSchema, TableBuilder } from "@vest-ts/db";
+import type { MigrationSchema, TableBuilder } from "@lara-node/db";
 
 export async function up(schema: MigrationSchema): Promise<void> {
   return schema.createTable("posts", (table: TableBuilder) => {

@@ -6,7 +6,7 @@ import crypto from "crypto";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import CacheModel from "./Models/Cache.js";
 
-/** Optional watcher hook — registered by @vest-ts/telescope at boot to avoid circular deps. */
+/** Optional watcher hook — registered by @lara-node/telescope at boot to avoid circular deps. */
 type CacheEventType = "get" | "set" | "del" | "has" | "clear";
 interface CacheWatchEvent {
   type: CacheEventType;

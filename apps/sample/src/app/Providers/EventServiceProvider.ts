@@ -1,5 +1,5 @@
-import { ServiceProvider } from "@vest-ts/core";
-import { getEventDispatcher } from "@vest-ts/events";
+import { ServiceProvider } from "@lara-node/core";
+import { getEventDispatcher } from "@lara-node/events";
 import { WelcomeNewAuthor } from "../Listeners/WelcomeNewAuthor.js";
 
 export class EventServiceProvider extends ServiceProvider {

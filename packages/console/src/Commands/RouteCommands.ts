@@ -1,6 +1,6 @@
 import { Command } from "../Command.js";
 import { ArgumentsCamelCase } from "yargs";
-import { RouteScanner } from "@vest-ts/router";
+import { RouteScanner } from "@lara-node/router";
 
 export class RouteListCommand extends Command {
   protected signature = "route:list";

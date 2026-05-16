@@ -1,9 +1,21 @@
+import net from "net";
 import { Command } from "../Command.js";
 import type { Argv } from "yargs";
 
+function findAvailablePort(startPort: number, host: string): Promise<number> {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.once("error", () => resolve(findAvailablePort(startPort + 1, host)));
+    server.once("listening", () => {
+      server.close(() => resolve(startPort));
+    });
+    server.listen(startPort, host);
+  });
+}
+
 export class ServeCommand extends Command {
   protected signature = "serve";
-  protected description = "Start the Vest HTTP server";
+  protected description = "Start the Lara-Node HTTP server";
 
   async handle(): Promise<void> {
     // Handled via buildCommand override below
@@ -27,31 +39,48 @@ export class ServeCommand extends Command {
             description: "Host to bind to",
           }),
       async (argv) => {
-        process.env.PORT = String(argv.port);
-        process.env.HOST = String(argv.host);
+        const host = String(argv.host);
+        const requestedPort = Number(argv.port);
+        const port = await findAvailablePort(requestedPort, host);
+
+        if (port !== requestedPort) {
+          console.log(`Port ${requestedPort} is in use, starting on port ${port}.`);
+        }
+
+        process.env.PORT = String(port);
+        process.env.HOST = host;
 
         const serverPath = process.cwd() + "/src/server.ts";
         const serverDistPath = process.cwd() + "/dist/server.js";
         const { existsSync } = await import("fs");
-        const { pathToFileURL } = await import("url");
+        const { spawn } = await import("child_process");
 
-        // Prefer source when artisan itself is running under tsx (source-first dev)
-        const runningUnderTsx =
-          process.execArgv.some((a) => a.includes("tsx")) ||
-          !!process.env.TSX_TSCONFIG_PATH ||
-          (process.argv[1] && process.argv[1].endsWith(".ts"));
 
-        if (runningUnderTsx && existsSync(serverPath)) {
-          await import(pathToFileURL(serverPath).href);
+        // Pick source (dev) or compiled output (prod)
+        let targetPath: string;
+        let nodeArgs: string[];
+
+        if (existsSync(serverPath)) {
+          // Spawn with the same TypeScript loader flags artisan was started with
+          // (e.g. -r @swc-node/register -r tsconfig-paths/register ...)
+          // so that require() hooks are active when server.ts is loaded.
+          targetPath = serverPath;
+          nodeArgs = [...process.execArgv, targetPath];
         } else if (existsSync(serverDistPath)) {
-          await import(pathToFileURL(serverDistPath).href);
-        } else if (existsSync(serverPath)) {
-          const { execSync } = await import("child_process");
-          execSync(`node --import tsx ${serverPath}`, { stdio: "inherit" });
+          targetPath = serverDistPath;
+          nodeArgs = [targetPath];
         } else {
-          console.error("No server.ts found. Create src/server.ts to start a server.");
-          process.exit(1);
+          console.error("No src/server.ts or dist/server.js found.");
+          return process.exit(1);
         }
+
+        const child = spawn(process.execPath, nodeArgs, {
+          stdio: "inherit",
+          env: process.env,
+          cwd: process.cwd(),
+        });
+
+        child.on("exit", (code) => process.exit(code ?? 0));
       },
     ) as Argv;
   }

@@ -138,19 +138,19 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
   }
 
   // ── package.json ─────────────────────────────────────────────────────────────
+  const REG = "-r @swc-node/register -r tsconfig-paths/register -r ./src/register.ts";
   const packageJson = {
     name,
     version: "0.1.0",
     private: true,
-    type: "module",
     scripts: {
-      dev: "node --import @swc-node/register/esm --import ./src/register.ts src/server.ts",
+      dev: `node ${REG} src/server.ts`,
       start: "node dist/server.js",
-      build: "tsdown src/server.ts src/artisan.ts --format esm --out-dir dist",
-      artisan: "node --import @swc-node/register/esm --import ./src/register.ts src/artisan.ts",
-      migrate: "node --import @swc-node/register/esm --import ./src/register.ts src/artisan.ts migrate",
-      "migrate:fresh": "node --import @swc-node/register/esm --import ./src/register.ts src/artisan.ts migrate:fresh",
-      "db:seed": "node --import @swc-node/register/esm --import ./src/register.ts src/artisan.ts db:seed",
+      build: "tsdown src/server.ts src/artisan.ts --format cjs --out-dir dist",
+      artisan: `node ${REG} src/artisan.ts`,
+      migrate: `node ${REG} src/artisan.ts migrate`,
+      "migrate:fresh": `node ${REG} src/artisan.ts migrate:fresh`,
+      "db:seed": `node ${REG} src/artisan.ts db:seed`,
       test: "vitest run",
       lint: "oxlint src",
       typecheck: "tsc --noEmit",
@@ -172,10 +172,12 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
       "@types/express": "^5.0.6",
       "@types/jsonwebtoken": "^9.0.9",
       "@types/bcryptjs": "^2.4.6",
+      "@types/cors": "^2.8.17",
       "@types/multer": "^1.4.12",
       "@types/yargs": "^17.0.33",
       "@swc-node/register": "^1.10.9",
       "@swc/core": "^1.11.0",
+      "tsconfig-paths": "^4.2.0",
       oxlint: "^0.16.6",
       tsdown: "^0.12.9",
       typescript: "^5.9.3",
@@ -193,8 +195,8 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
       {
         compilerOptions: {
           target: "ES2022",
-          module: "ESNext",
-          moduleResolution: "bundler",
+          module: "CommonJS",
+          moduleResolution: "node",
           strict: true,
           skipLibCheck: true,
           esModuleInterop: true,
@@ -231,7 +233,7 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
           transform: { legacyDecorator: true, decoratorMetadata: true },
           target: "es2022",
         },
-        module: { type: "es6" },
+        module: { type: "commonjs" },
         sourceMaps: true,
       },
       null,
@@ -289,10 +291,10 @@ declare global {
         name?: string;
         roles?: string[];
         permissions?: string[];
-        [key: string]: any;
+        [key: string]: unknown;
       };
-      validate: <T extends Record<string, any>>(
-        payloadOrRules?: any,
+      validate: <T extends Record<string, unknown>>(
+        payloadOrRules?: Record<string, string | RuleFn> | Record<string, unknown>,
         rulesMaybe?: Record<string, RuleSpec> | Record<string, string | RuleFn>,
         customMessages?: Record<string, string>,
       ) => Promise<T>;
@@ -333,10 +335,10 @@ import { Model } from '@lara-node/db';
 |
 */
 export const ModelRegistry = new Map<string, typeof Model>([
-  ['user', User as unknown as typeof Model],
-  ['role', Role as unknown as typeof Model],
-  ['permission', Permission as unknown as typeof Model],
-  ['file', File as unknown as typeof Model],
+  ['user', User as typeof Model],
+  ['role', Role as typeof Model],
+  ['permission', Permission as typeof Model],
+  ['file', File as typeof Model],
 ]);
 `,
   );
@@ -388,48 +390,23 @@ main().catch((err) => {
   );
 
   // ── src/bootstrap/app.ts ──────────────────────────────────────────────────────
-  const providerImports: string[] = [
-    `import { AppServiceProvider } from '../app/Providers/AppServiceProvider';`,
-    `import { RouteServiceProvider } from '../app/Providers/RouteServiceProvider';`,
-  ];
-  const bootProviders: string[] = [`  app.register(AppServiceProvider);`];
-  const startProviders: string[] = [
-    `  app.register(AppServiceProvider);`,
-    `  app.register(RouteServiceProvider);`,
-  ];
-
-  if (hasEvents) {
-    providerImports.push(`import { EventServiceProvider } from '../app/Providers/EventServiceProvider';`);
-    providerImports.push(`import { BroadcastServiceProvider } from '../app/Providers/BroadcastServiceProvider';`);
-    bootProviders.push(`  app.register(EventServiceProvider);`);
-    startProviders.push(`  app.register(EventServiceProvider);`);
-    startProviders.push(`  app.register(BroadcastServiceProvider);`);
-  }
-  if (hasQueue) {
-    providerImports.push(`import { QueueServiceProvider } from '../app/Providers/QueueServiceProvider';`);
-    bootProviders.push(`  app.register(QueueServiceProvider);`);
-    startProviders.push(`  app.register(QueueServiceProvider);`);
-  }
-  if (hasHorizon) {
-    providerImports.push(`import { HorizonServiceProvider } from '@lara-node/horizon';`);
-    startProviders.push(`  app.register(HorizonServiceProvider);`);
-  }
-  if (hasTelescope) {
-    providerImports.push(`import { TelescopeServiceProvider } from '@lara-node/telescope';`);
-    startProviders.push(`  app.register(TelescopeServiceProvider);`);
-  }
-
   w(
     dir,
     "src/bootstrap/app.ts",
     `import { container, Application } from '@lara-node/core';
-${providerImports.join("\n")}
+import { Kernel } from '../app/Http/Kernel';
+import { AppServiceProvider } from '../app/Providers/AppServiceProvider';
 
 export const app = new Application(container);
 
+/*
+|--------------------------------------------------------------------------
+| Boot sequence (console — no HTTP kernel needed)
+|--------------------------------------------------------------------------
+*/
 export async function bootForConsole(): Promise<void> {
   try {
-${bootProviders.join("\n")}
+    app.register(AppServiceProvider);
     await app.boot();
   } catch (err) {
     console.error('Failed to boot application:', err);
@@ -437,15 +414,32 @@ ${bootProviders.join("\n")}
   }
 }
 
+/*
+|--------------------------------------------------------------------------
+| Boot sequence (HTTP server)
+|
+| Order matters:
+|   1. Register AppServiceProvider (cascades to all additionalProviders)
+|   2. Boot HTTP Kernel — registers global middleware + named route aliases
+|      so that when RouteServiceProvider.boot() lazily loads routes,
+|      string aliases like 'auth' are already resolved.
+|   3. configureBaseMiddleware (cors, json, urlencoded)
+|   4. app.boot() — boots all providers (RouteServiceProvider mounts routes)
+|   5. configureErrorHandling — must come after routes are mounted
+|--------------------------------------------------------------------------
+*/
 export async function startApplication(): Promise<void> {
   const port = process.env.PORT ?? 3000;
 
-${startProviders.join("\n")}
+  app.register(AppServiceProvider);
+
+  const kernel = new Kernel(app);
+  kernel.boot();
 
   app.configureBaseMiddleware();
   await app.boot();
 
-  app.configure404Handler();
+  kernel.configureErrorHandling(kernel.errorHandler);
 
   app.listen(port, () => {
     console.log(\`Server running on http://localhost:\${port}\`);
@@ -461,62 +455,157 @@ export default app;
   w(
     dir,
     "src/app/Http/Kernel.ts",
-    `import { RequestHandler } from 'express';
+    `import { RequestHandler, ErrorRequestHandler } from 'express';
+import { HttpKernel as BaseKernel, middlewareStack } from '@lara-node/router';
+import type { Middleware } from '@lara-node/core';
 import {
   AsyncContextMiddleware,
   RequestLoggerMiddleware,
   ValidatorMiddleware,
   ResponseExtenderMiddleware,
-  AuthMiddleware,
-  AuthorizeByStatusMiddleware,
   ErrorHandlerMiddleware,
-  authorizeRoles,
-  authorizePermissions,
 } from '@lara-node/middlewares';
-import User from '../Models/User/User';
 
 /*
 |--------------------------------------------------------------------------
 | HTTP Kernel
 |--------------------------------------------------------------------------
+|
+| Extends the base HttpKernel from @lara-node/router.
+|
+| - \`middleware\`  — global middleware applied to every request
+|
+| Named middleware aliases (auth, can, role, must-be-active) are registered
+| in MiddlewareServiceProvider, NOT here, so they are available before
+| route files are loaded in RouteServiceProvider.boot().
+|
 */
-export class HttpKernel {
-  protected middleware: RequestHandler[] = [
-    (req, res, next) => new AsyncContextMiddleware().handle(req, res, next),
-    (req, res, next) => new RequestLoggerMiddleware().handle(req, res, next),
-    (req, res, next) => new ValidatorMiddleware().handle(req as any, res, next),
-    (req, res, next) => new ResponseExtenderMiddleware().handle(req, res, next),
-  ];
+export class Kernel extends BaseKernel {
+  protected override middleware: RequestHandler[] = middlewareStack.resolveMiddlewareStack([
+    AsyncContextMiddleware,
+    RequestLoggerMiddleware,
+    ValidatorMiddleware,
+    ResponseExtenderMiddleware,
+  ] as Middleware[]);
 
-  protected namedMiddleware: Record<string, RequestHandler | ((...args: string[]) => RequestHandler)> = {
-    auth: new AuthMiddleware({
-      userLoader: async (uid) => {
-        const user = await User.with(['profile', 'roles', 'roles.permissions']).find(uid) as any;
-        if (!user) return null;
-        await user.update({ last_seen_at: new Date() });
-        const roles = user.roles ?? [];
-        const perms = roles.flatMap((r: any) => r.permissions ?? []);
-        return {
-          id: user.id,
-          roles: roles.map((r: any) => r.slug),
-          permissions: perms.map((p: any) => p.slug),
-          model: user,
-        };
-      },
-    }).toHandler(),
-    'must-be-active': (req, res, next) => new AuthorizeByStatusMiddleware().handle(req, res, next),
-    can: (...perms: string[]) => authorizePermissions(...perms),
-    role: (...roles: string[]) => authorizeRoles(...roles),
-  };
-
-  readonly errorHandler = (err: any, req: any, res: any, next: any) =>
+  readonly errorHandler: ErrorRequestHandler = (err, req, res, next) =>
     new ErrorHandlerMiddleware().handle(err, req, res, next);
-
-  getMiddleware(): RequestHandler[] { return this.middleware; }
-  getNamedMiddleware() { return this.namedMiddleware; }
 }
+`,
+  );
 
-export const httpKernel = new HttpKernel();
+  // ── MiddlewareServiceProvider ─────────────────────────────────────────────────
+  w(
+    dir,
+    "src/app/Providers/MiddlewareServiceProvider.ts",
+    `import { MiddlewareServiceProvider as BaseProvider } from '@lara-node/core';
+import {
+  AuthMiddleware,
+  AuthorizeByStatusMiddleware,
+  authorizeRoles,
+  authorizePermissions,
+} from '@lara-node/middlewares';
+import User from '../Models/User/User';
+
+type UserWithRelations = User & {
+  roles: Array<{ slug: string; permissions: Array<{ slug: string }> }>;
+};
+
+/*
+|--------------------------------------------------------------------------
+| MiddlewareServiceProvider
+|--------------------------------------------------------------------------
+|
+| Register named middleware aliases, groups, and priority here.
+| This provider runs before RouteServiceProvider so all aliases are
+| available when route files are lazily loaded in boot().
+|
+| Aliases are used in routes:
+|   g.get('/me', 'auth', [AuthController, 'me']);
+|   g.get('/admin', 'role:admin', [UserController, 'index']);
+|   g.get('/resource', 'can:view_resource', [Controller, 'index']);
+|
+*/
+export class MiddlewareServiceProvider extends BaseProvider {
+  protected registerMiddleware(): void {
+    this.middlewareAliases({
+      auth: new AuthMiddleware({
+        userLoader: async (uid) => {
+          const user = await User.with(['profile', 'roles', 'roles.permissions']).find(uid) as UserWithRelations | null;
+          if (!user) return null;
+          await user.update({ last_seen_at: new Date() });
+          const roles = user.roles ?? [];
+          const perms = roles.flatMap((r) => r.permissions ?? []);
+          return {
+            id: user.getAttribute('id') as number,
+            roles: roles.map((r) => r.slug),
+            permissions: perms.map((p) => p.slug),
+            model: user,
+          };
+        },
+      }).toHandler(),
+      'must-be-active': AuthorizeByStatusMiddleware,
+      can: (...perms: string[]) => authorizePermissions(...perms),
+      role: (...roles: string[]) => authorizeRoles(...roles),
+    });
+
+    this.middlewareGroup('web', []);
+
+    this.middlewareGroup('api', [
+      // 'throttle:120,1',
+    ]);
+
+    this.middlewarePriority(['auth', 'must-be-active', 'can', 'role']);
+  }
+}
+`,
+  );
+
+  // ── ConfigServiceProvider ─────────────────────────────────────────────────────
+  const configImports: string[] = [
+    `import { ServiceProvider, setConfig } from '@lara-node/core';`,
+    `import appConfig from '../../config/app.config';`,
+    `import dbConfig from '../../config/db.config';`,
+    `import mailConfig from '../../config/mail.config';`,
+    `import queueConfig from '../../config/queue.config';`,
+  ];
+  const configRegistrations: string[] = [
+    `    setConfig('app', appConfig as unknown as Record<string, unknown>);`,
+    `    setConfig('db', dbConfig as unknown as Record<string, unknown>);`,
+    `    setConfig('mail', mailConfig as unknown as Record<string, unknown>);`,
+    `    setConfig('queue', queueConfig as unknown as Record<string, unknown>);`,
+  ];
+  if (hasEvents) {
+    configImports.push(`import broadcastingConfig from '../../config/broadcasting.config';`);
+    configRegistrations.push(
+      `    setConfig('broadcasting', broadcastingConfig as unknown as Record<string, unknown>);`,
+    );
+  }
+
+  w(
+    dir,
+    "src/app/Providers/ConfigServiceProvider.ts",
+    `${configImports.join("\n")}
+
+/*
+|--------------------------------------------------------------------------
+| ConfigServiceProvider
+|--------------------------------------------------------------------------
+|
+| Loads all application config files and registers them with the global
+| config() system. This provider must run FIRST so every other provider
+| and module can call config('mail.default') and get app-level overrides
+| instead of the package defaults.
+|
+| After running \`pnpm artisan vendor:publish --tag=config\`, new config
+| files will appear in src/config/. Import and register them here.
+|
+*/
+export class ConfigServiceProvider extends ServiceProvider {
+  register(): void {
+${configRegistrations.join("\n")}
+  }
+}
 `,
   );
 
@@ -579,7 +668,7 @@ export class ThrottleMiddleware {
   w(
     dir,
     "src/app/Models/User/User.ts",
-    `import { Model, use, Observer } from '@lara-node/db';
+    `import { Model, use } from '@lara-node/db';
 import { SoftDeletes, Timestamps } from '@lara-node/db';
 import { Injectable } from '@lara-node/core';
 import Role from './Role';
@@ -591,16 +680,16 @@ import { UserObserver } from '../../Observers/UserObserver';
 @use(SoftDeletes, Timestamps)
 export class User extends Model {
   static primaryKey = 'id';
-  static fillable = [
+  static fillable: string[] = [
     'name', 'email', 'email_verified_at', 'password', 'status',
     'last_login', 'last_seen_at', 'last_login_ip', 'default_role_id',
     'remember_token', 'avatar', 'phone_number', 'created_at', 'updated_at', 'deleted_at',
   ];
-  static hidden = ['password', 'remember_token'];
-  static casts = {
+  static hidden: string[] = ['password', 'remember_token'];
+  static casts: Record<string, string> = {
     created_at: 'datetime', updated_at: 'datetime', deleted_at: 'datetime',
     last_login: 'datetime', last_seen_at: 'datetime',
-  } as any;
+  };
   static observer = UserObserver;
 
   roles() {
@@ -612,7 +701,7 @@ export class User extends Model {
   }
 
   isActive(): boolean {
-    const status = this.getAttribute('status');
+    const status = this.getAttribute('status') as string | undefined | null;
     return status === undefined || status === null || status === 'active';
   }
 }
@@ -630,8 +719,8 @@ import Permission from './Permission';
 
 @use(SoftDeletes)
 export class Role extends Model {
-  static fillable = ['name', 'slug', 'description', 'created_at', 'updated_at', 'deleted_at'];
-  static casts = { created_at: 'datetime', updated_at: 'datetime', deleted_at: 'datetime' } as any;
+  static fillable: string[] = ['name', 'slug', 'description', 'created_at', 'updated_at', 'deleted_at'];
+  static casts: Record<string, string> = { created_at: 'datetime', updated_at: 'datetime', deleted_at: 'datetime' };
 
   permissions() {
     return this.belongsToMany(Permission, 'permissions_roles', 'roles_id', 'permissions_id');
@@ -651,8 +740,8 @@ import { SoftDeletes } from '@lara-node/db';
 @use(SoftDeletes)
 export class Permission extends Model {
   static table = 'permissions';
-  static fillable = ['name', 'slug', 'description', 'created_at', 'updated_at', 'deleted_at'];
-  static casts = { created_at: 'datetime', updated_at: 'datetime', deleted_at: 'datetime' } as any;
+  static fillable: string[] = ['name', 'slug', 'description', 'created_at', 'updated_at', 'deleted_at'];
+  static casts: Record<string, string> = { created_at: 'datetime', updated_at: 'datetime', deleted_at: 'datetime' };
 }
 
 export default Permission;
@@ -668,15 +757,15 @@ import { SoftDeletes } from '@lara-node/db';
 @use(SoftDeletes)
 export class UserProfile extends Model {
   static table = 'user_profiles';
-  static fillable = [
+  static fillable: string[] = [
     'user_id', 'gender', 'id_number', 'city', 'country',
     'address', 'zip_code', 'date_of_birth', 'metadata',
     'created_at', 'updated_at', 'deleted_at',
   ];
-  static casts = {
+  static casts: Record<string, string> = {
     date_of_birth: 'datetime', metadata: 'json',
     created_at: 'datetime', updated_at: 'datetime', deleted_at: 'datetime',
-  } as any;
+  };
 }
 
 export default UserProfile;
@@ -692,8 +781,8 @@ import { SoftDeletes } from '@lara-node/db';
 @use(SoftDeletes)
 export class RolesUsers extends Model {
   static table = 'roles_users';
-  static fillable = ['roles_id', 'users_id', 'created_at', 'updated_at', 'deleted_at'];
-  static casts = { created_at: 'datetime', updated_at: 'datetime', deleted_at: 'datetime' } as any;
+  static fillable: string[] = ['roles_id', 'users_id', 'created_at', 'updated_at', 'deleted_at'];
+  static casts: Record<string, string> = { created_at: 'datetime', updated_at: 'datetime', deleted_at: 'datetime' };
 }
 `,
   );
@@ -707,8 +796,8 @@ import { SoftDeletes } from '@lara-node/db';
 @use(SoftDeletes)
 export class PermissionsRoles extends Model {
   static table = 'permissions_roles';
-  static fillable = ['permissions_id', 'roles_id', 'created_at', 'updated_at', 'deleted_at'];
-  static casts = { created_at: 'datetime', updated_at: 'datetime', deleted_at: 'datetime' } as any;
+  static fillable: string[] = ['permissions_id', 'roles_id', 'created_at', 'updated_at', 'deleted_at'];
+  static casts: Record<string, string> = { created_at: 'datetime', updated_at: 'datetime', deleted_at: 'datetime' };
 }
 
 export default PermissionsRoles;
@@ -736,14 +825,14 @@ import { SoftDeletes, Timestamps } from '@lara-node/db';
 @use(SoftDeletes, Timestamps)
 export class File extends Model {
   static table = 'files';
-  static fillable = [
+  static fillable: string[] = [
     'original_name', 'filename', 'mime_type', 'size', 'disk_path',
     'user_id', 'created_at', 'updated_at', 'deleted_at',
   ];
-  static casts = {
+  static casts: Record<string, string> = {
     size: 'int',
     created_at: 'datetime', updated_at: 'datetime', deleted_at: 'datetime',
-  } as any;
+  };
 }
 
 export default File;
@@ -765,21 +854,23 @@ export default File;
 | Register via: static observer = UserObserver; on the model.
 |
 */
-export class UserObserver extends Observer<any> {
-  creating(user: any): void {
-    if (!user.status) user.status = 'active';
+import User from '../Models/User/User';
+
+export class UserObserver extends Observer<User> {
+  creating(user: User): void {
+    if (!user.getAttribute('status')) user.setAttribute('status', 'active');
   }
 
-  created(user: any): void {
-    console.log(\`[UserObserver] User created: \${user.email}\`);
+  created(user: User): void {
+    console.log(\`[UserObserver] User created: \${user.getAttribute('email') as string}\`);
   }
 
-  updating(user: any): void {
-    user.updated_at = new Date();
+  updating(user: User): void {
+    user.setAttribute('updated_at', new Date());
   }
 
-  deleting(user: any): void {
-    console.log(\`[UserObserver] User soft-deleted: \${user.id}\`);
+  deleting(user: User): void {
+    console.log(\`[UserObserver] User soft-deleted: \${user.getAttribute('id') as number}\`);
   }
 }
 `,
@@ -805,15 +896,15 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const user = await User.where('email', email).first() as any;
+    const user = await User.where('email', email).first() as User | null;
     if (!user) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
 
-    const ok = await bcrypt.compare(password, user.password);
+    const ok = await bcrypt.compare(password, user.getAttribute('password') as string);
     if (!ok) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
 
-    const secret = process.env.JWT_SECRET || 'dev-secret-change';
-    const expiresIn = (process.env.JWT_EXPIRES_IN || '7d') as any;
-    const token = jwt.sign({ sub: user.id }, secret, { expiresIn });
+    const secret = process.env.JWT_SECRET ?? 'dev-secret-change';
+    const expiresIn = (process.env.JWT_EXPIRES_IN ?? '7d') as jwt.SignOptions['expiresIn'];
+    const token = jwt.sign({ sub: user.getAttribute('id') }, secret, { expiresIn });
 
     await user.update({ last_login: new Date(), last_seen_at: new Date() });
     return { token, user };
@@ -843,50 +934,51 @@ export class UserService {
     return User.with(['profile', 'roles', 'roles.permissions']).find(id);
   }
 
-  async create(data: Record<string, any>) {
+  async create(data: Record<string, unknown>) {
     return User.create({ ...data, created_at: new Date(), updated_at: new Date() });
   }
 
-  async update(id: number | string, data: Record<string, any>) {
-    const user = await User.find(id) as any;
+  async update(id: number | string, data: Record<string, unknown>) {
+    const user = await User.find(id) as User | null;
     if (!user) throw Object.assign(new Error('User not found'), { status: 404 });
     await user.update({ ...data, updated_at: new Date() });
     return user;
   }
 
   async destroy(id: number | string) {
-    const user = await User.find(id) as any;
+    const user = await User.find(id) as User | null;
     if (!user) throw Object.assign(new Error('User not found'), { status: 404 });
     await user.delete();
   }
 
   async addRole(userId: number | string, roleId: number | string) {
-    const user = await User.with(['roles']).find(userId) as any;
+    const user = await User.with(['roles']).find(userId) as User | null;
     if (!user) throw Object.assign(new Error('User not found'), { status: 404 });
-    await user.roles().attach([roleId]);
+    await (user as User & { roles: () => { attach: (ids: (number | string)[]) => Promise<void> } }).roles().attach([roleId]);
     return user;
   }
 
   async removeRole(userId: number | string, roleId: number | string) {
-    const user = await User.find(userId) as any;
+    const user = await User.find(userId) as User | null;
     if (!user) throw Object.assign(new Error('User not found'), { status: 404 });
-    await user.roles().detach([roleId]);
+    await (user as User & { roles: () => { detach: (ids: (number | string)[]) => Promise<void> } }).roles().detach([roleId]);
   }
 
   async toggleStatus(userId: number | string) {
-    const user = await User.find(userId) as any;
+    const user = await User.find(userId) as User | null;
     if (!user) throw Object.assign(new Error('User not found'), { status: 404 });
-    const newStatus = (user.status === 'active') ? 'inactive' : 'active';
+    const current = user.getAttribute('status') as string | null;
+    const newStatus = current === 'active' ? 'inactive' : 'active';
     await user.update({ status: newStatus, updated_at: new Date() });
     return user;
   }
 
-  async updateProfile(userId: number | string, data: Record<string, any>) {
-    let profile = await UserProfile.where('user_id', userId).first() as any;
+  async updateProfile(userId: number | string, data: Record<string, unknown>) {
+    let profile = await UserProfile.where('user_id', userId).first() as UserProfile | null;
     if (profile) {
       await profile.update({ ...data, updated_at: new Date() });
     } else {
-      profile = await UserProfile.create({ user_id: userId, ...data, created_at: new Date(), updated_at: new Date() });
+      profile = await UserProfile.create({ user_id: userId, ...data, created_at: new Date(), updated_at: new Date() }) as UserProfile;
     }
     return profile;
   }
@@ -900,6 +992,10 @@ export class UserService {
     `import { Injectable } from '@lara-node/core';
 import Role from '../Models/User/Role';
 
+type RoleWithRelations = Role & {
+  permissions: () => { sync: (ids: number[]) => Promise<void> };
+};
+
 @Injectable()
 export class RoleService {
   async index() { return Role.with(['permissions']).all(); }
@@ -909,21 +1005,21 @@ export class RoleService {
     return Role.create({ ...data, created_at: new Date(), updated_at: new Date() });
   }
 
-  async update(id: number | string, data: Record<string, any>) {
-    const role = await Role.find(id) as any;
+  async update(id: number | string, data: Record<string, unknown>) {
+    const role = await Role.find(id) as Role | null;
     if (!role) throw Object.assign(new Error('Role not found'), { status: 404 });
     await role.update({ ...data, updated_at: new Date() });
     return role;
   }
 
   async destroy(id: number | string) {
-    const role = await Role.find(id) as any;
+    const role = await Role.find(id) as Role | null;
     if (!role) throw Object.assign(new Error('Role not found'), { status: 404 });
     await role.delete();
   }
 
   async syncPermissions(roleId: number | string, permissionIds: number[]) {
-    const role = await Role.find(roleId) as any;
+    const role = await Role.find(roleId) as RoleWithRelations | null;
     if (!role) throw Object.assign(new Error('Role not found'), { status: 404 });
     await role.permissions().sync(permissionIds);
     return Role.with(['permissions']).find(roleId);
@@ -972,9 +1068,9 @@ export class FileService {
   }
 
   async destroy(id: number | string) {
-    const file = await File.find(id) as any;
+    const file = await File.find(id) as File | null;
     if (!file) throw Object.assign(new Error('File not found'), { status: 404 });
-    try { await fs.unlink(file.disk_path); } catch { /* file missing on disk */ }
+    try { await fs.unlink(file.getAttribute('disk_path') as string); } catch { /* file missing on disk */ }
     await file.delete();
   }
 }
@@ -1000,14 +1096,10 @@ export { FileService } from './FileService';
 import { Injectable } from '@lara-node/core';
 import { Doc } from '@lara-node/router';
 import { AuthService } from '@app/Services/index';
-import { UserService } from '@app/Services/index';
 
 @Injectable()
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly userService: UserService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Doc({
     summary: 'Register a new user',
@@ -1020,12 +1112,12 @@ export class AuthController {
     responses: [{ status: 201, description: 'User created' }, { status: 422, description: 'Validation error' }],
   })
   async register(req: Request, res: Response): Promise<void> {
-    const data = await req.validate({
+    const data = await req.validate<{ name: string; email: string; password: string }>({
       name: 'required|string|min:2|max:100',
       email: 'required|email',
       password: 'required|string|min:8',
     });
-    const user = await this.authService.register(data as any);
+    const user = await this.authService.register(data);
     res.status(201).json({ success: true, data: user });
   }
 
@@ -1039,7 +1131,7 @@ export class AuthController {
     responses: [{ status: 200, description: 'JWT token and user' }, { status: 401, description: 'Invalid credentials' }],
   })
   async login(req: Request, res: Response): Promise<void> {
-    const { email, password } = await req.validate({
+    const { email, password } = await req.validate<{ email: string; password: string }>({
       email: 'required|email',
       password: 'required|string',
     });
@@ -1051,7 +1143,7 @@ export class AuthController {
     summary: 'Get the authenticated user',
     tags: ['Auth'],
     auth: true,
-    responses: { 200: { description: 'Current user with roles and permissions' } },
+    responses: [{ status: 200, description: 'Current user with roles and permissions' }],
   })
   async me(req: Request, res: Response): Promise<void> {
     const user = await this.authService.me(req.user!.id);
@@ -1065,9 +1157,11 @@ export class AuthController {
     dir,
     "src/app/Http/Controllers/User/UserController.ts",
     `import { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
 import { Injectable } from '@lara-node/core';
 import { Doc } from '@lara-node/router';
 import { UserService } from '@app/Services/index';
+import User from '@app/Models/User/User';
 
 @Injectable()
 export class UserController {
@@ -1088,55 +1182,54 @@ export class UserController {
 
   @Doc({ summary: "Get a user's profile", tags: ['Users'], auth: true })
   async showProfile(req: Request, res: Response): Promise<void> {
-    const user = await this.userService.find(req.params.id) as any;
+    const user = await this.userService.find(req.params.id) as (User & { profile?: unknown }) | null;
     if (!user) { res.status(404).json({ success: false, message: 'Not found' }); return; }
     res.json({ success: true, data: user.profile });
   }
 
   @Doc({ summary: 'Create a new user', tags: ['Users'], auth: true, body: { name: { type: 'string' }, email: { type: 'string' }, password: { type: 'string' } } })
   async store(req: Request, res: Response): Promise<void> {
-    const data = await req.validate({
+    const data = await req.validate<{ name: string; email: string; password: string }>({
       name: 'required|string|min:2|max:100',
       email: 'required|email',
       password: 'required|string|min:8',
     });
-    const user = await this.userService.create(data as any);
+    const user = await this.userService.create(data);
     res.status(201).json({ success: true, data: user });
   }
 
   @Doc({ summary: 'Update a user', tags: ['Users'], auth: true })
   async update(req: Request, res: Response): Promise<void> {
-    const data = await req.validate({
+    const data = await req.validate<{ name?: string; email?: string }>({
       name: 'sometimes|string|min:2|max:100',
       email: 'sometimes|email',
     });
-    const user = await this.userService.update(req.params.id, data as any);
+    const user = await this.userService.update(req.params.id, data);
     res.json({ success: true, data: user });
   }
 
   @Doc({ summary: "Update a user's profile", tags: ['Users'], auth: true })
   async updateProfile(req: Request, res: Response): Promise<void> {
-    const profile = await this.userService.updateProfile(req.params.id, req.body);
+    const profile = await this.userService.updateProfile(req.params.id, req.body as Record<string, unknown>);
     res.json({ success: true, data: profile });
   }
 
   @Doc({ summary: 'Change user password', tags: ['Users'], auth: true, body: { password: { type: 'string', description: 'New password (min 8 chars)' } } })
   async setPassword(req: Request, res: Response): Promise<void> {
-    const { password } = await req.validate({ password: 'required|string|min:8' });
-    const bcrypt = await import('bcryptjs');
-    const hashed = await bcrypt.default.hash(password, 12);
+    const { password } = await req.validate<{ password: string }>({ password: 'required|string|min:8' });
+    const hashed = await bcrypt.hash(password, 12);
     await this.userService.update(req.params.id, { password: hashed });
     res.json({ success: true, message: 'Password updated' });
   }
 
   @Doc({ summary: 'Send password reset email', tags: ['Users'], auth: true })
-  async resetPassword(req: Request, res: Response): Promise<void> {
+  async resetPassword(_req: Request, res: Response): Promise<void> {
     res.json({ success: true, message: 'Password reset email sent' });
   }
 
   @Doc({ summary: 'Assign a role to a user', tags: ['Users'], auth: true, body: { role_id: { type: 'integer', description: 'Role ID to assign' } } })
   async addRole(req: Request, res: Response): Promise<void> {
-    const { role_id } = await req.validate({ role_id: 'required|integer' });
+    const { role_id } = await req.validate<{ role_id: number }>({ role_id: 'required|integer' });
     const user = await this.userService.addRole(req.params.id, role_id);
     res.json({ success: true, data: user });
   }
@@ -1169,6 +1262,7 @@ export class UserController {
 import { Injectable } from '@lara-node/core';
 import { Doc } from '@lara-node/router';
 import { RoleService } from '@app/Services/index';
+import Role from '@app/Models/User/Role';
 
 @Injectable()
 export class RoleController {
@@ -1189,7 +1283,7 @@ export class RoleController {
   })
   async show(req: Request, res: Response): Promise<void> {
     // req.params.role is already a loaded Role model instance (route-model binding via ModelRegistry)
-    const role = req.params.role as any;
+    const role = req.params.role as unknown as Role;
     res.json({ success: true, data: role });
   }
 
@@ -1209,17 +1303,17 @@ export class RoleController {
       slug: 'required|string|min:2|max:100',
       description: 'nullable|string',
     });
-    res.status(201).json({ success: true, data: await this.roleService.create(data as any) });
+    res.status(201).json({ success: true, data: await this.roleService.create(data) });
   }
 
   @Doc({ summary: 'Update a role', tags: ['Roles'], auth: true })
   async update(req: Request, res: Response): Promise<void> {
-    const data = await req.validate({
+    const data = await req.validate<{ name?: string; slug?: string; description?: string }>({
       name: 'sometimes|string|min:2|max:100',
       slug: 'sometimes|string|min:2|max:100',
       description: 'nullable|string',
     });
-    res.json({ success: true, data: await this.roleService.update(req.params.id, data as any) });
+    res.json({ success: true, data: await this.roleService.update(req.params.id, data) });
   }
 
   @Doc({ summary: 'Delete a role (soft delete)', tags: ['Roles'], auth: true })
@@ -1235,8 +1329,8 @@ export class RoleController {
     body: { permission_ids: { type: 'array', description: 'Array of permission IDs' } },
   })
   async syncPermissions(req: Request, res: Response): Promise<void> {
-    const { permission_ids } = await req.validate({ permission_ids: 'required|array' });
-    res.json({ success: true, data: await this.roleService.syncPermissions(req.params.id, permission_ids as number[]) });
+    const { permission_ids } = await req.validate<{ permission_ids: number[] }>({ permission_ids: 'required|array' });
+    res.json({ success: true, data: await this.roleService.syncPermissions(req.params.id, permission_ids) });
   }
 }
 `,
@@ -1315,9 +1409,12 @@ export class FileController {
 
   @Doc({ summary: 'Download a file by ID', tags: ['Files'], auth: true })
   async download(req: Request, res: Response): Promise<void> {
-    const file = await this.fileService.find(req.params.id) as any;
+    const file = await this.fileService.find(req.params.id);
     if (!file) { res.status(404).json({ success: false, message: 'Not found' }); return; }
-    res.download(file.disk_path, file.original_name);
+    res.download(
+      file.getAttribute('disk_path') as string,
+      file.getAttribute('original_name') as string,
+    );
   }
 
   @Doc({ summary: 'Delete a file (soft delete + remove from disk)', tags: ['Files'], auth: true })
@@ -1330,26 +1427,66 @@ export class FileController {
   );
 
   // ── AppServiceProvider ────────────────────────────────────────────────────────
+  const additionalProviders: string[] = [
+    `ConfigServiceProvider`,
+    `MiddlewareServiceProvider`,
+    `RouteServiceProvider`,
+    `DocServiceProvider`,
+  ];
+  if (hasEvents) {
+    additionalProviders.push(`EventServiceProvider`);
+    additionalProviders.push(`BroadcastServiceProvider`);
+  }
+  if (hasQueue) additionalProviders.push(`QueueServiceProvider`);
+  if (hasHorizon) additionalProviders.push(`HorizonServiceProvider`);
+  if (hasTelescope) additionalProviders.push(`TelescopeServiceProvider`);
+
+  const appProviderImports: string[] = [
+    `import { ServiceProvider, ServiceProviderClass } from '@lara-node/core';`,
+    `import { AuthService, UserService, RoleService, PermissionService, FileService } from '@app/Services/index';`,
+    `import { AuthController } from '../Http/Controllers/User/AuthController';`,
+    `import { UserController } from '../Http/Controllers/User/UserController';`,
+    `import { RoleController } from '../Http/Controllers/User/RoleController';`,
+    `import { PermissionController } from '../Http/Controllers/User/PermissionController';`,
+    `import { FileController } from '../Http/Controllers/File/FileController';`,
+    `import { PermissionsSyncCommand, PermissionsListCommand } from '../Console/Commands/PermissionCommands';`,
+    `import { ConfigServiceProvider } from './ConfigServiceProvider';`,
+    `import { MiddlewareServiceProvider } from './MiddlewareServiceProvider';`,
+    `import { RouteServiceProvider } from './RouteServiceProvider';`,
+    `import { DocServiceProvider } from '@lara-node/router';`,
+  ];
+  if (hasEvents) {
+    appProviderImports.push(`import { EventServiceProvider } from './EventServiceProvider';`);
+    appProviderImports.push(`import { BroadcastServiceProvider } from './BroadcastServiceProvider';`);
+  }
+  if (hasQueue) appProviderImports.push(`import { QueueServiceProvider } from './QueueServiceProvider';`);
+  if (hasHorizon) appProviderImports.push(`import { HorizonServiceProvider } from '@lara-node/horizon';`);
+  if (hasTelescope) appProviderImports.push(`import { TelescopeServiceProvider } from '@lara-node/telescope';`);
+
   w(
     dir,
     "src/app/Providers/AppServiceProvider.ts",
-    `import { ServiceProvider } from '@lara-node/core';
-import { AuthService } from '@app/Services/index';
-import { UserService } from '@app/Services/index';
-import { RoleService } from '@app/Services/index';
-import { PermissionService } from '@app/Services/index';
-import { FileService } from '@app/Services/index';
-import { AuthController } from '../Http/Controllers/User/AuthController';
-import { UserController } from '../Http/Controllers/User/UserController';
-import { RoleController } from '../Http/Controllers/User/RoleController';
-import { PermissionController } from '../Http/Controllers/User/PermissionController';
-import { FileController } from '../Http/Controllers/File/FileController';
-import { PermissionsSyncCommand } from '../Console/Commands/PermissionCommands';
-import { PermissionsListCommand } from '../Console/Commands/PermissionCommands';
-import { DocServiceProvider } from '@lara-node/router';
+    `${appProviderImports.join("\n")}
 
 export class AppServiceProvider extends ServiceProvider {
+  /*
+  |--------------------------------------------------------------------------
+  | Additional Providers
+  |--------------------------------------------------------------------------
+  |
+  | Order matters:
+  |   1. ConfigServiceProvider — loads app config files, overrides package defaults
+  |   2. MiddlewareServiceProvider — registers aliases ('auth', 'can', 'role')
+  |   3. RouteServiceProvider — boots route files (needs middleware aliases ready)
+  |
+  */
+  protected additionalProviders: ServiceProviderClass[] = [
+    ${additionalProviders.map((p) => `    ${p},`).join("\n")}
+  ];
+
   register(): void {
+    this.registerProviders(this.additionalProviders);
+
     this.singleton(AuthService);
     this.singleton(UserService);
     this.singleton(RoleService);
@@ -1364,9 +1501,7 @@ export class AppServiceProvider extends ServiceProvider {
     this.singleton(PermissionsListCommand);
   }
 
-  boot(): void {
-    this.app.register(DocServiceProvider);
-  }
+  boot(): void {}
 }
 `,
   );
@@ -1376,6 +1511,7 @@ export class AppServiceProvider extends ServiceProvider {
     dir,
     "src/app/Providers/RouteServiceProvider.ts",
     `import { ServiceProvider } from '@lara-node/core';
+import RouterBuilder from '@lara-node/router';
 import { ModelRegistry } from '../Models/ModelRegistry';
 
 /*
@@ -1383,15 +1519,17 @@ import { ModelRegistry } from '../Models/ModelRegistry';
 | RouteServiceProvider
 |--------------------------------------------------------------------------
 |
-| Mounts route groups and registers route-model bindings so Express
-| automatically resolves model params:
+| register() — registers models for route-model binding so that params like
+|              :role, :user are auto-resolved to model instances.
 |
-|   // Route defined as:
-|   g.get('/:role', [RoleController, 'show']);
+| boot()     — lazily loads route files (AFTER the HTTP Kernel has booted
+|              and registered middleware aliases like 'auth', 'can').
 |
-|   // Controller receives the loaded model instance:
+| Route-model binding example:
+|   g.get('/:role', 'can:view_roles', [RoleController, 'show']);
+|
 |   async show(req: Request, res: Response) {
-|     const role = req.params.role as any; // Role model instance
+|     const role = req.params.role as unknown as Role; // auto-loaded
 |     res.json({ success: true, data: role });
 |   }
 |
@@ -1399,31 +1537,16 @@ import { ModelRegistry } from '../Models/ModelRegistry';
 export class RouteServiceProvider extends ServiceProvider {
   protected apiPrefix = '/api';
 
-  register(): void {}
-
-  boot(): void {
-    this.bindRouteModels();
-    this.mapApiRoutes();
-    this.mapWebRoutes();
-    if (${hasEvents}) this.mapChannelRoutes();
+  register(): void {
+    for (const [name, ModelClass] of ModelRegistry.entries()) {
+      RouterBuilder.registerModel(name, ModelClass);
+    }
   }
 
-  protected bindRouteModels(): void {
-    for (const [param, ModelClass] of ModelRegistry.entries()) {
-      this.app.express.param(param, async (req: any, res: any, next: any, id: string) => {
-        try {
-          const record = await (ModelClass as any).find(id);
-          if (!record) {
-            res.status(404).json({ success: false, message: \`\${param.charAt(0).toUpperCase() + param.slice(1)} not found\` });
-            return;
-          }
-          req.params[param] = record;
-          next();
-        } catch (err) {
-          next(err);
-        }
-      });
-    }
+  boot(): void {
+    this.mapApiRoutes();
+    this.mapWebRoutes();
+    ${hasEvents ? `this.mapChannelRoutes();` : ""}
   }
 
   protected mapApiRoutes(): void {
@@ -1435,13 +1558,11 @@ export class RouteServiceProvider extends ServiceProvider {
     const { webRoutesBuilder } = require('@routes/web');
     this.app.mountRoutes('/', webRoutesBuilder.build());
   }
-
+  ${hasEvents ? `
   protected mapChannelRoutes(): void {
-    try {
-      const { channelRouter } = require('@routes/channels');
-      this.app.mountRoutes('/broadcasting', channelRouter);
-    } catch { /* channels optional */ }
-  }
+    const { channelRouter } = require('@routes/channels');
+    this.app.mountRoutes('/broadcasting', channelRouter);
+  }` : ""}
 }
 `,
   );
@@ -1535,19 +1656,19 @@ export class UserEventSubscriber implements EventSubscriber {
     dispatcher.listen('user.*', this.handleAnyUserEvent.bind(this));
   }
 
-  async handleUserRegistered(payload: any): Promise<void> {
-    console.log('[UserEventSubscriber] User registered:', payload.email);
+  async handleUserRegistered(payload: Record<string, unknown>): Promise<void> {
+    console.log('[UserEventSubscriber] User registered:', payload['email']);
   }
 
-  async handleUserLoggedIn(payload: any): Promise<void> {
-    console.log('[UserEventSubscriber] User logged in:', payload.email);
+  async handleUserLoggedIn(payload: Record<string, unknown>): Promise<void> {
+    console.log('[UserEventSubscriber] User logged in:', payload['email']);
   }
 
-  async handleUserLoggedOut(payload: any): Promise<void> {
-    console.log('[UserEventSubscriber] User logged out:', payload.userId);
+  async handleUserLoggedOut(payload: Record<string, unknown>): Promise<void> {
+    console.log('[UserEventSubscriber] User logged out:', payload['userId']);
   }
 
-  async handleAnyUserEvent(payload: any): Promise<void> {
+  async handleAnyUserEvent(payload: Record<string, unknown>): Promise<void> {
     console.log('[UserEventSubscriber] User event:', payload);
   }
 }
@@ -1607,11 +1728,11 @@ export class BroadcastServiceProvider extends ServiceProvider {
   register(): void {}
 
   async boot(): Promise<void> {
-    Broadcast.private('notifications.{userId}', (user: any, userId: string) => {
-      return user && String(user.id) === userId;
+    Broadcast.private('notifications.{userId}', (user: Record<string, unknown> | null, userId: string) => {
+      return !!user && String(user['id']) === userId;
     });
-    Broadcast.private('user.{userId}', (user: any, userId: string) => {
-      return user && String(user.id) === userId;
+    Broadcast.private('user.{userId}', (user: Record<string, unknown> | null, userId: string) => {
+      return !!user && String(user['id']) === userId;
     });
     Broadcast.public('announcements');
   }
@@ -1652,7 +1773,7 @@ export class SendMailJob extends Job {
       subject: string;
       body: string;
       template?: string;
-      data?: Record<string, any>;
+      data?: Record<string, unknown>;
     },
   ) { super(); }
 
@@ -2092,14 +2213,14 @@ export class PermissionsSyncCommand extends Command {
     this.info('Syncing permissions...');
 
     try {
-      const { default: Permission } = await import('../../Models/User/Permission');
-      const { default: Role } = await import('../../Models/User/Role');
+      const Permission = require('../../Models/User/Permission').default;
+      const Role = require('../../Models/User/Role').default;
       const now = new Date();
       let created = 0, updated = 0;
-      const syncedPerms: any[] = [];
+      const syncedPerms: Array<{ id?: number }> = [];
 
       for (const p of PERMISSIONS) {
-        let perm = await Permission.where('slug', p.slug).first() as any;
+        let perm = await Permission.where('slug', p.slug).first();
         if (perm) {
           if (!dryRun) await perm.update({ name: p.name, updated_at: now });
           updated++;
@@ -2111,20 +2232,20 @@ export class PermissionsSyncCommand extends Command {
         this.line(\`  \${perm ? 'UPDATE' : 'CREATE'} \${p.slug}\`);
       }
 
-      let adminRole = await Role.where('slug', 'admin').first() as any;
+      let adminRole = await Role.where('slug', 'admin').first();
       if (!adminRole && !dryRun) {
         adminRole = await Role.create({ name: 'Admin', slug: 'admin', description: 'Administrator role', created_at: now, updated_at: now });
       }
 
       if (!dryRun && adminRole && syncedPerms.length) {
-        const permIds = syncedPerms.map((p: any) => p?.id).filter(Boolean);
+        const permIds = syncedPerms.map((p) => p?.id).filter(Boolean) as number[];
         try { await adminRole.permissions().sync(permIds); }
         catch { await adminRole.permissions().attach(permIds); }
       }
 
       this.info(\`Created: \${created}, Updated: \${updated}, Total: \${PERMISSIONS.length}\`);
-    } catch (err: any) {
-      this.error(\`Failed: \${err.message}\`); process.exit(1);
+    } catch (err) {
+      this.error(\`Failed: \${(err as Error).message}\`); process.exit(1);
     }
   }
 }
@@ -2197,7 +2318,7 @@ rb.prefix('/files').middleware(['auth', 'must-be-active']).group((g: RouterBuild
   g.get('/', 'can:view_files', [FileController, 'index']);
   g.get('/:id', 'can:view_files', [FileController, 'show']);
   g.get('/:id/download', 'can:view_files', [FileController, 'download']);
-  g.post('/', multerUpload.single('file') as any, 'can:upload_files', [FileController, 'store']);
+  g.post('/', multerUpload.single('file'), 'can:upload_files', [FileController, 'store']);
   g.delete('/:id', 'can:delete_files', [FileController, 'destroy']);
 });
 
@@ -2208,11 +2329,12 @@ export default rb;
   w(
     dir,
     "src/routes/web.ts",
-    `import RouterBuilder from '@lara-node/router';
+    `import { Request, Response } from 'express';
+import RouterBuilder from '@lara-node/router';
 
 export const webRoutesBuilder = new RouterBuilder();
 
-webRoutesBuilder.get('/', (_req: any, res: any) => {
+webRoutesBuilder.get('/', (_req: Request, res: Response) => {
   res.json({ message: 'Welcome to ${name}', version: '1.0.0' });
 });
 
@@ -2463,36 +2585,39 @@ const PERMISSIONS = [
   { slug: 'delete_files', name: 'Delete Files' },
 ];
 
+type RoleModel = Role & { permissions: () => { sync: (ids: number[]) => Promise<void>; attach: (ids: number[]) => Promise<void> } };
+
 export class RolePermissionSeeder {
-  async run(): Promise<{ adminRole: any; userRole: any; permIds: number[] }> {
+  async run(): Promise<{ adminRole: RoleModel; userRole: RoleModel; permIds: number[] }> {
     const now = new Date();
     console.log('  Seeding roles...');
 
-    let adminRole = await Role.where('slug', 'admin').first() as any;
+    let adminRole = await Role.where('slug', 'admin').first() as RoleModel | null;
     if (!adminRole) {
-      adminRole = await Role.create({ name: 'Admin', slug: 'admin', description: 'Administrator with full access', created_at: now, updated_at: now });
+      adminRole = await Role.create({ name: 'Admin', slug: 'admin', description: 'Administrator with full access', created_at: now, updated_at: now }) as RoleModel;
     }
 
-    let userRole = await Role.where('slug', 'user').first() as any;
+    let userRole = await Role.where('slug', 'user').first() as RoleModel | null;
     if (!userRole) {
-      userRole = await Role.create({ name: 'User', slug: 'user', description: 'Regular user', created_at: now, updated_at: now });
+      userRole = await Role.create({ name: 'User', slug: 'user', description: 'Regular user', created_at: now, updated_at: now }) as RoleModel;
     }
 
     console.log('  Seeding permissions...');
     const permIds: number[] = [];
     for (const p of PERMISSIONS) {
-      let perm = await Permission.where('slug', p.slug).first() as any;
+      let perm = await Permission.where('slug', p.slug).first() as Permission | null;
       if (!perm) {
-        perm = await Permission.create({ name: p.name, slug: p.slug, created_at: now, updated_at: now });
+        perm = await Permission.create({ name: p.name, slug: p.slug, created_at: now, updated_at: now }) as Permission;
       }
-      if (perm?.id) permIds.push(perm.id as number);
+      const id = perm?.getAttribute('id') as number | undefined;
+      if (id) permIds.push(id);
     }
 
     try { await adminRole.permissions().sync(permIds); }
     catch { await adminRole.permissions().attach(permIds); }
 
     console.log(\`  ✓ \${PERMISSIONS.length} permissions synced to admin role\`);
-    return { adminRole, userRole, permIds };
+    return { adminRole, userRole: userRole!, permIds };
   }
 }
 `,
@@ -2505,12 +2630,14 @@ export class RolePermissionSeeder {
 import User from '../../app/Models/User/User';
 import UserProfile from '../../app/Models/User/UserProfile';
 
+type UserWithRoles = User & { roles: () => { sync: (ids: number[]) => Promise<void>; attach: (id: number) => Promise<void> } };
+
 export class UserSeeder {
   async run(adminRoleId: number, userRoleId: number): Promise<void> {
     const now = new Date();
     console.log('  Seeding users...');
 
-    let admin = await User.where('email', 'admin@example.com').first() as any;
+    let admin = await User.where('email', 'admin@example.com').first() as UserWithRoles | null;
     if (!admin) {
       admin = await User.create({
         name: 'Admin',
@@ -2519,11 +2646,11 @@ export class UserSeeder {
         status: 'active',
         created_at: now,
         updated_at: now,
-      });
-      await UserProfile.create({ user_id: admin.id, gender: 'other', created_at: now, updated_at: now });
+      }) as UserWithRoles;
+      await UserProfile.create({ user_id: admin.getAttribute('id'), gender: 'other', created_at: now, updated_at: now });
     }
 
-    let regularUser = await User.where('email', 'user@example.com').first() as any;
+    let regularUser = await User.where('email', 'user@example.com').first() as UserWithRoles | null;
     if (!regularUser) {
       regularUser = await User.create({
         name: 'User',
@@ -2532,8 +2659,8 @@ export class UserSeeder {
         status: 'active',
         created_at: now,
         updated_at: now,
-      });
-      await UserProfile.create({ user_id: regularUser.id, gender: 'other', created_at: now, updated_at: now });
+      }) as UserWithRoles;
+      await UserProfile.create({ user_id: regularUser.getAttribute('id'), gender: 'other', created_at: now, updated_at: now });
     }
 
     try { await admin.roles().sync([adminRoleId]); } catch { await admin.roles().attach(adminRoleId); }
@@ -2558,15 +2685,18 @@ export class DatabaseSeeder {
     console.log('Running DatabaseSeeder...');
 
     const { adminRole, userRole } = await new RolePermissionSeeder().run();
-    await new UserSeeder().run(adminRole.id, userRole.id);
+    await new UserSeeder().run(
+      adminRole.getAttribute('id') as number,
+      userRole.getAttribute('id') as number,
+    );
 
     console.log('DatabaseSeeder complete');
   }
 }
 
-// Allow running directly: node --import @swc-node/register/esm src/database/seeders/DatabaseSeeder.ts
+// Allow running directly: node -r @swc-node/register -r tsconfig-paths/register src/database/seeders/DatabaseSeeder.ts
 if (require.main === module) {
-  new DatabaseSeeder().run().catch((err) => {
+  new DatabaseSeeder().run().catch((err: Error) => {
     console.error(err);
     process.exit(1);
   });
@@ -2578,11 +2708,42 @@ if (require.main === module) {
   w(
     dir,
     "src/config/app.config.ts",
-    `export default {
-  name: process.env.APP_NAME || '${name}',
-  env: process.env.APP_ENV || 'local',
-  debug: process.env.APP_DEBUG === 'true',
-  url: process.env.APP_URL || 'http://localhost:3000',
+    `export const APP_NAME = process.env.APP_NAME || '${name}';
+export const APP_ENV = process.env.APP_ENV || 'local';
+export const APP_KEY = process.env.APP_KEY || '';
+export const APP_DEBUG = process.env.APP_DEBUG === 'true';
+export const APP_URL = process.env.APP_URL || 'http://localhost:3000';
+
+export const CACHE_DRIVER = (process.env.CACHE_DRIVER || 'file').toLowerCase();
+export const CACHE_PREFIX = process.env.CACHE_PREFIX || APP_NAME;
+
+export const DOCS_ENABLED = (() => {
+  const flag = process.env.DOCS_ENABLED;
+  if (flag !== undefined) return flag.toLowerCase() === 'true' || flag === '1';
+  return process.env.NODE_ENV !== 'production';
+})();
+export const DOCS_TITLE = process.env.DOCS_TITLE || '${name} API';
+export const DOCS_VERSION = process.env.DOCS_VERSION || '1.0.0';
+export const DOCS_PATH = process.env.DOCS_PATH || '/docs';
+export const DOCS_THEME = process.env.DOCS_THEME || 'kepler';
+
+export default {
+  name: APP_NAME,
+  env: APP_ENV,
+  debug: APP_DEBUG,
+  url: APP_URL,
+  key: APP_KEY,
+  cache: {
+    driver: CACHE_DRIVER,
+    prefix: CACHE_PREFIX,
+  },
+  docs: {
+    enabled: DOCS_ENABLED,
+    title: DOCS_TITLE,
+    version: DOCS_VERSION,
+    path: DOCS_PATH,
+    theme: DOCS_THEME,
+  },
 };
 `,
   );
@@ -2591,12 +2752,15 @@ if (require.main === module) {
     dir,
     "src/config/db.config.ts",
     `export const dbConfig = {
-  connection: process.env.DB_CONNECTION || 'mysql',
+  connection: process.env.DB_CONNECTION || '${opts.database}',
   host: process.env.DB_HOST || '127.0.0.1',
-  port: Number(process.env.DB_PORT) || 3306,
+  port: Number(process.env.DB_PORT) || ${opts.database === "mysql" ? 3306 : 27017},
   database: process.env.DB_NAME || '${name.replace(/-/g, "_")}',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
+  pool: {
+    limit: Number(process.env.DB_POOL_LIMIT) || 10,
+  },
 };
 
 export async function initDatabase() {
@@ -2607,6 +2771,125 @@ export async function initDatabase() {
 export default dbConfig;
 `,
   );
+
+  w(
+    dir,
+    "src/config/mail.config.ts",
+    `export interface MailerConfig {
+  transport: 'smtp' | 'log' | 'array';
+  host?: string;
+  port?: number;
+  encryption?: 'tls' | 'ssl' | null;
+  username?: string;
+  password?: string;
+  timeout?: number;
+}
+
+export interface MailConfig {
+  default: string;
+  mailers: Record<string, MailerConfig>;
+  from: { address: string; name: string };
+}
+
+const mailConfig: MailConfig = {
+  default: process.env.MAIL_MAILER || 'smtp',
+
+  mailers: {
+    smtp: {
+      transport: 'smtp',
+      host: process.env.MAIL_HOST || 'smtp.mailgun.org',
+      port: parseInt(process.env.MAIL_PORT || '587', 10),
+      encryption: (process.env.MAIL_ENCRYPTION as 'tls' | 'ssl' | null) || 'tls',
+      username: process.env.MAIL_USERNAME || '',
+      password: process.env.MAIL_PASSWORD || '',
+      timeout: parseInt(process.env.MAIL_TIMEOUT || '30', 10),
+    },
+    log: {
+      transport: 'log',
+    },
+    array: {
+      transport: 'array',
+    },
+  },
+
+  from: {
+    address: process.env.MAIL_FROM_ADDRESS || 'hello@example.com',
+    name: process.env.MAIL_FROM_NAME || '${name}',
+  },
+};
+
+export default mailConfig;
+`,
+  );
+
+  w(
+    dir,
+    "src/config/queue.config.ts",
+    `export interface QueueConfig {
+  default: string;
+  connections: Record<string, { driver: string; table?: string; queue?: string; retry_after?: number }>;
+  failed: { driver: string; table: string };
+}
+
+const queueConfig: QueueConfig = {
+  default: process.env.QUEUE_CONNECTION || 'sync',
+
+  connections: {
+    sync: { driver: 'sync' },
+    database: { driver: 'database', table: 'jobs', queue: 'default', retry_after: 90 },
+    redis: {
+      driver: 'redis',
+      queue: process.env.REDIS_QUEUE || 'default',
+      retry_after: 90,
+    },
+  },
+
+  failed: { driver: 'database', table: 'failed_jobs' },
+};
+
+export const QUEUE_CONNECTION = queueConfig.default;
+export default queueConfig;
+`,
+  );
+
+  if (hasEvents) {
+    w(
+      dir,
+      "src/config/broadcasting.config.ts",
+      `export interface BroadcastingConfig {
+  default: string;
+  connections: {
+    websocket: { driver: 'websocket'; path: string; pingInterval: number; pingTimeout: number };
+    redis: { driver: 'redis'; connection: string };
+    log: { driver: 'log' };
+    null: { driver: 'null' };
+  };
+  auth: { endpoint: string; headerName: string };
+}
+
+export const broadcastingConfig: BroadcastingConfig = {
+  default: process.env.BROADCAST_DRIVER || 'websocket',
+  connections: {
+    websocket: {
+      driver: 'websocket',
+      path: process.env.BROADCAST_WEBSOCKET_PATH || '/ws',
+      pingInterval: parseInt(process.env.BROADCAST_PING_INTERVAL || '25000', 10),
+      pingTimeout: parseInt(process.env.BROADCAST_PING_TIMEOUT || '20000', 10),
+    },
+    redis: { driver: 'redis', connection: process.env.BROADCAST_REDIS_CONNECTION || 'default' },
+    log: { driver: 'log' },
+    null: { driver: 'null' },
+  },
+  auth: {
+    endpoint: process.env.BROADCAST_AUTH_ENDPOINT || '/broadcasting/auth',
+    headerName: process.env.BROADCAST_AUTH_HEADER || 'Authorization',
+  },
+};
+
+export default broadcastingConfig;
+`,
+    );
+  }
 
   // ── Vitest ────────────────────────────────────────────────────────────────────
   w(
@@ -2693,6 +2976,8 @@ src/
 │   ├── Observers/              # Model observers
 │   ├── Providers/              # Service providers
 │   │   ├── AppServiceProvider.ts
+│   │   ├── ConfigServiceProvider.ts
+│   │   ├── MiddlewareServiceProvider.ts
 │   │   ├── RouteServiceProvider.ts
 │   │   ├── EventServiceProvider.ts
 │   │   ├── BroadcastServiceProvider.ts

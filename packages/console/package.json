@@ -1,7 +1,7 @@
 {
-  "name": "@vest-ts/console",
-  "version": "0.1.0",
-  "description": "Vest Artisan CLI — commands, kernel, and scheduler",
+  "name": "@lara-node/console",
+  "version": "0.1.5",
+  "description": "Lara-Node Artisan CLI — commands, kernel, and scheduler",
   "bin": {
     "artisan": "./dist/artisan.js"
   },
@@ -32,13 +32,13 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vest-ts/cache": "workspace:*",
-    "@vest-ts/core": "workspace:*",
-    "@vest-ts/db": "workspace:*",
-    "@vest-ts/events": "workspace:*",
-    "@vest-ts/horizon": "workspace:*",
-    "@vest-ts/queue": "workspace:*",
-    "@vest-ts/router": "workspace:*",
+    "@lara-node/cache": "workspace:^",
+    "@lara-node/core": "workspace:^",
+    "@lara-node/db": "workspace:^",
+    "@lara-node/events": "workspace:^",
+    "@lara-node/horizon": "workspace:^",
+    "@lara-node/queue": "workspace:^",
+    "@lara-node/router": "workspace:^",
     "dotenv": "^17.2.3",
     "reflect-metadata": "^0.2.2",
     "yargs": "^17.7.2"

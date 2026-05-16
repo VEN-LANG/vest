@@ -5,7 +5,7 @@ import {
   getRegisteredListeners,
   getRegisteredSubscribers,
   clearEventRegistries,
-} from "@vest-ts/events";
+} from "@lara-node/events";
 
 /*
 |--------------------------------------------------------------------------
@@ -135,7 +135,7 @@ export class EventDispatchCommand extends Command {
   };
 
   async handle(args: ArgumentsCamelCase): Promise<void> {
-    const { event: eventFn, getEventDispatcher } = await import("@vest-ts/events");
+    const { event: eventFn, getEventDispatcher } = await import("@lara-node/events");
 
     const eventName = args.event as string;
     let payload: any = {};
@@ -188,7 +188,7 @@ export class EventClearCommand extends Command {
   };
 
   async handle(args: ArgumentsCamelCase): Promise<void> {
-    const { getEventDispatcher } = await import("@vest-ts/events");
+    const { getEventDispatcher } = await import("@lara-node/events");
     const dispatcher = getEventDispatcher();
 
     if (args.event) {
@@ -250,7 +250,7 @@ export class EventGenerateCommand extends Command {
       .replace(/^\./, "")
       .replace(/\s+/g, ".");
 
-    const template = `import { Event } from '@vest-ts/events';
+    const template = `import { Event } from '@lara-node/events';
 
 /*
 |--------------------------------------------------------------------------
@@ -358,8 +358,8 @@ export class ListenerGenerateCommand extends Command {
     const queueDecorator = isQueued ? `@ShouldQueueDecorator({ queue: '${queueName}' })\n` : "";
 
     const imports = isQueued
-      ? `import { Listener, ListensTo, ShouldQueueDecorator } from '@vest-ts/events';`
-      : `import { Listener, ListensTo } from '@vest-ts/events';`;
+      ? `import { Listener, ListensTo, ShouldQueueDecorator } from '@lara-node/events';`
+      : `import { Listener, ListensTo } from '@lara-node/events';`;
 
     const template = `${imports}
 
@@ -454,7 +454,7 @@ export class SubscriberGenerateCommand extends Command {
       .replace(/Subscriber$/, "")
       .toLowerCase();
 
-    const template = `import { EventDispatcher, EventSubscriber, Subscriber } from '@vest-ts/events';
+    const template = `import { EventDispatcher, EventSubscriber, Subscriber } from '@lara-node/events';
 
 /*
 |--------------------------------------------------------------------------

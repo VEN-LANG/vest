@@ -1,7 +1,7 @@
 {
-  "name": "@vest-ts/core",
-  "version": "0.1.0",
-  "description": "Vest IoC container, Application, and ServiceProvider",
+  "name": "@lara-node/core",
+  "version": "0.1.4",
+  "description": "Lara-Node IoC container, Application, and ServiceProvider",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

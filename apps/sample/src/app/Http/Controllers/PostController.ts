@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import { event } from "@vest-ts/events";
-import { dispatch } from "@vest-ts/queue";
+import { event } from "@lara-node/events";
+import { dispatch } from "@lara-node/queue";
 import { Post } from "../../Models/Post.js";
 import { ProcessPostAnalytics } from "../../Jobs/ProcessPostAnalytics.js";
 

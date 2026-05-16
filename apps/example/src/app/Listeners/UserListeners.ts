@@ -1,7 +1,7 @@
-import { Mail, mail } from "@vest-ts/mail";
+import { Mail, mail } from "@lara-node/mail";
 import { WelcomeEmail } from "@app/Mail";
-import { ListensTo, ShouldQueue } from "@vest-ts/events";
-import { Listener } from "@vest-ts/events";
+import { ListensTo, ShouldQueue } from "@lara-node/events";
+import { Listener } from "@lara-node/events";
 import { UserLoggedIn, UserRegistered } from "@app/Events";
 
 /*

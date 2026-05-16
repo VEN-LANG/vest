@@ -1,7 +1,7 @@
 {
-  "name": "@vest-ts/db",
-  "version": "0.1.0",
-  "description": "Vest ORM — Eloquent-style models, migrations, schema builder",
+  "name": "@lara-node/db",
+  "version": "0.1.2",
+  "description": "Lara-Node ORM — Eloquent-style models, migrations, schema builder",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -28,7 +28,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vest-ts/core": "workspace:*",
+    "@lara-node/core": "workspace:^",
     "mongodb": "^7.0.0",
     "mysql2": "^3.16.0",
     "reflect-metadata": "^0.2.2"

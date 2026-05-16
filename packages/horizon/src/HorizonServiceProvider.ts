@@ -1,9 +1,9 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { ServiceProvider } from "@vest-ts/core";
+import { ServiceProvider } from "@lara-node/core";
 import { horizonMetrics } from "./HorizonMetrics.js";
 import { HorizonManager } from "./HorizonManager.js";
 import { renderHorizonDashboard } from "./HorizonDashboard.js";
-import { OpenApiGenerator } from "@vest-ts/router";
+import { OpenApiGenerator } from "@lara-node/router";
 import horizonConfig from "./horizon.config.js";
 
 /*

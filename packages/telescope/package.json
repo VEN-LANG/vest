@@ -1,7 +1,7 @@
 {
-  "name": "@vest-ts/telescope",
-  "version": "0.1.0",
-  "description": "Vest Telescope — request and query debug dashboard",
+  "name": "@lara-node/telescope",
+  "version": "0.1.4",
+  "description": "Lara-Node Telescope — request and query debug dashboard",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -15,8 +15,14 @@
   },
   "files": [
     "dist",
+    "config",
     "README.md"
   ],
+  "laraNode": {
+    "publish": [
+      { "tag": "config", "from": "config/telescope.config.ts", "to": "config/telescope.config.ts" }
+    ]
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -28,13 +34,13 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vest-ts/cache": "workspace:*",
-    "@vest-ts/core": "workspace:*",
-    "@vest-ts/db": "workspace:*",
-    "@vest-ts/events": "workspace:*",
-    "@vest-ts/horizon": "workspace:*",
-    "@vest-ts/queue": "workspace:*",
-    "@vest-ts/router": "workspace:*",
+    "@lara-node/cache": "workspace:^",
+    "@lara-node/core": "workspace:^",
+    "@lara-node/db": "workspace:^",
+    "@lara-node/events": "workspace:^",
+    "@lara-node/horizon": "workspace:^",
+    "@lara-node/queue": "workspace:^",
+    "@lara-node/router": "workspace:^",
     "express": "^5.2.1"
   },
   "devDependencies": {

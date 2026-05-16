@@ -3,10 +3,13 @@ import "reflect-metadata";
 import "dotenv/config";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { Kernel } from "@vest-ts/console";
+import { Kernel } from "@lara-node/console";
+import { app, bootForConsole } from "./bootstrap/app.js";
 
 async function main() {
-  const kernel = new Kernel();
+  await bootForConsole();
+
+  const kernel = new Kernel(app);
   await kernel.boot();
 
   let cli = yargs(hideBin(process.argv)).scriptName("artisan").usage("$0 <command> [options]");

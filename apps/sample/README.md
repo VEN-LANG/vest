@@ -1,6 +1,6 @@
-# Vest Sample — Blog API
+# Lara-Node Sample — Blog API
 
-A minimal, runnable blog API built with Vest. Demonstrates auth, models, events, jobs, and scheduled tasks in ~200 lines.
+A minimal, runnable blog API built with Lara-Node. Demonstrates auth, models, events, jobs, and scheduled tasks in ~200 lines.
 
 ## What's included
 
@@ -61,7 +61,7 @@ TOKEN=$(curl -s -X POST http://localhost:3001/api/auth/login \
 curl -s -X POST http://localhost:3001/api/posts \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
-  -d '{"title":"My First Post","body":"Hello from Vest!"}' | jq .
+  -d '{"title":"My First Post","body":"Hello from Lara-Node!"}' | jq .
 
 # List posts
 curl -s http://localhost:3001/api/posts | jq .

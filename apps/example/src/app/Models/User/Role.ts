@@ -1,7 +1,7 @@
-import { Model, use } from "@vest-ts/db";
+import { Model, use } from "@lara-node/db";
 import Permission from "./Permission";
-import { SoftDeletes } from "@vest-ts/db";
-import { Sluggable } from "@vest-ts/db";
+import { SoftDeletes } from "@lara-node/db";
+import { Sluggable } from "@lara-node/db";
 
 @use(SoftDeletes, Sluggable)
 export class Role extends Model {

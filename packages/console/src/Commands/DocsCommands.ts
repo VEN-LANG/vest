@@ -1,7 +1,7 @@
 import { Command } from "../Command.js";
 import { ArgumentsCamelCase } from "yargs";
-import { RouteScanner } from "@vest-ts/router";
-import { OpenApiGenerator } from "@vest-ts/router";
+import { RouteScanner } from "@lara-node/router";
+import { OpenApiGenerator } from "@lara-node/router";
 import * as fs from "fs";
 import * as path from "path";
 

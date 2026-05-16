@@ -3,11 +3,12 @@ import fs from "fs";
 import path from "path";
 import multer from "multer";
 import jwt from "jsonwebtoken";
+import { Injectable } from "@lara-node/core";
 import { FileService } from "@app/Services/FileService";
 import File from "@app/Models/File/File";
 import { ValidationError } from "@app/Helpers/validator";
 import { parseRequest } from "@app/Helpers/auth";
-import { Doc } from "@vest-ts/router";
+import { Doc } from "@lara-node/router";
 
 type MulterFile = Express.Multer.File;
 
@@ -46,6 +47,7 @@ export const multerUpload = multer({
 const JWT_SECRET: string =
   process.env.FILE_URL_SECRET || process.env.JWT_SECRET || "dev-secret-change";
 
+@Injectable()
 export class FileController {
   public constructor(public fileService: FileService) {}
 

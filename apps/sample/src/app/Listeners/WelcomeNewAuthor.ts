@@ -1,5 +1,5 @@
-import { Listener, ListensTo } from "@vest-ts/events";
-import { Mail, HtmlMailable } from "@vest-ts/mail";
+import { Listener, ListensTo } from "@lara-node/events";
+import { Mail, HtmlMailable } from "@lara-node/mail";
 
 interface PostCreatedPayload {
   post: { title: string };

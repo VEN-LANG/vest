@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
-import { Model } from "@vest-ts/db";
-import { QueryResult } from "@vest-ts/db";
+import { Model } from "@lara-node/db";
+import { QueryResult } from "@lara-node/db";
 
 declare global {
   namespace Express {

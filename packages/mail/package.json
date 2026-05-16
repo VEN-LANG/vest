@@ -1,7 +1,7 @@
 {
-  "name": "@vest-ts/mail",
-  "version": "0.1.0",
-  "description": "Vest mail manager with SMTP, log, and array drivers",
+  "name": "@lara-node/mail",
+  "version": "0.1.3",
+  "description": "Lara-Node mail manager with SMTP, log, and array drivers",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -15,8 +15,14 @@
   },
   "files": [
     "dist",
+    "config",
     "README.md"
   ],
+  "laraNode": {
+    "publish": [
+      { "tag": "config", "from": "config/mail.config.ts", "to": "config/mail.config.ts" }
+    ]
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -28,9 +34,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vest-ts/core": "workspace:*",
-    "@vest-ts/events": "workspace:*",
-    "@vest-ts/queue": "workspace:*",
+    "@lara-node/core": "workspace:^",
+    "@lara-node/events": "workspace:^",
+    "@lara-node/queue": "workspace:^",
     "nodemailer": "^8.0.1"
   },
   "devDependencies": {

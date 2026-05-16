@@ -1,4 +1,4 @@
-import { ServiceProvider } from "@vest-ts/core";
+import { ServiceProvider } from "@lara-node/core";
 import { DocsUI } from "./DocsUI.js";
 
 /**

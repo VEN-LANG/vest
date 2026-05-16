@@ -1,10 +1,10 @@
-import { Worker } from "@vest-ts/queue";
-import { scheduler } from "@vest-ts/queue";
-import { Queue } from "@vest-ts/queue";
+import { Worker } from "@lara-node/queue";
+import { scheduler } from "@lara-node/queue";
+import { Queue } from "@lara-node/queue";
 import { horizonMetrics, writeHorizonSignal } from "./HorizonMetrics.js";
-import { WorkerOptions } from "@vest-ts/queue";
-import { getEventDispatcher } from "@vest-ts/events";
-import { queueConfig } from "@vest-ts/queue";
+import { WorkerOptions } from "@lara-node/queue";
+import { getEventDispatcher } from "@lara-node/events";
+import { queueConfig } from "@lara-node/queue";
 
 /*
 |--------------------------------------------------------------------------
@@ -21,253 +21,270 @@ import { queueConfig } from "@vest-ts/queue";
 */
 
 export interface WorkerDefinition {
-  id: string;
-  connection?: string;
-  queues?: string | string[];
-  options?: WorkerOptions;
+    id: string;
+    connection?: string;
+    queues?: string | string[];
+    options?: WorkerOptions;
 }
 
 class HorizonManagerClass {
-  private workers = new Map<string, { worker: Worker; startedAt: Date }>();
+    private workers = new Map<string, { worker: Worker; startedAt: Date }>();
+    /** Persists the original WorkerDefinition so a worker can be restarted after a memory cycle. */
+    private workerDefs = new Map<string, WorkerDefinition>();
 
-  /*
-  |--------------------------------------------------------------------------
-  | Worker Lifecycle
-  |--------------------------------------------------------------------------
-  */
+    /*
+    |--------------------------------------------------------------------------
+    | Worker Lifecycle
+    |--------------------------------------------------------------------------
+    */
 
-  startWorker(def: WorkerDefinition): string {
-    const { id, connection, queues = "default", options = {} } = def;
-    const worker = new Worker(connection, queues, { ...options, workerId: id });
-    const startedAt = new Date();
-    this.workers.set(id, { worker, startedAt });
+    startWorker(def: WorkerDefinition): string {
+        const { id, connection, queues = "default", options = {} } = def;
+        const worker = new Worker(connection, queues, { ...options, workerId: id });
+        const startedAt = new Date();
+        this.workers.set(id, { worker, startedAt });
+        this.workerDefs.set(id, def);
 
-    let jobStartTime = 0;
+        let jobStartTime = 0;
 
-    worker.on("worker:start", ({ connection: conn, queues: qs }) => {
-      horizonMetrics
-        .registerWorker(id, {
-          connection: conn,
-          queues: qs,
-          status: "running",
-          jobsProcessed: 0,
-          currentJob: null,
-          memoryMb: process.memoryUsage().heapUsed / 1024 / 1024,
-          runtimeSeconds: 0,
-          startedAt,
-          pid: process.pid,
-        })
-        .catch(() => {});
-    });
+        worker.on("worker:start", ({ connection: conn, queues: qs }) => {
+            horizonMetrics.registerWorker(id, {
+                connection: conn,
+                queues: qs,
+                status: "running",
+                jobsProcessed: 0,
+                currentJob: null,
+                memoryMb: process.memoryUsage().heapUsed / 1024 / 1024,
+                runtimeSeconds: 0,
+                startedAt,
+                pid: process.pid,
+            }).catch(() => {});
+        });
 
-    worker.on("job:processing", ({ job }) => {
-      jobStartTime = Date.now();
-      horizonMetrics
-        .updateWorker(id, {
-          currentJob: job,
-          memoryMb: process.memoryUsage().heapUsed / 1024 / 1024,
-          runtimeSeconds: worker.getRuntime(),
-        })
-        .catch(() => {});
-      getEventDispatcher().dispatchNow("horizon:job.processing", { workerId: id, job });
-    });
+        worker.on("job:processing", ({ job }) => {
+            jobStartTime = Date.now();
+            horizonMetrics.updateWorker(id, {
+                currentJob: job,
+                memoryMb: process.memoryUsage().heapUsed / 1024 / 1024,
+                runtimeSeconds: worker.getRuntime(),
+            }).catch(() => {});
+            getEventDispatcher().dispatchNow("horizon:job.processing", { workerId: id, job });
+        });
 
-    worker.on("job:processed", ({ job }) => {
-      const durationMs = jobStartTime ? Date.now() - jobStartTime : 0;
-      const conn = connection || queueConfig.default;
-      horizonMetrics
-        .updateWorker(id, {
-          jobsProcessed: worker.getJobsProcessed(),
-          currentJob: null,
-          memoryMb: process.memoryUsage().heapUsed / 1024 / 1024,
-          runtimeSeconds: worker.getRuntime(),
-        })
-        .catch(() => {});
-      horizonMetrics
-        .recordJob({
-          uuid: job.uuid,
-          displayName: job.displayName,
-          queue: job.queue,
-          connection: conn,
-          completedAt: new Date(),
-          durationMs,
-          status: "processed",
-        })
-        .catch(() => {});
-      getEventDispatcher().dispatchNow("horizon:job.processed", {
-        workerId: id,
-        job,
-        durationMs,
-        connection: conn,
-      });
-    });
+        worker.on("job:processed", ({ job }) => {
+            const durationMs = jobStartTime ? Date.now() - jobStartTime : 0;
+            const conn = connection || queueConfig.default;
+            horizonMetrics.updateWorker(id, {
+                jobsProcessed: worker.getJobsProcessed(),
+                currentJob: null,
+                memoryMb: process.memoryUsage().heapUsed / 1024 / 1024,
+                runtimeSeconds: worker.getRuntime(),
+            }).catch(() => {});
+            horizonMetrics.recordJob({
+                uuid: job.uuid,
+                displayName: job.displayName,
+                queue: job.queue,
+                connection: conn,
+                completedAt: new Date(),
+                durationMs,
+                status: "processed",
+            }).catch(() => {});
+            getEventDispatcher().dispatchNow("horizon:job.processed", {
+                workerId: id,
+                job,
+                durationMs,
+                connection: conn,
+            });
+        });
 
-    worker.on("job:failed", ({ job, exception }) => {
-      const durationMs = jobStartTime ? Date.now() - jobStartTime : 0;
-      const conn = connection || queueConfig.default;
-      horizonMetrics
-        .updateWorker(id, {
-          currentJob: null,
-          memoryMb: process.memoryUsage().heapUsed / 1024 / 1024,
-          runtimeSeconds: worker.getRuntime(),
-        })
-        .catch(() => {});
-      horizonMetrics
-        .recordJob({
-          uuid: job.uuid,
-          displayName: job.displayName,
-          queue: job.queue,
-          connection: conn,
-          completedAt: new Date(),
-          durationMs,
-          status: "failed",
-          exception: exception.message,
-        })
-        .catch(() => {});
-      getEventDispatcher().dispatchNow("horizon:job.failed", {
-        workerId: id,
-        job,
-        durationMs,
-        connection: conn,
-        exception: exception.message,
-      });
-    });
+        worker.on("job:failed", ({ job, exception }) => {
+            const durationMs = jobStartTime ? Date.now() - jobStartTime : 0;
+            const conn = connection || queueConfig.default;
+            horizonMetrics.updateWorker(id, {
+                currentJob: null,
+                memoryMb: process.memoryUsage().heapUsed / 1024 / 1024,
+                runtimeSeconds: worker.getRuntime(),
+            }).catch(() => {});
+            horizonMetrics.recordJob({
+                uuid: job.uuid,
+                displayName: job.displayName,
+                queue: job.queue,
+                connection: conn,
+                completedAt: new Date(),
+                durationMs,
+                status: "failed",
+                exception: exception.message,
+            }).catch(() => {});
+            getEventDispatcher().dispatchNow("horizon:job.failed", {
+                workerId: id,
+                job,
+                durationMs,
+                connection: conn,
+                exception: exception.message,
+            });
+        });
 
-    worker.on("worker:pause", () =>
-      horizonMetrics.updateWorker(id, { status: "paused" }).catch(() => {}),
-    );
-    worker.on("worker:resume", () =>
-      horizonMetrics.updateWorker(id, { status: "running" }).catch(() => {}),
-    );
-    worker.on("worker:stop", () => {
-      horizonMetrics.updateWorker(id, { status: "stopped" }).catch(() => {});
-      clearInterval(heartbeat);
-    });
+        worker.on("worker:pause", () => horizonMetrics.updateWorker(id, { status: "paused" }).catch(() => {}));
+        worker.on("worker:resume", () => horizonMetrics.updateWorker(id, { status: "running" }).catch(() => {}));
+        worker.on("worker:stop", () => {
+            horizonMetrics.updateWorker(id, { status: "stopped" }).catch(() => {});
+            clearInterval(heartbeat);
+        });
 
-    // Heartbeat — refreshes both the worker snapshot TTL AND the IDs list
-    // so neither ever silently expires while the worker is running.
-    // Fires every 20 s (well within the 90 s snapshot TTL).
-    const heartbeat = setInterval(() => {
-      if (!worker.isRunning()) {
-        clearInterval(heartbeat);
-        return;
-      }
-      horizonMetrics
-        .keepAlive(id, {
-          memoryMb: process.memoryUsage().heapUsed / 1024 / 1024,
-          runtimeSeconds: worker.getRuntime(),
-          jobsProcessed: worker.getJobsProcessed(),
-        })
-        .catch(() => {});
-    }, 20_000);
+        worker.on("worker:memory-exceeded", ({ memoryMb, limitMb }: { memoryMb: number; limitMb: number }) => {
+            console.log(
+                `[Horizon] Worker ${id} hit memory limit (${memoryMb}/${limitMb} MB) — ` +
+                `trimming Telescope store and scheduling restart...`,
+            );
+            // Free the largest block of disposable in-process memory before the restart
+            TelescopeStore.trim(0.25);
+            // Only restart if the worker was not explicitly stopped (stopWorker removes from this.workers first)
+            setTimeout(() => {
+                const savedDef = this.workerDefs.get(id);
+                if (savedDef && !this.workers.has(id)) {
+                    console.log(`[Horizon] Restarting worker ${id} after memory limit...`);
+                    this.startWorker(savedDef);
+                }
+            }, 2000);
+        });
 
-    worker.daemon().catch(console.error);
-    return id;
-  }
+        // Heartbeat — refreshes both the worker snapshot TTL AND the IDs list
+        // so neither ever silently expires while the worker is running.
+        // Fires every 20 s (well within the 90 s snapshot TTL).
+        const heartbeat = setInterval(() => {
+            if (!worker.isRunning()) {
+                clearInterval(heartbeat);
+                return;
+            }
+            horizonMetrics.keepAlive(id, {
+                memoryMb: process.memoryUsage().heapUsed / 1024 / 1024,
+                runtimeSeconds: worker.getRuntime(),
+                jobsProcessed: worker.getJobsProcessed(),
+            }).catch(() => {});
+        }, 20_000);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Worker Control — writes Cache signals so out-of-process workers respond
-  |--------------------------------------------------------------------------
-  */
-
-  pauseWorker(id: string): boolean {
-    const w = this.workers.get(id);
-    if (w) w.worker.pause(); // immediate for in-process
-    writeHorizonSignal(id, "pause").catch(() => {});
-    return true;
-  }
-
-  resumeWorker(id: string): boolean {
-    const w = this.workers.get(id);
-    if (w) w.worker.resume();
-    writeHorizonSignal(id, "resume").catch(() => {});
-    return true;
-  }
-
-  stopWorker(id: string): boolean {
-    const entry = this.workers.get(id);
-    if (entry) {
-      entry.worker.stop();
-      this.workers.delete(id);
-      horizonMetrics.removeWorker(id).catch(() => {});
+        worker.daemon().catch(console.error);
+        return id;
     }
-    writeHorizonSignal(id, "stop").catch(() => {});
-    return true;
-  }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Scheduler
-  |--------------------------------------------------------------------------
-  */
+    /*
+    |--------------------------------------------------------------------------
+    | Worker Control — writes Cache signals so out-of-process workers respond
+    |--------------------------------------------------------------------------
+    */
 
-  getSchedulerTasks() {
-    return scheduler.getTasks().map((t) => ({
-      name: t.name,
-      expression: t.expression,
-      description: t.description,
-      isRunning: t.isRunning,
-      lastRun: t.lastRun,
-      nextRun: t.nextRun,
-    }));
-  }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Queue sizes
-  |--------------------------------------------------------------------------
-  */
-
-  async getQueueSizes(): Promise<Record<string, number>> {
-    const queues = new Set<string>(["default"]);
-    for (const conn of Object.values(queueConfig.connections)) {
-      if (conn.queue) {
-        const qs = Array.isArray(conn.queue) ? conn.queue : [conn.queue];
-        qs.forEach((q) => queues.add(q));
-      }
+    pauseWorker(id: string): boolean {
+        const w = this.workers.get(id);
+        if (w) w.worker.pause(); // immediate for in-process
+        writeHorizonSignal(id, "pause").catch(() => {});
+        return true;
     }
-    const activeWorkers = await horizonMetrics.getWorkers();
-    activeWorkers.forEach((w) => w.queues.forEach((q) => queues.add(q)));
 
-    const result: Record<string, number> = {};
-    await Promise.all(
-      Array.from(queues).map(async (q) => {
-        try {
-          result[q] = await Queue.size(q);
-        } catch {
-          result[q] = 0;
+    resumeWorker(id: string): boolean {
+        const w = this.workers.get(id);
+        if (w) {
+            // Worker is alive (paused) — just unpause it
+            w.worker.resume();
+            writeHorizonSignal(id, "resume").catch(() => {});
+        } else {
+            // Worker was stopped — restart it from its saved definition
+            const def = this.workerDefs.get(id);
+            if (def) {
+                console.log(`[Horizon] Restarting stopped worker ${id}...`);
+                this.startWorker(def);
+            } else {
+                return false;
+            }
         }
-      }),
-    );
-    return result;
-  }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Failed jobs
-  |--------------------------------------------------------------------------
-  */
-
-  async getFailedJobs(): Promise<any[]> {
-    try {
-      return await Queue.getFailedJobs();
-    } catch {
-      return [];
+        return true;
     }
-  }
 
-  retryFailed(uuid: string) {
-    return Queue.retryFailed(uuid);
-  }
+    stopWorker(id: string): boolean {
+        const entry = this.workers.get(id);
+        if (entry) {
+            // Remove from the active map first so the memory-exceeded handler
+            // sees it as intentionally stopped and does not auto-restart.
+            this.workers.delete(id);
+            entry.worker.stop();
+            horizonMetrics.removeWorker(id).catch(() => {});
+        }
+        // Keep workerDefs so the worker can be restarted via resumeWorker.
+        writeHorizonSignal(id, "stop").catch(() => {});
+        return true;
+    }
 
-  forgetFailed(uuid: string) {
-    return Queue.forgetFailed(uuid);
-  }
+    /*
+    |--------------------------------------------------------------------------
+    | Scheduler
+    |--------------------------------------------------------------------------
+    */
 
-  async flushFailed(): Promise<number> {
-    return Queue.flushFailed();
-  }
+    getSchedulerTasks() {
+        return scheduler.getTasks().map((t) => ({
+            name: t.name,
+            expression: t.expression,
+            description: t.description,
+            isRunning: t.isRunning,
+            lastRun: t.lastRun,
+            nextRun: t.nextRun,
+        }));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Queue sizes
+    |--------------------------------------------------------------------------
+    */
+
+    async getQueueSizes(): Promise<Record<string, number>> {
+        const queues = new Set<string>(["default"]);
+        for (const conn of Object.values(queueConfig.connections)) {
+            if (conn.queue) {
+                const qs = Array.isArray(conn.queue) ? conn.queue : [conn.queue];
+                qs.forEach((q) => queues.add(q));
+            }
+        }
+        const activeWorkers = await horizonMetrics.getWorkers();
+        activeWorkers.forEach((w) => w.queues.forEach((q) => queues.add(q)));
+
+        const result: Record<string, number> = {};
+        await Promise.all(
+            Array.from(queues).map(async (q) => {
+                try {
+                    result[q] = await Queue.size(q);
+                } catch {
+                    result[q] = 0;
+                }
+            }),
+        );
+        return result;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Failed jobs
+    |--------------------------------------------------------------------------
+    */
+
+    async getFailedJobs(): Promise<any[]> {
+        try {
+            return await Queue.getFailedJobs();
+        } catch {
+            return [];
+        }
+    }
+
+    retryFailed(uuid: string) {
+        return Queue.retryFailed(uuid);
+    }
+
+    forgetFailed(uuid: string) {
+        return Queue.forgetFailed(uuid);
+    }
+
+    async flushFailed(): Promise<number> {
+        return Queue.flushFailed();
+    }
 }
 
 export const HorizonManager = new HorizonManagerClass();

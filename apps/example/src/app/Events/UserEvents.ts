@@ -1,4 +1,4 @@
-import { Event } from "@vest-ts/events";
+import { Event } from "@lara-node/events";
 
 /*
 |--------------------------------------------------------------------------

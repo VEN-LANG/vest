@@ -1,8 +1,8 @@
 import { Command } from "../Command.js";
 import { ArgumentsCamelCase } from "yargs";
-import { Queue, Worker, scheduler, getRegisteredJobs } from "@vest-ts/queue";
-import { queueConfig } from "@vest-ts/queue";
-import { Cache } from "@vest-ts/cache";
+import { Queue, Worker, scheduler, getRegisteredJobs } from "@lara-node/queue";
+import { queueConfig } from "@lara-node/queue";
+import { Cache } from "@lara-node/cache";
 
 /*
 |--------------------------------------------------------------------------
@@ -676,7 +676,7 @@ export class QueueJobsCommand extends Command {
       console.log("");
       console.log("Jobs are auto-registered when they use the @Queueable decorator:");
       console.log("");
-      console.log('  import { Job, Queueable } from "@vest-ts/queue";');
+      console.log('  import { Job, Queueable } from "@lara-node/queue";');
       console.log("");
       console.log("  @Queueable()");
       console.log("  export class MyJob extends Job {");

@@ -8,7 +8,7 @@ import {
   cacheClear,
   cacheKeys,
   generateCacheKey,
-} from "@vest-ts/cache";
+} from "@lara-node/cache";
 
 export class CacheClearCommand extends Command {
   protected signature = "cache:clear";

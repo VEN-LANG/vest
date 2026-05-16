@@ -1,5 +1,5 @@
-import { ServiceProvider } from "@vest-ts/core";
-import { middlewareStack } from "@vest-ts/router";
+import { ServiceProvider } from "@lara-node/core";
+import { middlewareStack } from "@lara-node/router";
 
 export class RouteServiceProvider extends ServiceProvider {
   /*

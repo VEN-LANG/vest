@@ -1,7 +1,7 @@
 {
-  "name": "@vest-ts/cache",
-  "version": "0.1.0",
-  "description": "Vest cache manager — file, database, and Redis drivers",
+  "name": "@lara-node/cache",
+  "version": "0.1.2",
+  "description": "Lara-Node cache manager — file, database, and Redis drivers",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -28,8 +28,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vest-ts/core": "workspace:*",
-    "@vest-ts/db": "workspace:*",
+    "@lara-node/core": "workspace:^",
+    "@lara-node/db": "workspace:^",
     "redis": "^5.10.0"
   },
   "devDependencies": {

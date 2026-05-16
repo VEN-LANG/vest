@@ -88,3 +88,6 @@ export {
 
 // Serve Command
 export { ServeCommand } from "./ServeCommand.js";
+
+// Vendor Publish
+export { VendorPublishCommand } from "./VendorPublishCommand.js";

@@ -1,4 +1,4 @@
-import { ServiceProvider } from "@vest-ts/core";
+import { ServiceProvider } from "@lara-node/core";
 import { Queue, QueueManager, scheduler, Schedule } from "./index.js";
 
 /**
@@ -9,7 +9,7 @@ import { Queue, QueueManager, scheduler, Schedule } from "./index.js";
  *
  * @example
  * // app/Providers/QueueServiceProvider.ts
- * import { QueueServiceProvider as BaseProvider } from '@vest-ts/queue';
+ * import { QueueServiceProvider as BaseProvider } from '@lara-node/queue';
  *
  * export class QueueServiceProvider extends BaseProvider {
  *   protected schedule(): void {

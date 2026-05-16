@@ -9,7 +9,7 @@
 |
 */
 
-import RouterBuilder from "@vest-ts/router";
+import RouterBuilder from "@lara-node/router";
 import { FileController } from "@app/Http/Controllers/File/FileController";
 
 export const webRoutesBuilder = new RouterBuilder();

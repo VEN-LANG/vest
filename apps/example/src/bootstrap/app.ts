@@ -1,17 +1,17 @@
 import "reflect-metadata";
-import { container, Application } from "@vest-ts/core";
+import { container, Application } from "@lara-node/core";
 
 // ---------------------------------------------------------------------------
-// Framework service providers — from @vest-ts/* packages
+// Framework service providers — from @lara-node/* packages
 // ---------------------------------------------------------------------------
-import { DatabaseServiceProvider } from "@vest-ts/db";
-import { CacheServiceProvider } from "@vest-ts/cache";
-import { EventServiceProvider, BroadcastServiceProvider } from "@vest-ts/events";
-import { QueueServiceProvider } from "@vest-ts/queue";
-import { MailServiceProvider } from "@vest-ts/mail";
-import { DocServiceProvider } from "@vest-ts/router";
-import { HorizonServiceProvider } from "@vest-ts/horizon";
-import { TelescopeServiceProvider } from "@vest-ts/telescope";
+import { DatabaseServiceProvider } from "@lara-node/db";
+import { CacheServiceProvider } from "@lara-node/cache";
+import { EventServiceProvider, BroadcastServiceProvider } from "@lara-node/events";
+import { QueueServiceProvider } from "@lara-node/queue";
+import { MailServiceProvider } from "@lara-node/mail";
+import { DocServiceProvider } from "@lara-node/router";
+import { HorizonServiceProvider } from "@lara-node/horizon";
+import { TelescopeServiceProvider } from "@lara-node/telescope";
 
 // ---------------------------------------------------------------------------
 // App-level providers — YOUR providers (edit these freely)
@@ -39,6 +39,27 @@ export const app = new Application(container);
  *   4. Horizon/Telescope — monitoring (registered before routes so they can install watchers)
  *   5. App providers     — your code (services, routes, etc.)
  */
+export async function bootForConsole(): Promise<void> {
+  try {
+    app.register(DatabaseServiceProvider);
+    app.register(CacheServiceProvider);
+    app.register(EventServiceProvider);
+    app.register(AppEventServiceProvider);
+    app.register(QueueServiceProvider);
+    app.register(AppQueueServiceProvider);
+    app.register(MailServiceProvider);
+    app.register(DocServiceProvider);
+    app.register(TelescopeServiceProvider);
+    app.register(HorizonServiceProvider);
+    app.register(AppServiceProvider);
+    app.register(AppBroadcastServiceProvider);
+    await app.boot();
+  } catch (err) {
+    console.error("Failed to boot application:", err);
+    process.exit(1);
+  }
+}
+
 export async function startApplication(): Promise<void> {
   const PORT = process.env.PORT ?? 3000;
 

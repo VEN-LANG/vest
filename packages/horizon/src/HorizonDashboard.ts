@@ -1,5 +1,5 @@
 export function renderHorizonDashboard(basePath: string, token?: string): string {
-  const appUrl = process.env.APP_URL || "";
+  const appUrl = process.env.APP_URL || '';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

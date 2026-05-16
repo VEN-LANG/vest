@@ -1,4 +1,4 @@
-import { ServiceProvider } from "@vest-ts/core";
+import { ServiceProvider } from "@lara-node/core";
 import { getBroadcastManager, BroadcastManager } from "./Broadcasting/BroadcastManager.js";
 
 /**
@@ -10,8 +10,8 @@ import { getBroadcastManager, BroadcastManager } from "./Broadcasting/BroadcastM
  *
  * @example
  * // app/Providers/BroadcastServiceProvider.ts
- * import { BroadcastServiceProvider as BaseProvider } from '@vest-ts/events';
- * import { Broadcast } from '@vest-ts/events';
+ * import { BroadcastServiceProvider as BaseProvider } from '@lara-node/events';
+ * import { Broadcast } from '@lara-node/events';
  *
  * export class BroadcastServiceProvider extends BaseProvider {
  *   protected channels(): void {

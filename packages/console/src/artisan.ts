@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Vest Artisan CLI
+ * Lara-Node Artisan CLI
  *
  * Usage:
  *   artisan <command> [options]
@@ -10,7 +10,7 @@
  *   artisan queue:work
  *
  * In an app's package.json:
- *   "artisan": "node node_modules/@vest-ts/console/dist/artisan.js"
+ *   "artisan": "node node_modules/@lara-node/console/dist/artisan.js"
  */
 
 import "dotenv/config";

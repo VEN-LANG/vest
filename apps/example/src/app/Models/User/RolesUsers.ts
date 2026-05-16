@@ -1,5 +1,5 @@
-import { Model, use } from "@vest-ts/db";
-import { SoftDeletes } from "@vest-ts/db";
+import { Model, use } from "@lara-node/db";
+import { SoftDeletes } from "@lara-node/db";
 import Role from "./Role";
 import User from "./User";
 

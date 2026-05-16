@@ -9,7 +9,7 @@
 |
 */
 
-import { Broadcast } from "@vest-ts/events";
+import { Broadcast } from "@lara-node/events";
 
 /*
 |--------------------------------------------------------------------------

@@ -8,7 +8,7 @@
 */
 import { ArgumentsCamelCase } from "yargs";
 import { Command } from "../Command.js";
-import { getBroadcastManager, Broadcast, channelRegistry, ChannelRoute } from "@vest-ts/events";
+import { getBroadcastManager, Broadcast, channelRegistry, ChannelRoute } from "@lara-node/events";
 
 /*
 |--------------------------------------------------------------------------

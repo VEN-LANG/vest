@@ -1,4 +1,4 @@
-import { ServiceProvider } from "@vest-ts/core";
+import { ServiceProvider } from "@lara-node/core";
 
 export class MailServiceProvider extends ServiceProvider {
   register(): void {

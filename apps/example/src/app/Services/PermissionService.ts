@@ -1,5 +1,5 @@
 import Permission from "@app/Models/User/Permission";
-import { ModelAttributes } from "@vest-ts/db";
+import { ModelAttributes } from "@lara-node/db";
 
 export class PermissionService {
   async list() {

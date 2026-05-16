@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import { MongoClient, Db, Collection, Document } from "mongodb";
-import { createMongoQueryProxy } from "@vest-ts/db";
+import { createMongoQueryProxy } from "@lara-node/db";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

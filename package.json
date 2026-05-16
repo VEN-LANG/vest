@@ -1,8 +1,8 @@
 {
-  "name": "vest",
+  "name": "lara-node",
   "version": "0.1.0",
   "private": true,
-  "description": "Vest — a Laravel-inspired Node.js framework powered by Vite+",
+  "description": "Lara-Node — a Laravel-inspired Node.js framework powered by Vite+",
   "type": "module",
   "scripts": {
     "build": "pnpm -r --filter './packages/*' build",
@@ -15,7 +15,7 @@
     "format": "oxfmt packages apps",
     "format:check": "oxfmt --check packages apps",
     "clean": "pnpm -r --filter './packages/*' clean",
-    "create-vest": "node packages/create-vest/dist/index.js"
+    "create-lara-node": "node packages/create-lara-node/dist/index.js"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.3",

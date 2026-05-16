@@ -1,10 +1,10 @@
-import { QueueServiceProvider as BaseProvider } from "@vest-ts/queue";
+import { QueueServiceProvider as BaseProvider } from "@lara-node/queue";
 
 /**
  * QueueServiceProvider
  *
  * Override `schedule()` to register cron tasks. Framework queue
- * infrastructure (drivers, worker, etc.) is handled in @vest-ts/queue.
+ * infrastructure (drivers, worker, etc.) is handled in @lara-node/queue.
  *
  * @example
  * protected schedule(): void {

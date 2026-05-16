@@ -1,4 +1,4 @@
-import { Command } from "@vest-ts/console";
+import { Command } from "@lara-node/console";
 import { ArgumentsCamelCase } from "yargs";
 import { initDatabase } from "../../../config/db.config.js";
 

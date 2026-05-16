@@ -40,7 +40,7 @@ export interface QueryEventPayload {
 /** Optional hook registered by Telescope/events layer — avoids circular deps. */
 let _queryEventHook: ((payload: QueryEventPayload) => Promise<void>) | null = null;
 
-/** Called by @vest-ts/telescope or @vest-ts/events to wire up query event emission. */
+/** Called by @lara-node/telescope or @lara-node/events to wire up query event emission. */
 export function setQueryEventHook(hook: (payload: QueryEventPayload) => Promise<void>): void {
   _queryEventHook = hook;
 }

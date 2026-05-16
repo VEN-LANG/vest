@@ -1,4 +1,4 @@
-import { Job } from "@vest-ts/queue";
+import { Job } from "@lara-node/queue";
 
 export class ProcessPostAnalytics extends Job {
   constructor(

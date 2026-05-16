@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 /**
- * Vest — Vite+ Unified Toolchain Configuration
+ * Lara-Node — Vite+ Unified Toolchain Configuration
  *
  * Tools configured here:
  *   - Vitest      — testing (vitest run / vitest watch)
@@ -21,17 +21,19 @@ export default defineConfig({
   // ---------------------------------------------------------------------------
   resolve: {
     alias: {
-      '@vest-ts/core': resolve(__dirname, 'packages/core/src'),
-      '@vest-ts/cache': resolve(__dirname, 'packages/cache/src'),
-      '@vest-ts/db': resolve(__dirname, 'packages/db/src'),
-      '@vest-ts/events': resolve(__dirname, 'packages/events/src'),
-      '@vest-ts/queue': resolve(__dirname, 'packages/queue/src'),
-      '@vest-ts/mail': resolve(__dirname, 'packages/mail/src'),
-      '@vest-ts/router': resolve(__dirname, 'packages/router/src'),
-      '@vest-ts/auth': resolve(__dirname, 'packages/auth/src'),
-      '@vest-ts/console': resolve(__dirname, 'packages/console/src'),
-      '@vest-ts/horizon': resolve(__dirname, 'packages/horizon/src'),
-      '@vest-ts/telescope': resolve(__dirname, 'packages/telescope/src'),
+      '@lara-node/core': resolve(__dirname, 'packages/core/src'),
+      '@lara-node/cache': resolve(__dirname, 'packages/cache/src'),
+      '@lara-node/db': resolve(__dirname, 'packages/db/src'),
+      '@lara-node/events': resolve(__dirname, 'packages/events/src'),
+      '@lara-node/queue': resolve(__dirname, 'packages/queue/src'),
+      '@lara-node/mail': resolve(__dirname, 'packages/mail/src'),
+      '@lara-node/router': resolve(__dirname, 'packages/router/src'),
+      '@lara-node/auth': resolve(__dirname, 'packages/auth/src'),
+      '@lara-node/console': resolve(__dirname, 'packages/console/src'),
+      '@lara-node/horizon': resolve(__dirname, 'packages/horizon/src'),
+      '@lara-node/telescope': resolve(__dirname, 'packages/telescope/src'),
+      '@lara-node/middlewares': resolve(__dirname, 'packages/middlewares/src'),
+      '@lara-node/validator': resolve(__dirname, 'packages/validator/src'),
     },
   },
 

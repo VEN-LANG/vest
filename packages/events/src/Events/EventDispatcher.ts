@@ -177,7 +177,7 @@ export class EventDispatcher {
 
     // Dynamic import to avoid circular dependencies
     const { CallQueuedListener, registerQueuedListener } = await require("./QueuedEventJobs");
-    const { Queue } = await import("@vest-ts/queue");
+    const { Queue } = await import("@lara-node/queue");
 
     for (const registration of queuedListeners) {
       if (registration.listenerClass) {
@@ -464,7 +464,7 @@ export abstract class Event {
    */
   async dispatchToQueue(): Promise<void> {
     const { CallQueuedEvent } = await require("./QueuedEventJobs");
-    const { Queue } = await import("@vest-ts/queue");
+    const { Queue } = await import("@lara-node/queue");
 
     const job = new CallQueuedEvent(this.constructor.name, this.eventName(), this.toPayload());
 
