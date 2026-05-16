@@ -12,7 +12,21 @@ import { join, resolve } from "path";
 import pc from "picocolors";
 import prompts from "prompts";
 
-const LARA_NODE_VERSION = "0.1.1";
+const VERSIONS: Record<string, string> = {
+  "@lara-node/core":        "0.1.4",
+  "@lara-node/router":      "0.1.3",
+  "@lara-node/db":          "0.1.4",
+  "@lara-node/auth":        "0.1.2",
+  "@lara-node/console":     "0.1.5",
+  "@lara-node/validator":   "0.1.6",
+  "@lara-node/middlewares": "0.1.7",
+  "@lara-node/events":      "0.1.3",
+  "@lara-node/queue":       "0.1.3",
+  "@lara-node/mail":        "0.1.3",
+  "@lara-node/horizon":     "0.1.4",
+  "@lara-node/telescope":   "0.1.4",
+  "@lara-node/cache":       "0.1.2",
+};
 
 async function main() {
   console.log(
@@ -156,7 +170,7 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
       typecheck: "tsc --noEmit",
     },
     dependencies: {
-      ...Object.fromEntries(laraNodeDeps.map((p) => [p, `^${LARA_NODE_VERSION}`])),
+      ...Object.fromEntries(laraNodeDeps.map((p) => [p, `^${VERSIONS[p] ?? "0.1.0"}`])),
       "reflect-metadata": "^0.2.2",
       dotenv: "^17.2.3",
       express: "^5.2.1",

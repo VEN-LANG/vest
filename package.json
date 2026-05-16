@@ -28,7 +28,11 @@
     "vitest": "^3.2.3"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["bcrypt", "esbuild", "sharp"]
+    "onlyBuiltDependencies": [
+      "bcrypt",
+      "esbuild",
+      "sharp"
+    ]
   },
   "engines": {
     "node": ">=20.0.0",
