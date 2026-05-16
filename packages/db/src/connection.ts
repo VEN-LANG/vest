@@ -203,6 +203,14 @@ export function collection(name: string): Collection<Document> {
   return createMongoQueryProxy(name, col) as Collection<Document>;
 }
 
+export function __setMongoDbForTest(db: Db | undefined): void {
+  mongoDb = db;
+}
+
+export function __setPoolForTest(p: mysql.Pool | undefined): void {
+  pool = p;
+}
+
 export async function closeDatabase(): Promise<void> {
   if (dbType === "mysql") {
     if (pool) await pool.end();
