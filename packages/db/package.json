@@ -1,7 +1,7 @@
 {
   "name": "@lara-node/db",
-  "version": "0.1.7",
-  "description": "Lara-Node ORM \u2014 Eloquent-style models, migrations, schema builder",
+  "version": "0.1.9",
+  "description": "Lara-Node ORM — Eloquent-style models, migrations, schema builder",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -41,6 +41,6 @@
     "@lara-node/core": "workspace:^"
   },
   "peerDependencies": {
-    "@lara-node/core": "^0.1.4"
+    "@lara-node/core": "^0.1.5"
   }
 }

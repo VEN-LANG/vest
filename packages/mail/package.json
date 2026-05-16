@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/mail",
-  "version": "0.1.4",
+  "version": "0.1.7",
   "description": "Lara-Node mail manager with SMTP, log, and array drivers",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -38,8 +38,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@lara-node/events": "workspace:^",
-    "@lara-node/queue": "workspace:^",
+    "@lara-node/events": "^0.1.4",
+    "@lara-node/queue": "^0.1.4",
     "nodemailer": "^8.0.1"
   },
   "devDependencies": {
@@ -52,6 +52,6 @@
     "@lara-node/core": "workspace:^"
   },
   "peerDependencies": {
-    "@lara-node/core": "^0.1.4"
+    "@lara-node/core": "^0.1.5"
   }
 }

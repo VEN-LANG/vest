@@ -24,3 +24,4 @@ export {
 } from "./Middleware/ThrottleMiddleware.js";
 export { HttpKernel } from "./Http/Kernel.js";
 export { DocServiceProvider } from "./DocServiceProvider.js";
+export { autoRegisterModels, modelRegistryMiddleware } from "./ModelAutoRegistry.js";

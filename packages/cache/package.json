@@ -1,7 +1,7 @@
 {
   "name": "@lara-node/cache",
-  "version": "0.1.3",
-  "description": "Lara-Node cache manager \u2014 file, database, and Redis drivers",
+  "version": "0.1.6",
+  "description": "Lara-Node cache manager — file, database, and Redis drivers",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -28,7 +28,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@lara-node/db": "workspace:^",
+    "@lara-node/db": "^0.1.7",
     "redis": "^5.10.0"
   },
   "devDependencies": {
@@ -40,6 +40,6 @@
     "@lara-node/core": "workspace:^"
   },
   "peerDependencies": {
-    "@lara-node/core": "^0.1.4"
+    "@lara-node/core": "^0.1.5"
   }
 }

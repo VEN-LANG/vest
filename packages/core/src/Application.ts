@@ -1,4 +1,4 @@
-import express, { Application as ExpressApp, RequestHandler } from "express";
+import express, { Application as ExpressApp, ErrorRequestHandler, RequestHandler } from "express";
 import { createServer, Server as HttpServer } from "http";
 import cors from "cors";
 import { Container } from "./Container.js";
@@ -127,7 +127,7 @@ export class Application {
     });
   }
 
-  configureErrorHandler(handler: RequestHandler): void {
+  configureErrorHandler(handler: ErrorRequestHandler): void {
     this.expressApp.use(handler);
   }
 

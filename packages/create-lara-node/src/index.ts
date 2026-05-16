@@ -13,19 +13,19 @@ import pc from "picocolors";
 import prompts from "prompts";
 
 const VERSIONS: Record<string, string> = {
-  "@lara-node/core":        "0.1.4",
-  "@lara-node/router":      "0.1.4",
-  "@lara-node/db":          "0.1.4",
-  "@lara-node/auth":        "0.1.2",
-  "@lara-node/console":     "0.1.5",
-  "@lara-node/validator":   "0.1.6",
-  "@lara-node/middlewares": "0.1.7",
-  "@lara-node/events":      "0.1.3",
-  "@lara-node/queue":       "0.1.3",
-  "@lara-node/mail":        "0.1.3",
-  "@lara-node/horizon":     "0.1.4",
-  "@lara-node/telescope":   "0.1.4",
-  "@lara-node/cache":       "0.1.2",
+  "@lara-node/core":        "0.1.5",
+  "@lara-node/router":      "0.1.9",
+  "@lara-node/db":          "0.1.9",
+  "@lara-node/auth":        "0.1.6",
+  "@lara-node/console":     "0.1.9",
+  "@lara-node/validator":   "0.1.8",
+  "@lara-node/middlewares": "0.1.9",
+  "@lara-node/events":      "0.1.7",
+  "@lara-node/queue":       "0.1.7",
+  "@lara-node/mail":        "0.1.7",
+  "@lara-node/horizon":     "0.1.8",
+  "@lara-node/telescope":   "0.1.8",
+  "@lara-node/cache":       "0.1.6",
 };
 
 async function main() {
@@ -323,39 +323,7 @@ export {};
 `,
   );
 
-  // ── src/app/Models/ModelRegistry.ts ──────────────────────────────────────────
-  w(
-    dir,
-    "src/app/Models/ModelRegistry.ts",
-    `import User from './User/User';
-import Role from './User/Role';
-import Permission from './User/Permission';
-import File from './File/File';
-import { Model } from '@lara-node/db';
-
-/*
-|--------------------------------------------------------------------------
-| ModelRegistry
-|--------------------------------------------------------------------------
-|
-| Maps Express route parameter names to their Eloquent models.
-| Used by RouteServiceProvider for automatic route-model binding:
-|
-|   // Route: /api/roles/:role
-|   // => Role is auto-loaded from DB and injected as req.params.role
-|
-| Extending:
-|   ModelRegistry.set('post', Post);
-|
-*/
-export const ModelRegistry = new Map<string, typeof Model>([
-  ['user', User as typeof Model],
-  ['role', Role as typeof Model],
-  ['permission', Permission as typeof Model],
-  ['file', File as typeof Model],
-]);
-`,
-  );
+  // ── src/app/Models/ModelRegistry.ts is gone — models are auto-discovered ──
 
   // ── src/server.ts ─────────────────────────────────────────────────────────────
   w(
@@ -1527,16 +1495,18 @@ export class AppServiceProvider extends ServiceProvider {
     dir,
     "src/app/Providers/RouteServiceProvider.ts",
     `import { ServiceProvider } from '@lara-node/core';
-import RouterBuilder, { registerRouteBuilder } from '@lara-node/router';
-import { ModelRegistry } from '../Models/ModelRegistry';
+import { registerRouteBuilder, autoRegisterModels } from '@lara-node/router';
+import path from 'path';
 
 /*
 |--------------------------------------------------------------------------
 | RouteServiceProvider
 |--------------------------------------------------------------------------
 |
-| register() — registers models for route-model binding so that params like
-|              :role, :user are auto-resolved to model instances.
+| register() — scans src/app/Models and auto-registers every Model subclass
+|              for route-model binding (:user, :role → auto-resolved).
+|
+|              Override registerModels() to add extra manual registrations.
 |
 | boot()     — lazily loads route files (AFTER the HTTP Kernel has booted
 |              and registered middleware aliases like 'auth', 'can').
@@ -1554,9 +1524,27 @@ export class RouteServiceProvider extends ServiceProvider {
   protected apiPrefix = '/api';
 
   register(): void {
-    for (const [name, ModelClass] of ModelRegistry.entries()) {
-      RouterBuilder.registerModel(name, ModelClass);
-    }
+    void this.registerModels();
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Register Models
+  |--------------------------------------------------------------------------
+  | All Model subclasses in src/app/Models are registered automatically.
+  | You can override this method to add additional registrations:
+  |
+  |   import RouterBuilder from '@lara-node/router';
+  |   import { Product } from '../Models/Product';
+  |
+  |   protected async registerModels(): Promise<void> {
+  |     await super.registerModels();
+  |     RouterBuilder.registerModel('product', Product);
+  |   }
+  */
+  protected async registerModels(): Promise<void> {
+    const modelsRoot = path.resolve(__dirname, '../Models');
+    await autoRegisterModels(modelsRoot);
   }
 
   boot(): void {
