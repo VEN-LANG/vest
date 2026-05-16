@@ -2372,7 +2372,7 @@ channelRouter.post('/auth', (req, res) => {
   w(
     dir,
     "src/database/migrations/001_create_users.ts",
-    `import { MigrationSchema, TableBuilder } from '@lara-node/db';
+    `import type { MigrationSchema, TableBuilder } from '@lara-node/db';
 
 export class CreateUsersTable {
   async up(schema: MigrationSchema): Promise<void> {
@@ -2406,7 +2406,7 @@ export class CreateUsersTable {
   w(
     dir,
     "src/database/migrations/002_create_roles.ts",
-    `import { MigrationSchema, TableBuilder } from '@lara-node/db';
+    `import type { MigrationSchema, TableBuilder } from '@lara-node/db';
 
 export class CreateRolesTable {
   async up(schema: MigrationSchema): Promise<void> {
@@ -2431,7 +2431,7 @@ export class CreateRolesTable {
   w(
     dir,
     "src/database/migrations/003_create_permissions.ts",
-    `import { MigrationSchema, TableBuilder } from '@lara-node/db';
+    `import type { MigrationSchema, TableBuilder } from '@lara-node/db';
 
 export class CreatePermissionsTable {
   async up(schema: MigrationSchema): Promise<void> {
@@ -2456,7 +2456,7 @@ export class CreatePermissionsTable {
   w(
     dir,
     "src/database/migrations/004_create_roles_users.ts",
-    `import { MigrationSchema, TableBuilder } from '@lara-node/db';
+    `import type { MigrationSchema, TableBuilder } from '@lara-node/db';
 
 export class CreateRolesUsersTable {
   async up(schema: MigrationSchema): Promise<void> {
@@ -2479,7 +2479,7 @@ export class CreateRolesUsersTable {
   w(
     dir,
     "src/database/migrations/005_create_permissions_roles.ts",
-    `import { MigrationSchema, TableBuilder } from '@lara-node/db';
+    `import type { MigrationSchema, TableBuilder } from '@lara-node/db';
 
 export class CreatePermissionsRolesTable {
   async up(schema: MigrationSchema): Promise<void> {
@@ -2502,7 +2502,7 @@ export class CreatePermissionsRolesTable {
   w(
     dir,
     "src/database/migrations/006_user_profiles.ts",
-    `import { MigrationSchema, TableBuilder } from '@lara-node/db';
+    `import type { MigrationSchema, TableBuilder } from '@lara-node/db';
 
 export class CreateUserProfilesTable {
   async up(schema: MigrationSchema): Promise<void> {
@@ -2532,7 +2532,7 @@ export class CreateUserProfilesTable {
   w(
     dir,
     "src/database/migrations/007_create_files.ts",
-    `import { MigrationSchema, TableBuilder } from '@lara-node/db';
+    `import type { MigrationSchema, TableBuilder } from '@lara-node/db';
 
 export class CreateFilesTable {
   async up(schema: MigrationSchema): Promise<void> {

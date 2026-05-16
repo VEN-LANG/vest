@@ -1,42 +1,68 @@
 import fs from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
+import { createRequire } from "module";
 import crypto from "crypto";
 import readline from "readline";
 import os from "os";
 import { query, initDatabase, getDbType, getMongoDb } from "../connection.js";
 import Schema, { MongoSchema } from "./Schema.js";
 
+// createRequire rooted at the app's working directory so @swc-node/register
+// (or any other require hook) is active when .ts migration files are loaded.
+const _cjsRequire = createRequire(process.cwd() + "/package.json");
+
+async function loadMigrationFile(filePath: string): Promise<unknown> {
+  if (filePath.endsWith(".ts")) {
+    // Use CJS require — respects registered hooks (@swc-node/register, ts-node, etc.)
+    // so TypeScript is transformed and type-only imports are correctly stripped.
+    return _cjsRequire(filePath);
+  }
+  return import(pathToFileURL(filePath).href);
+}
+
 // helper to resolve CommonJS/ESModule default exports from required migration files
 function resolveMigrationModule(mod: any) {
   if (!mod) return mod;
-  // if it's an object with default property, prefer that (handle esModule wrappers)
-  if (mod && typeof mod === "object" && "default" in mod && mod.default)
+
+  // ESM/CJS default export wrapper
+  if (typeof mod === "object" && "default" in mod && mod.default)
     return resolveMigrationModule(mod.default);
-  // prefer direct object that exposes up/down methods
-  if (
-    mod &&
-    typeof mod === "object" &&
-    (typeof mod.up === "function" || typeof mod.down === "function")
-  )
+
+  // Plain object with up/down directly (e.g. module.exports = { up, down })
+  if (typeof mod === "object" && (typeof mod.up === "function" || typeof mod.down === "function"))
     return mod;
-  // if it's a function, it may be a class constructor with prototype methods - try instantiate
+
+  // Class constructor passed directly or as default export
   if (typeof mod === "function") {
-    // detect likely class by checking prototype methods
-    try {
-      const proto = mod.prototype || {};
-      if (typeof proto.up === "function" || typeof proto.down === "function") {
-        try {
-          const inst = new (mod as any)();
-          if (inst && (typeof inst.up === "function" || typeof inst.down === "function"))
-            return inst;
-        } catch (e) {
-          // instantiation failed; fallthrough to returning original function
-        }
-      }
-    } catch (e) {}
+    const proto = mod.prototype ?? {};
+    if (typeof proto.up === "function" || typeof proto.down === "function") {
+      try {
+        const inst = new (mod as new () => unknown)();
+        if (inst && (typeof (inst as any).up === "function" || typeof (inst as any).down === "function"))
+          return inst;
+      } catch (_) {}
+    }
     return mod;
   }
+
+  // Named export object: { CreateUsersTable: [class], ... } — find the first migration class
+  if (typeof mod === "object") {
+    for (const key of Object.keys(mod)) {
+      const val = mod[key];
+      if (typeof val === "function") {
+        const proto = val.prototype ?? {};
+        if (typeof proto.up === "function" || typeof proto.down === "function") {
+          try {
+            const inst = new (val as new () => unknown)();
+            if (inst && (typeof (inst as any).up === "function" || typeof (inst as any).down === "function"))
+              return inst;
+          } catch (_) {}
+        }
+      }
+    }
+  }
+
   return mod;
 }
 
@@ -384,7 +410,7 @@ async function run(inputArgs?: {
 
         console.log("Applying migration", f);
         if (f.endsWith(".js") || f.endsWith(".ts")) {
-          const rawMod = await import(pathToFileURL(path.join(dir, f)).href);
+          const rawMod = await loadMigrationFile(path.join(dir, f));
           const mod = resolveMigrationModule(rawMod);
           if (mod && typeof mod.up === "function") {
             if (getDbType() === "mongodb") {
@@ -457,7 +483,7 @@ async function run(inputArgs?: {
           const full = path.join(dir2, f);
           console.log("Reverting migration", f);
           if (fs.existsSync(full) && (f.endsWith(".js") || f.endsWith(".ts"))) {
-            const rawMod = await import(pathToFileURL(full).href);
+            const rawMod = await loadMigrationFile(full);
             const mod = resolveMigrationModule(rawMod);
             if (mod && typeof mod.down === "function") {
               const schema = new MongoSchema();

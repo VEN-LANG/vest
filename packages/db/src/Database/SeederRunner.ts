@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
+import { createRequire } from "module";
 import {
   initDatabase,
   query,
@@ -8,6 +9,13 @@ import {
   getMongoDb,
   collection as mongoCollection,
 } from "../connection.js";
+
+const _cjsRequire = createRequire(process.cwd() + "/package.json");
+
+async function loadFile(filePath: string): Promise<unknown> {
+  if (filePath.endsWith(".ts")) return _cjsRequire(filePath);
+  return import(pathToFileURL(filePath).href);
+}
 
 export interface SeederOptions {
   class?: string;
@@ -41,7 +49,7 @@ function makeSeederContext(): SeederCtx {
 }
 
 async function loadAndRunSeeder(filePath: string) {
-  const mod = await import(pathToFileURL(filePath).href);
+  const mod = await loadFile(filePath);
   const fn = mod && (mod.seed || mod.default || mod.run || mod);
   if (typeof fn === "function") {
     const wantsArg = fn.length >= 1;
