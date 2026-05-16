@@ -14,7 +14,7 @@ import prompts from "prompts";
 
 const VERSIONS: Record<string, string> = {
   "@lara-node/core":        "0.1.4",
-  "@lara-node/router":      "0.1.3",
+  "@lara-node/router":      "0.1.4",
   "@lara-node/db":          "0.1.4",
   "@lara-node/auth":        "0.1.2",
   "@lara-node/console":     "0.1.5",
@@ -1443,6 +1443,7 @@ export class FileController {
   // ── AppServiceProvider ────────────────────────────────────────────────────────
   const additionalProviders: string[] = [
     `ConfigServiceProvider`,
+    `DatabaseServiceProvider`,
     `MiddlewareServiceProvider`,
     `RouteServiceProvider`,
     `DocServiceProvider`,
@@ -1465,6 +1466,7 @@ export class FileController {
     `import { FileController } from '../Http/Controllers/File/FileController';`,
     `import { PermissionsSyncCommand, PermissionsListCommand } from '../Console/Commands/PermissionCommands';`,
     `import { ConfigServiceProvider } from './ConfigServiceProvider';`,
+    `import { DatabaseServiceProvider } from '@lara-node/db';`,
     `import { MiddlewareServiceProvider } from './MiddlewareServiceProvider';`,
     `import { RouteServiceProvider } from './RouteServiceProvider';`,
     `import { DocServiceProvider } from '@lara-node/router';`,
@@ -1525,7 +1527,7 @@ export class AppServiceProvider extends ServiceProvider {
     dir,
     "src/app/Providers/RouteServiceProvider.ts",
     `import { ServiceProvider } from '@lara-node/core';
-import RouterBuilder from '@lara-node/router';
+import RouterBuilder, { registerRouteBuilder } from '@lara-node/router';
 import { ModelRegistry } from '../Models/ModelRegistry';
 
 /*
@@ -1565,11 +1567,13 @@ export class RouteServiceProvider extends ServiceProvider {
 
   protected mapApiRoutes(): void {
     const { routesBuilder } = require('@routes/api');
+    registerRouteBuilder(routesBuilder, 'api', this.apiPrefix);
     this.app.mountRoutes(this.apiPrefix, routesBuilder.build());
   }
 
   protected mapWebRoutes(): void {
     const { webRoutesBuilder } = require('@routes/web');
+    registerRouteBuilder(webRoutesBuilder, 'web');
     this.app.mountRoutes('/', webRoutesBuilder.build());
   }
   ${hasEvents ? `

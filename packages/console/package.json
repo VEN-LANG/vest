@@ -1,7 +1,7 @@
 {
   "name": "@lara-node/console",
-  "version": "0.1.5",
-  "description": "Lara-Node Artisan CLI — commands, kernel, and scheduler",
+  "version": "0.1.6",
+  "description": "Lara-Node Artisan CLI \u2014 commands, kernel, and scheduler",
   "bin": {
     "artisan": "./dist/artisan.js"
   },
@@ -33,7 +33,6 @@
   },
   "dependencies": {
     "@lara-node/cache": "workspace:^",
-    "@lara-node/core": "workspace:^",
     "@lara-node/db": "workspace:^",
     "@lara-node/events": "workspace:^",
     "@lara-node/horizon": "workspace:^",
@@ -49,6 +48,10 @@
     "rimraf": "^6.0.1",
     "tsdown": "^0.12.9",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.3"
+    "vitest": "^3.2.3",
+    "@lara-node/core": "workspace:^"
+  },
+  "peerDependencies": {
+    "@lara-node/core": "^0.1.4"
   }
 }

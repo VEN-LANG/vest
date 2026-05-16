@@ -1,7 +1,7 @@
 {
   "name": "create-lara-node",
-  "version": "0.2.6",
-  "description": "Scaffold a new Lara-Node application — pnpm create lara-node",
+  "version": "0.2.8",
+  "description": "Scaffold a new Lara-Node application \u2014 pnpm create lara-node",
   "bin": {
     "create-lara-node": "./dist/index.js"
   },

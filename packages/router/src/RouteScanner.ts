@@ -34,12 +34,20 @@ export interface ScannedRoute {
 
 // ─── Scanner ───────────────────────────────────────────────────────────────────
 
-/** Registry for route builders — populated by the app at boot time. */
-const _routeBuilders: Array<{
+type RouteBuilderEntry = {
   builder: { getRoutes(): any[] };
   prefix?: string;
   source: "api" | "web";
-}> = [];
+};
+
+const _BUILDERS_KEY = "__lara_node_route_builders__";
+if (!(globalThis as Record<string, unknown>)[_BUILDERS_KEY]) {
+  (globalThis as Record<string, unknown>)[_BUILDERS_KEY] = [];
+}
+/** Registry for route builders — populated by the app at boot time. */
+const _routeBuilders: RouteBuilderEntry[] = (
+  globalThis as Record<string, unknown>
+)[_BUILDERS_KEY] as RouteBuilderEntry[];
 
 export function registerRouteBuilder(
   builder: { getRoutes(): any[] },

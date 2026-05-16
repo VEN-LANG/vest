@@ -235,11 +235,8 @@ importers:
 
   packages/auth:
     dependencies:
-      '@lara-node/core':
-        specifier: workspace:*
-        version: link:../core
       '@lara-node/router':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../router
       bcrypt:
         specifier: ^6.0.0
@@ -248,6 +245,9 @@ importers:
         specifier: ^9.0.3
         version: 9.0.3
     devDependencies:
+      '@lara-node/core':
+        specifier: workspace:^
+        version: link:../core
       '@types/bcrypt':
         specifier: ^6.0.0
         version: 6.0.0
@@ -275,16 +275,16 @@ importers:
 
   packages/cache:
     dependencies:
-      '@lara-node/core':
-        specifier: workspace:*
-        version: link:../core
       '@lara-node/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       redis:
         specifier: ^5.10.0
         version: 5.12.1
     devDependencies:
+      '@lara-node/core':
+        specifier: workspace:^
+        version: link:../core
       '@types/node':
         specifier: ^24.12.2
         version: 24.12.4
@@ -304,25 +304,22 @@ importers:
   packages/console:
     dependencies:
       '@lara-node/cache':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../cache
-      '@lara-node/core':
-        specifier: workspace:*
-        version: link:../core
       '@lara-node/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@lara-node/events':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../events
       '@lara-node/horizon':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../horizon
       '@lara-node/queue':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../queue
       '@lara-node/router':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../router
       dotenv:
         specifier: ^17.2.3
@@ -334,6 +331,9 @@ importers:
         specifier: ^17.7.2
         version: 17.7.2
     devDependencies:
+      '@lara-node/core':
+        specifier: workspace:^
+        version: link:../core
       '@types/node':
         specifier: ^24.12.2
         version: 24.12.4
@@ -414,9 +414,6 @@ importers:
 
   packages/db:
     dependencies:
-      '@lara-node/core':
-        specifier: workspace:*
-        version: link:../core
       mongodb:
         specifier: ^7.0.0
         version: 7.2.0
@@ -427,6 +424,9 @@ importers:
         specifier: ^0.2.2
         version: 0.2.2
     devDependencies:
+      '@lara-node/core':
+        specifier: workspace:^
+        version: link:../core
       '@types/node':
         specifier: ^24.12.2
         version: 24.12.4
@@ -445,11 +445,8 @@ importers:
 
   packages/events:
     dependencies:
-      '@lara-node/core':
-        specifier: workspace:*
-        version: link:../core
       '@lara-node/queue':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../queue
       reflect-metadata:
         specifier: ^0.2.2
@@ -458,6 +455,9 @@ importers:
         specifier: ^8.19.0
         version: 8.20.1
     devDependencies:
+      '@lara-node/core':
+        specifier: workspace:^
+        version: link:../core
       '@types/node':
         specifier: ^24.12.2
         version: 24.12.4
@@ -480,24 +480,24 @@ importers:
   packages/horizon:
     dependencies:
       '@lara-node/cache':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../cache
-      '@lara-node/core':
-        specifier: workspace:*
-        version: link:../core
       '@lara-node/events':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../events
       '@lara-node/queue':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../queue
       '@lara-node/router':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../router
       express:
         specifier: ^5.2.1
         version: 5.2.1
     devDependencies:
+      '@lara-node/core':
+        specifier: workspace:^
+        version: link:../core
       '@types/express':
         specifier: ^5.0.6
         version: 5.0.6
@@ -519,19 +519,19 @@ importers:
 
   packages/mail:
     dependencies:
-      '@lara-node/core':
-        specifier: workspace:*
-        version: link:../core
       '@lara-node/events':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../events
       '@lara-node/queue':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../queue
       nodemailer:
         specifier: ^8.0.1
         version: 8.0.7
     devDependencies:
+      '@lara-node/core':
+        specifier: workspace:^
+        version: link:../core
       '@types/node':
         specifier: ^24.12.2
         version: 24.12.4
@@ -554,10 +554,10 @@ importers:
   packages/middlewares:
     dependencies:
       '@lara-node/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@lara-node/validator':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../validator
       express:
         specifier: ^5.2.1
@@ -588,13 +588,10 @@ importers:
   packages/queue:
     dependencies:
       '@lara-node/cache':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../cache
-      '@lara-node/core':
-        specifier: workspace:*
-        version: link:../core
       '@lara-node/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       cron-parser:
         specifier: ^5.5.0
@@ -606,6 +603,9 @@ importers:
         specifier: ^0.2.2
         version: 0.2.2
     devDependencies:
+      '@lara-node/core':
+        specifier: workspace:^
+        version: link:../core
       '@types/node':
         specifier: ^24.12.2
         version: 24.12.4
@@ -625,13 +625,10 @@ importers:
   packages/router:
     dependencies:
       '@lara-node/cache':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../cache
-      '@lara-node/core':
-        specifier: workspace:*
-        version: link:../core
       '@lara-node/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       express:
         specifier: ^5.2.1
@@ -640,6 +637,9 @@ importers:
         specifier: ^0.2.2
         version: 0.2.2
     devDependencies:
+      '@lara-node/core':
+        specifier: workspace:^
+        version: link:../core
       '@types/express':
         specifier: ^5.0.6
         version: 5.0.6
@@ -662,30 +662,30 @@ importers:
   packages/telescope:
     dependencies:
       '@lara-node/cache':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../cache
-      '@lara-node/core':
-        specifier: workspace:*
-        version: link:../core
       '@lara-node/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@lara-node/events':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../events
       '@lara-node/horizon':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../horizon
       '@lara-node/queue':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../queue
       '@lara-node/router':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../router
       express:
         specifier: ^5.2.1
         version: 5.2.1
     devDependencies:
+      '@lara-node/core':
+        specifier: workspace:^
+        version: link:../core
       '@types/express':
         specifier: ^5.0.6
         version: 5.0.6
@@ -708,7 +708,7 @@ importers:
   packages/validator:
     dependencies:
       '@lara-node/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
     devDependencies:
       '@types/node':

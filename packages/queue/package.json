@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/queue",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Lara-Node job queue, worker, and scheduler",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -20,7 +20,11 @@
   ],
   "laraNode": {
     "publish": [
-      { "tag": "config", "from": "config/queue.config.ts", "to": "config/queue.config.ts" }
+      {
+        "tag": "config",
+        "from": "config/queue.config.ts",
+        "to": "config/queue.config.ts"
+      }
     ]
   },
   "publishConfig": {
@@ -35,7 +39,6 @@
   },
   "dependencies": {
     "@lara-node/cache": "workspace:^",
-    "@lara-node/core": "workspace:^",
     "@lara-node/db": "workspace:^",
     "cron-parser": "^5.5.0",
     "redis": "^5.10.0",
@@ -46,6 +49,10 @@
     "rimraf": "^6.0.1",
     "tsdown": "^0.12.9",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.3"
+    "vitest": "^3.2.3",
+    "@lara-node/core": "workspace:^"
+  },
+  "peerDependencies": {
+    "@lara-node/core": "^0.1.4"
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@lara-node/db",
-  "version": "0.1.4",
-  "description": "Lara-Node ORM — Eloquent-style models, migrations, schema builder",
+  "version": "0.1.6",
+  "description": "Lara-Node ORM \u2014 Eloquent-style models, migrations, schema builder",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -28,7 +28,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@lara-node/core": "workspace:^",
     "mongodb": "^7.0.0",
     "mysql2": "^3.16.0",
     "reflect-metadata": "^0.2.2"
@@ -38,6 +37,10 @@
     "rimraf": "^6.0.1",
     "tsdown": "^0.12.9",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.3"
+    "vitest": "^3.2.3",
+    "@lara-node/core": "workspace:^"
+  },
+  "peerDependencies": {
+    "@lara-node/core": "^0.1.4"
   }
 }

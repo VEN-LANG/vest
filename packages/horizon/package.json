@@ -1,7 +1,7 @@
 {
   "name": "@lara-node/horizon",
-  "version": "0.1.4",
-  "description": "Lara-Node Horizon — queue monitoring dashboard",
+  "version": "0.1.5",
+  "description": "Lara-Node Horizon \u2014 queue monitoring dashboard",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -20,7 +20,11 @@
   ],
   "laraNode": {
     "publish": [
-      { "tag": "config", "from": "config/horizon.config.ts", "to": "config/horizon.config.ts" }
+      {
+        "tag": "config",
+        "from": "config/horizon.config.ts",
+        "to": "config/horizon.config.ts"
+      }
     ]
   },
   "publishConfig": {
@@ -35,7 +39,6 @@
   },
   "dependencies": {
     "@lara-node/cache": "workspace:^",
-    "@lara-node/core": "workspace:^",
     "@lara-node/events": "workspace:^",
     "@lara-node/queue": "workspace:^",
     "@lara-node/router": "workspace:^",
@@ -47,6 +50,10 @@
     "rimraf": "^6.0.1",
     "tsdown": "^0.12.9",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.3"
+    "vitest": "^3.2.3",
+    "@lara-node/core": "workspace:^"
+  },
+  "peerDependencies": {
+    "@lara-node/core": "^0.1.4"
   }
 }
