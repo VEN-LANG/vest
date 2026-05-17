@@ -329,7 +329,8 @@ export {};
   w(
     dir,
     "src/server.ts",
-    `import { startApplication } from './bootstrap/app';
+    `import 'dotenv/config';
+import { startApplication } from './bootstrap/app';
 
 startApplication();
 `,
