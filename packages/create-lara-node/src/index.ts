@@ -15,7 +15,7 @@ import prompts from "prompts";
 const VERSIONS: Record<string, string> = {
   "@lara-node/core":        "0.1.6",
   "@lara-node/router":      "0.2.3",
-  "@lara-node/db":          "0.1.10",
+  "@lara-node/db":          "0.1.11",
   "@lara-node/auth":        "0.1.6",
   "@lara-node/console":     "0.1.9",
   "@lara-node/validator":   "0.1.8",
@@ -259,34 +259,57 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
   w(dir, "src/register.ts", `import 'reflect-metadata';\nimport 'dotenv/config';\n`);
 
   // ── .env.example ─────────────────────────────────────────────────────────────
-  w(
-    dir,
-    ".env.example",
-    [
-      "APP_NAME=" + name,
-      "APP_ENV=local",
-      "APP_KEY=",
-      "APP_DEBUG=true",
-      "PORT=3000",
-      "",
-      `DB_CONNECTION=${opts.database}`,
+  const dbName = name.replace(/-/g, "_");
+  const envLines: string[] = [
+    "APP_NAME=" + name,
+    "APP_ENV=local",
+    "APP_KEY=",
+    "APP_DEBUG=true",
+    "PORT=3000",
+    "",
+    "# ── Database ──────────────────────────────────────────────────",
+    `DB_CONNECTION=${opts.database}`,
+    "DB_NAME=" + dbName,
+  ];
+
+  if (opts.database === "mysql") {
+    envLines.push(
       "DB_HOST=127.0.0.1",
       "DB_PORT=3306",
-      "DB_NAME=" + name.replace(/-/g, "_"),
       "DB_USER=root",
       "DB_PASSWORD=",
-      "",
-      "JWT_SECRET=change-this-in-production",
-      "JWT_EXPIRES_IN=7d",
-      "",
-      "CACHE_DRIVER=file",
-      "QUEUE_CONNECTION=sync",
-      "MAIL_DRIVER=log",
-      "MAIL_FROM_ADDRESS=hello@example.com",
-      "MAIL_FROM_NAME=" + name,
-      "BROADCAST_DRIVER=null",
-    ].join("\n"),
+      "DB_POOL_LIMIT=10",
+      "# DB_SOCKET_PATH=/var/run/mysqld/mysqld.sock  # use instead of host/port on Linux",
+    );
+  } else {
+    envLines.push(
+      "# MONGO_URI=mongodb://user:pass@localhost:27017/" + dbName + "?authSource=admin",
+      "DB_HOST=127.0.0.1",
+      "DB_PORT=27017",
+      "# MONGO_REPLICA_SET=rs0",
+      "# MONGO_DIRECT_CONNECTION=true",
+      "# MONGO_RETRY_WRITES=false",
+      "# MONGO_SERVER_SELECTION_TIMEOUT_MS=10000",
+    );
+  }
+
+  envLines.push(
+    "# SKIP_DB=1  # set to skip DB init in test/CI",
+    "",
+    "# ── Auth ─────────────────────────────────────────────────────",
+    "JWT_SECRET=change-this-in-production",
+    "JWT_EXPIRES_IN=7d",
+    "",
+    "# ── Cache / Queue / Mail / Broadcast ─────────────────────────",
+    "CACHE_DRIVER=file",
+    "QUEUE_CONNECTION=sync",
+    "MAIL_DRIVER=log",
+    "MAIL_FROM_ADDRESS=hello@example.com",
+    "MAIL_FROM_NAME=" + name,
+    "BROADCAST_DRIVER=null",
   );
+
+  w(dir, ".env.example", envLines.join("\n"));
 
   w(dir, ".gitignore", "node_modules\ndist\n.env\n*.log\nuploads/\n");
 
@@ -331,8 +354,23 @@ export {};
     "src/server.ts",
     `import 'dotenv/config';
 import { startApplication } from './bootstrap/app';
+import { closeDatabase } from '@lara-node/db';
 
 startApplication();
+
+async function shutdown(signal: string): Promise<void> {
+  console.log(\`\\n[server] \${signal} received — shutting down gracefully\`);
+  try {
+    await closeDatabase();
+    console.log('[server] Database connections closed');
+  } catch (err) {
+    console.error('[server] Error during shutdown:', err);
+  }
+  process.exit(0);
+}
+
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+process.on('SIGINT',  () => void shutdown('SIGINT'));
 `,
   );
 
@@ -2750,24 +2788,51 @@ export default {
 `,
   );
 
-  w(
-    dir,
-    "src/config/db.config.ts",
-    `export const dbConfig = {
-  connection: process.env.DB_CONNECTION || '${opts.database}',
-  host: process.env.DB_HOST || '127.0.0.1',
-  port: Number(process.env.DB_PORT) || ${opts.database === "mysql" ? 3306 : 27017},
-  database: process.env.DB_NAME || '${name.replace(/-/g, "_")}',
-  user: process.env.DB_USER || 'root',
+  const dbConfigContent = opts.database === "mysql"
+    ? `const dbName = '${name.replace(/-/g, "_")}';
+
+export const dbConfig = {
+  connection: process.env.DB_CONNECTION || 'mysql',
+  // ── MySQL ──────────────────────────────────────────────────────────────────
+  host:     process.env.DB_HOST     || '127.0.0.1',
+  port:     Number(process.env.DB_PORT) || 3306,
+  database: process.env.DB_NAME     || dbName,
+  user:     process.env.DB_USER     || 'root',
   password: process.env.DB_PASSWORD || '',
   pool: {
     limit: Number(process.env.DB_POOL_LIMIT) || 10,
   },
+  // Set DB_SOCKET_PATH (or DB_SOCKET) to use a Unix socket instead of host/port.
+  // Common paths: /var/run/mysqld/mysqld.sock  /tmp/mysql.sock
+  socketPath: process.env.DB_SOCKET_PATH || process.env.DB_SOCKET || undefined,
 };
+`
+    : `const dbName = '${name.replace(/-/g, "_")}';
 
+export const dbConfig = {
+  connection: process.env.DB_CONNECTION || 'mongodb',
+  // ── MongoDB ────────────────────────────────────────────────────────────────
+  // MONGO_URI takes precedence over host/port when set.
+  uri:      process.env.MONGO_URI || process.env.MONGODB_URI
+              || \`mongodb://\${process.env.DB_HOST || '127.0.0.1'}:\${process.env.DB_PORT || 27017}\`,
+  database: process.env.DB_NAME || dbName,
+  // Replica set: set MONGO_REPLICA_SET to the set name to enable replica-set mode.
+  replicaSet:         process.env.MONGO_REPLICA_SET             || undefined,
+  // directConnection: 'true' for standalone, 'false' for replica set (auto if unset).
+  directConnection:   process.env.MONGO_DIRECT_CONNECTION       || undefined,
+  // retryWrites: 'true' for replica set, 'false' for standalone (auto if unset).
+  retryWrites:        process.env.MONGO_RETRY_WRITES            || undefined,
+  serverSelectionTimeoutMS: Number(process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS) || 10000,
+};
+`;
+
+  w(
+    dir,
+    "src/config/db.config.ts",
+    dbConfigContent + `
 export async function initDatabase() {
   const { initDatabase: init } = await import('@lara-node/db');
-  return init(dbConfig);
+  return init();
 }
 
 export default dbConfig;
@@ -3131,16 +3196,49 @@ g.post('/login', 'throttle:10', [AuthController, 'login']);
 
 ## Environment Variables
 
+### App
+
 | Variable | Default | Description |
-|----------|---------|-------------|
+|---|---|---|
 | \`APP_ENV\` | \`local\` | Application environment |
 | \`PORT\` | \`3000\` | HTTP server port |
-| \`DB_CONNECTION\` | \`${opts.database}\` | Database driver |
-| \`DB_HOST\` | \`127.0.0.1\` | Database host |
-| \`DB_NAME\` | \`${name.replace(/-/g, "_")}\` | Database name |
 | \`JWT_SECRET\` | — | **Required in production** |
 | \`JWT_EXPIRES_IN\` | \`7d\` | Token expiry |
-| \`MAIL_DRIVER\` | \`log\` | Mail driver (log, smtp, ses) |
+
+### Database — common
+
+| Variable | Default | Description |
+|---|---|---|
+| \`DB_CONNECTION\` | \`${opts.database}\` | Driver: \`mysql\` or \`mongodb\` |
+| \`DB_NAME\` | \`${name.replace(/-/g, "_")}\` | Database / schema name |
+| \`SKIP_DB\` | — | Set to \`1\` to skip DB init in CI/test |
+
+${opts.database === "mysql" ? `### Database — MySQL
+
+| Variable | Default | Description |
+|---|---|---|
+| \`DB_HOST\` | \`127.0.0.1\` | Host |
+| \`DB_PORT\` | \`3306\` | Port |
+| \`DB_USER\` | \`root\` | Username |
+| \`DB_PASSWORD\` | _(empty)_ | Password |
+| \`DB_POOL_LIMIT\` | \`10\` | Connection pool size |
+| \`DB_SOCKET_PATH\` | — | Unix socket path (overrides host/port) |` : `### Database — MongoDB
+
+| Variable | Default | Description |
+|---|---|---|
+| \`MONGO_URI\` | — | Full connection string (preferred) |
+| \`DB_HOST\` | \`127.0.0.1\` | Used to build default URI |
+| \`DB_PORT\` | \`27017\` | Used to build default URI |
+| \`MONGO_REPLICA_SET\` | — | Replica set name |
+| \`MONGO_DIRECT_CONNECTION\` | auto | \`true\` / \`false\` |
+| \`MONGO_RETRY_WRITES\` | auto | \`true\` / \`false\` |
+| \`MONGO_SERVER_SELECTION_TIMEOUT_MS\` | \`10000\` | Timeout in ms |`}
+
+### Mail / Queue / Broadcast
+
+| Variable | Default | Description |
+|---|---|---|
+| \`MAIL_DRIVER\` | \`log\` | Mail driver (log, smtp) |
 | \`MAIL_FROM_ADDRESS\` | — | From address |
 | \`QUEUE_CONNECTION\` | \`sync\` | Queue driver |
 | \`BROADCAST_DRIVER\` | \`null\` | Broadcasting driver |
