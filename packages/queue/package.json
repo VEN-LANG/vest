@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/queue",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Lara-Node job queue, worker, and scheduler",
   "type": "module",
   "main": "./dist/index.cjs",

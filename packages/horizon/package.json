@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/horizon",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Lara-Node Horizon — queue monitoring dashboard",
   "type": "module",
   "main": "./dist/index.cjs",

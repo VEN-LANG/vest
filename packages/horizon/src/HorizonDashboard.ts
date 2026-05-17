@@ -105,8 +105,8 @@ tr.clickable{cursor:pointer}
   <section>
     <h2>Workers</h2>
     <table>
-      <thead><tr><th>ID</th><th>Connection</th><th>Queues</th><th>Status</th><th>Processed</th><th>Memory</th><th>Runtime</th><th>Current Job</th><th>Actions</th></tr></thead>
-      <tbody id="wb"><tr><td colspan="9" class="empty">No workers registered</td></tr></tbody>
+      <thead><tr><th>ID</th><th>Connection</th><th>Queues</th><th>Status</th><th>Processed</th><th>Memory</th><th>Runtime</th><th>Last Run</th><th>Next Run</th><th>Current Job</th><th>Actions</th></tr></thead>
+      <tbody id="wb"><tr><td colspan="11" class="empty">No workers registered</td></tr></tbody>
     </table>
   </section>
 
@@ -332,7 +332,7 @@ async function refresh(){
 
     /* Workers */
     const wb=document.getElementById('wb');
-    wb.innerHTML=!workers.length?'<tr><td colspan="9" class="empty">No workers registered</td></tr>':workers.map(w=>\`
+    wb.innerHTML=!workers.length?'<tr><td colspan="11" class="empty">No workers registered</td></tr>':workers.map(w=>\`
       <tr>
         <td class="trunc" title="\${w.id}">\${w.id}</td>
         <td>\${w.connection}</td>
@@ -341,6 +341,8 @@ async function refresh(){
         <td>\${w.jobsProcessed}</td>
         <td>\${w.memoryMb?Math.round(w.memoryMb)+'MB':'-'}</td>
         <td>\${w.runtimeSeconds?Math.round(w.runtimeSeconds)+'s':'-'}</td>
+        <td>\${fmt(w.lastRun)}</td>
+        <td>\${fmt(w.nextRun)}</td>
         <td class="trunc" title="\${w.currentJob?w.currentJob.displayName:''}">\${w.currentJob?w.currentJob.displayName:'-'}</td>
         <td><div class="acts">
           \${w.status==='running'?'<button class="btn" onclick="wAction(\\''+w.id+'\\',\\'pause\\')">Pause</button>':''}

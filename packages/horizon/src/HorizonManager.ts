@@ -57,6 +57,8 @@ class HorizonManagerClass {
                 memoryMb: process.memoryUsage().heapUsed / 1024 / 1024,
                 runtimeSeconds: 0,
                 startedAt,
+                lastRun: null,
+                nextRun: null,
                 pid: process.pid,
             }).catch(() => {});
         });
@@ -79,6 +81,7 @@ class HorizonManagerClass {
                 currentJob: null,
                 memoryMb: process.memoryUsage().heapUsed / 1024 / 1024,
                 runtimeSeconds: worker.getRuntime(),
+                lastRun: new Date(),
             }).catch(() => {});
             horizonMetrics.recordJob({
                 uuid: job.uuid,
@@ -104,6 +107,7 @@ class HorizonManagerClass {
                 currentJob: null,
                 memoryMb: process.memoryUsage().heapUsed / 1024 / 1024,
                 runtimeSeconds: worker.getRuntime(),
+                lastRun: new Date(),
             }).catch(() => {});
             horizonMetrics.recordJob({
                 uuid: job.uuid,
@@ -129,23 +133,27 @@ class HorizonManagerClass {
         worker.on("worker:stop", () => {
             horizonMetrics.updateWorker(id, { status: "stopped" }).catch(() => {});
             clearInterval(heartbeat);
+
+            // If still in the workers map, the stop was self-initiated (memory limit,
+            // queue:restart signal, stopWhenEmpty, etc.) — auto-restart after a short delay.
+            // stopWorker() removes from the map BEFORE calling worker.stop(), so explicit
+            // stops never reach this branch.
+            if (this.workers.has(id)) {
+                this.workers.delete(id);
+                const savedDef = this.workerDefs.get(id);
+                if (savedDef) {
+                    console.log(`[Horizon] Worker ${id} stopped — restarting in 2 s...`);
+                    horizonMetrics.updateWorker(id, { nextRun: new Date(Date.now() + 2000) }).catch(() => {});
+                    setTimeout(() => this.startWorker(savedDef), 2000);
+                }
+            }
         });
 
         worker.on("worker:memory-exceeded", ({ memoryMb, limitMb }: { memoryMb: number; limitMb: number }) => {
             console.log(
-                `[Horizon] Worker ${id} hit memory limit (${memoryMb}/${limitMb} MB) — ` +
-                `trimming Telescope store and scheduling restart...`,
+                `[Horizon] Worker ${id} hit memory limit (${memoryMb}/${limitMb} MB) — stopping for restart...`,
             );
-            // Free the largest block of disposable in-process memory before the restart
-            TelescopeStore.trim(0.25);
-            // Only restart if the worker was not explicitly stopped (stopWorker removes from this.workers first)
-            setTimeout(() => {
-                const savedDef = this.workerDefs.get(id);
-                if (savedDef && !this.workers.has(id)) {
-                    console.log(`[Horizon] Restarting worker ${id} after memory limit...`);
-                    this.startWorker(savedDef);
-                }
-            }, 2000);
+            // Restart is handled uniformly by the worker:stop handler above.
         });
 
         // Heartbeat — refreshes both the worker snapshot TTL AND the IDs list

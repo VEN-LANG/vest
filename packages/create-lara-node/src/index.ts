@@ -2765,8 +2765,8 @@ export default {
 };
 
 export async function initDatabase() {
-  const { DB } = await import('@lara-node/db');
-  return DB.connect(dbConfig);
+  const { initDatabase: init } = await import('@lara-node/db');
+  return init(dbConfig);
 }
 
 export default dbConfig;

@@ -41,6 +41,8 @@ export interface WorkerSnapshot {
   memoryMb: number;
   runtimeSeconds: number;
   startedAt: Date | null;
+  lastRun: Date | null;
+  nextRun: Date | null;
   pid: number;
 }
 
