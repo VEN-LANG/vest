@@ -71,8 +71,9 @@ export class Schedule {
   private tasks: ScheduledTask[] = [];
   private running: boolean = false;
   private events: EventEmitter = new EventEmitter();
-  // Cache split cron parts keyed by expression string — avoids re-splitting on every tick
   private readonly cronPartsCache = new Map<string, string[]>();
+  private readonly taskCacheKey = (name: string) =>
+    `${process.env.APP_NAME || "app"}:scheduler:task:${name}`;
 
   /*
   |--------------------------------------------------------------------------
@@ -304,7 +305,6 @@ export class Schedule {
 
   private async runTask(task: ScheduledTask): Promise<void> {
     task.isRunning = true;
-    task.lastRun = new Date();
     this.updateNextTaskRun(task);
 
     console.log(`[Scheduler] Running task: ${task.name}`);
@@ -312,6 +312,8 @@ export class Schedule {
 
     const finalize = async (error?: Error) => {
       task.isRunning = false;
+      task.lastRun = new Date();
+      Cache.set(this.taskCacheKey(task.name), { lastRun: task.lastRun }, null).catch(() => {});
       if (task.withoutOverlapping) {
         await releaseLock(`overlap:${task.name}`).catch(() => {});
       }
@@ -356,6 +358,15 @@ export class Schedule {
 
     this.running = true;
     console.log("[Scheduler] Starting scheduler daemon...");
+
+    // Restore lastRun from cache for all registered tasks so the dashboard
+    // shows accurate history after a process restart.
+    await Promise.all(
+      this.tasks.map(async (task) => {
+        const state = await Cache.get(this.taskCacheKey(task.name)).catch(() => null) as any;
+        if (state?.lastRun) task.lastRun = new Date(state.lastRun);
+      }),
+    );
 
     await this.runDueTasks();
 
