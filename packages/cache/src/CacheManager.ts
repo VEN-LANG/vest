@@ -152,7 +152,7 @@ export function generateCacheKey(
   return cleaned.join(":"); // unprefixed base key
 }
 
-class FileCache implements CacheDriver {
+export class FileCache implements CacheDriver {
   private dir: string;
   private initialized = false;
 
@@ -246,7 +246,7 @@ class FileCache implements CacheDriver {
   }
 }
 
-class DBCache implements CacheDriver {
+export class DBCache implements CacheDriver {
   private initialized = false;
 
   async init() {
@@ -340,7 +340,7 @@ class DBCache implements CacheDriver {
   }
 }
 
-class RedisCache implements CacheDriver {
+export class RedisCache implements CacheDriver {
   private client: any = null;
   private initialized = false;
 
@@ -450,7 +450,7 @@ class RedisCache implements CacheDriver {
   }
 }
 
-class CacheManager implements CacheDriver {
+export class CacheManager implements CacheDriver {
   private driver: CacheDriver | null = null;
   private initializing: Promise<void> | null = null;
 

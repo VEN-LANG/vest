@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/queue",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Lara-Node job queue, worker, and scheduler",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -38,7 +38,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@lara-node/cache": "^0.1.3",
+    "@lara-node/cache": "^0.1.7",
     "@lara-node/db": "^0.1.7",
     "cron-parser": "^5.5.0",
     "redis": "^5.10.0",

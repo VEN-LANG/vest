@@ -10,7 +10,9 @@ import {
   activateSchedulerWatcher,
   activateLogWatcher,
   QueryWatcher,
+  CacheWatcher,
 } from "./Watchers/index.js";
+import { setCacheWatchHook } from "@lara-node/cache";
 import { OpenApiGenerator } from "@lara-node/router";
 import telescopeConfig from "./telescope.config.js";
 
@@ -65,6 +67,9 @@ export class TelescopeServiceProvider extends ServiceProvider {
     if (watchers.scheduler || watchers.schedule) activateSchedulerWatcher();
     if (watchers.queries) QueryWatcher.activate();
     if (watchers.logs) activateLogWatcher();
+    if (watchers.cache) {
+      setCacheWatchHook((event) => CacheWatcher.record(event));
+    }
 
     /*
     |--------------------------------------------------------------------------

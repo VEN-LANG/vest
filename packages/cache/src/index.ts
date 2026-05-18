@@ -1,6 +1,10 @@
 export type { CacheDriver } from "./CacheManager.js";
 export {
   Cache,
+  CacheManager,
+  FileCache,
+  DBCache,
+  RedisCache,
   initCache,
   getCacheDriver,
   getCacheDriverName,

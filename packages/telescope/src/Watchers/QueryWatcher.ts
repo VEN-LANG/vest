@@ -1,5 +1,5 @@
 import { getEventDispatcher } from "@lara-node/events";
-import { TELESCOPE_QUERY_CACHE_KEY } from "@lara-node/db";
+import { TELESCOPE_QUERY_CACHE_KEY, setQueryEventHook } from "@lara-node/db";
 import { TelescopeStore } from "../TelescopeStore.js";
 
 /*
@@ -36,6 +36,11 @@ export const QueryWatcher = {
     activate(): void {
         if (activated) return;
         activated = true;
+
+        // Wire DB layer → EventDispatcher so emitQueryEvent() reaches this listener
+        setQueryEventHook(async (payload) => {
+            getEventDispatcher().dispatchNow("db:query", payload);
+        });
 
         // ── Strategy 1: in-process EventDispatcher ────────────────────────────
         getEventDispatcher().listen("db:query", (payload: any) => {
