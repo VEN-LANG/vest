@@ -1462,6 +1462,7 @@ export class FileController {
   const additionalProviders: string[] = [
     `ConfigServiceProvider`,
     `DatabaseServiceProvider`,
+    `CacheServiceProvider`,
     `MiddlewareServiceProvider`,
     `RouteServiceProvider`,
     `DocServiceProvider`,
@@ -1485,6 +1486,7 @@ export class FileController {
     `import { PermissionsSyncCommand, PermissionsListCommand } from '../Console/Commands/PermissionCommands';`,
     `import { ConfigServiceProvider } from './ConfigServiceProvider';`,
     `import { DatabaseServiceProvider } from '@lara-node/db';`,
+    `import { CacheServiceProvider } from '@lara-node/cache';`,
     `import { MiddlewareServiceProvider } from './MiddlewareServiceProvider';`,
     `import { RouteServiceProvider } from './RouteServiceProvider';`,
     `import { DocServiceProvider } from '@lara-node/router';`,
