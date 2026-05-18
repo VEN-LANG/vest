@@ -102,6 +102,23 @@ pnpm artisan db:seed        # seed admin + user accounts
 pnpm dev                    # start on http://localhost:3000
 ```
 
+> **`--expose-gc` is injected automatically** into every generated `node` script (dev, artisan, worker, horizon). This lets Node expose explicit GC calls so the ORM can release connection pool memory promptly in long-running processes. You will see `--expose-gc` in your generated `package.json` scripts — this is intentional.
+>
+> If you run Node directly (e.g. in production or CI) always include the flag:
+> ```bash
+> # HTTP server
+> node --expose-gc dist/server.js
+>
+> # Artisan
+> node --expose-gc dist/artisan.js migrate
+>
+> # Queue worker
+> node --expose-gc dist/artisan.js queue:work
+>
+> # Horizon dashboard
+> node --expose-gc dist/artisan.js horizon:serve
+> ```
+
 ## API Routes (generated)
 
 | Method | Path | Auth | Description |

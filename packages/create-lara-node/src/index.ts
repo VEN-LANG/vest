@@ -15,7 +15,7 @@ import prompts from "prompts";
 const VERSIONS: Record<string, string> = {
   "@lara-node/core":        "0.1.6",
   "@lara-node/router":      "0.2.3",
-  "@lara-node/db":          "0.1.12",
+  "@lara-node/db":          "0.1.13",
   "@lara-node/auth":        "0.1.6",
   "@lara-node/console":     "0.1.9",
   "@lara-node/validator":   "0.1.8",
@@ -152,7 +152,7 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
   }
 
   // ── package.json ─────────────────────────────────────────────────────────────
-  const REG = "-r @swc-node/register -r tsconfig-paths/register -r ./src/register.ts";
+  const REG = "--expose-gc -r @swc-node/register -r tsconfig-paths/register -r ./src/register.ts";
   const packageJson = {
     name,
     version: "0.1.0",

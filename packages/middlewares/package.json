@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@lara-node/validator": "^0.1.6",
-    "@lara-node/db": "^0.1.7",
+    "@lara-node/db": "^0.1.13",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {

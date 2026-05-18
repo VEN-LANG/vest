@@ -28,7 +28,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@lara-node/db": "^0.1.7",
+    "@lara-node/db": "^0.1.13",
     "redis": "^5.10.0"
   },
   "devDependencies": {

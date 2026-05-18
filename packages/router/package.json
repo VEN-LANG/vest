@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@lara-node/cache": "^0.1.7",
-    "@lara-node/db": "^0.1.7",
+    "@lara-node/db": "^0.1.13",
     "express": "^5.2.1",
     "reflect-metadata": "^0.2.2"
   },

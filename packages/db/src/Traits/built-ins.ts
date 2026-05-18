@@ -100,11 +100,11 @@ export class Sluggable {
    */
   generateSlug(text: string): string {
     return text
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/--+/g, "-")
-      .trim();
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/--+/g, "-")
+        .trim();
   }
 
   /**
@@ -163,18 +163,29 @@ export class Sluggable {
 
     registerEvent("saving", (model: Model) => {
       const m: any = model as any;
-      const isDirtyName = typeof m.isDirty === "function" ? m.isDirty("name") : true;
+      const isNew = !m.__exists;
       const slugVal = typeof m.getAttribute === "function" ? m.getAttribute("slug") : m.slug;
-      if (isDirtyName && !slugVal) {
-        if (typeof m.setSlugFrom === "function") {
-          m.setSlugFrom("name");
-        } else if (m.name) {
-          m.slug = String(m.name)
-            .toLowerCase()
-            .replace(/\s+/g, "-")
-            .replace(/[^a-z0-9-]/g, "")
-            .replace(/-+/g, "-")
-            .replace(/^-|-$/g, "");
+      if (!isNew && !slugVal) return true;
+      if (slugVal) return true;
+      // Try common source fields in priority order
+      const sourceFields = ["name", "title", "first_name"];
+      const getAttr = (k: string) =>
+          typeof m.getAttribute === "function" ? m.getAttribute(k) : m[k];
+      const sourceField = sourceFields.find((f) => getAttr(f));
+      if (!sourceField) return true;
+      const isDirtySource = isNew || (typeof m.isDirty === "function" ? m.isDirty(sourceField) : true);
+      if (!isDirtySource) return true;
+      if (typeof m.setSlugFrom === "function") {
+        m.setSlugFrom(sourceField);
+      } else {
+        const raw = getAttr(sourceField);
+        if (raw) {
+          m.slug = String(raw)
+              .toLowerCase()
+              .replace(/\s+/g, "-")
+              .replace(/[^a-z0-9-]/g, "")
+              .replace(/-+/g, "-")
+              .replace(/^-|-$/g, "");
         }
       }
       return true;
@@ -196,9 +207,9 @@ export class Sortable {
     const self = this as any;
     for (let i = 0; i < ids.length; i++) {
       await self
-        .query()
-        .where("id", ids[i])
-        .update({ order: i + 1 });
+          .query()
+          .where("id", ids[i])
+          .update({ order: i + 1 });
     }
   }
 
@@ -218,14 +229,14 @@ export class Sortable {
     const model = this as any as Model;
     const m: any = model as any;
     const currentOrder: number =
-      typeof m.getAttribute === "function" ? m.getAttribute("order") : m.order;
+        typeof m.getAttribute === "function" ? m.getAttribute("order") : m.order;
     if (typeof currentOrder !== "number") return;
     if (currentOrder > 1) {
       const self = m.constructor as typeof Model as any;
       const itemAbove = await self
-        .query()
-        .where("order", currentOrder - 1)
-        .first();
+          .query()
+          .where("order", currentOrder - 1)
+          .first();
 
       if (itemAbove) {
         await m.update({ order: currentOrder - 1 });
@@ -241,16 +252,16 @@ export class Sortable {
     const model = this as any as Model;
     const m: any = model as any;
     const currentOrder: number =
-      typeof m.getAttribute === "function" ? m.getAttribute("order") : m.order;
+        typeof m.getAttribute === "function" ? m.getAttribute("order") : m.order;
     if (typeof currentOrder !== "number") return;
     const self = m.constructor as typeof Model as any;
     const maxOrder = await self.query().max("order");
 
     if (typeof maxOrder === "number" && currentOrder < maxOrder) {
       const itemBelow = await self
-        .query()
-        .where("order", currentOrder + 1)
-        .first();
+          .query()
+          .where("order", currentOrder + 1)
+          .first();
 
       if (itemBelow) {
         await m.update({ order: currentOrder + 1 });
@@ -279,9 +290,9 @@ export class Searchable {
    */
   @scopeMethod()
   static scopeSearch(
-    builder: EloquentBuilder<any>,
-    query: string,
-    fields: string[] = ["name", "description"],
+      builder: EloquentBuilder<any>,
+      query: string,
+      fields: string[] = ["name", "description"],
   ) {
     if (query) {
       fields.forEach((field, index) => {
@@ -345,9 +356,9 @@ export class Cacheable {
     const self = this as any;
     const cacheKey = `${self.name}:${id}`;
     return self.cached(
-      () => self.find(id),
-      cacheKey,
-      300, // 5 minutes
+        () => self.find(id),
+        cacheKey,
+        300, // 5 minutes
     );
   }
 }

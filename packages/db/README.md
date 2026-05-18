@@ -10,6 +10,48 @@ pnpm add @lara-node/db
 
 ---
 
+## Runtime Flag: `--expose-gc`
+
+Always start your application with Node's `--expose-gc` flag. It enables explicit garbage collection calls so the ORM can release connection pool memory and MongoDB client memory promptly after heavy operations, preventing heap bloat in long-running processes.
+
+### Dev server
+
+```bash
+node --expose-gc -r @swc-node/register -r tsconfig-paths/register -r ./src/register.ts src/server.ts
+# or via the generated script:
+pnpm dev
+```
+
+### Artisan CLI
+
+```bash
+node --expose-gc -r @swc-node/register -r tsconfig-paths/register -r ./src/register.ts src/artisan.ts migrate
+node --expose-gc -r @swc-node/register -r tsconfig-paths/register -r ./src/register.ts src/artisan.ts db:seed
+# or via the generated scripts:
+pnpm artisan migrate
+pnpm artisan db:seed
+```
+
+### Queue worker
+
+```bash
+node --expose-gc -r @swc-node/register -r tsconfig-paths/register -r ./src/register.ts src/artisan.ts queue:work
+# or:
+pnpm artisan queue:work
+```
+
+### Horizon (queue dashboard)
+
+```bash
+node --expose-gc -r @swc-node/register -r tsconfig-paths/register -r ./src/register.ts src/artisan.ts horizon:serve
+# or:
+pnpm artisan horizon:serve
+```
+
+> **Note:** The `create-lara-node` scaffold injects `--expose-gc` into all generated `package.json` scripts automatically so you do not need to add it yourself in scaffolded projects.
+
+---
+
 ## Environment Variables
 
 All variables are read **lazily** (at call time, not at import time) so dotenv can be loaded in any order.
@@ -807,6 +849,45 @@ this.app.register(DatabaseServiceProvider);
 ```
 
 Set `SKIP_DB=1` to bypass initialization in test / CI environments where no DB is available.
+
+---
+
+## What's New
+
+### Builder-level `withoutGlobalScope`
+
+Exclude a specific global scope from a single query without touching static class state:
+
+```typescript
+// Remove the 'tenant' scope for this query only
+const all = await User.query().withoutGlobalScope('tenant').get();
+
+// Static helper (unchanged signature)
+const all = await User.withoutGlobalScope('tenant').get();
+```
+
+### Instance scope methods
+
+`scope()` now resolves both static and instance (prototype) scope methods:
+
+```typescript
+export class User extends Model {
+  // Instance scope method — gets hoisted to prototype, works via scope()
+  scopeActive(builder: EloquentBuilder<User>) {
+    builder.where('status', 'active');
+  }
+}
+
+const active = await User.scope('active').get();
+```
+
+### Dirty-attribute tracking (`_changes`)
+
+`Model` now tracks which attributes changed since the last save in a `_changes` map. Observers and lifecycle hooks can read it via `model.getChanges()` (if exposed) or via the protected `_changes` property in subclasses.
+
+### Accessor snake_case fix
+
+Accessors are now correctly matched using full StudlyCase conversion. A `getFullNameAttribute()` accessor is now properly triggered when accessing `model.full_name` (previously required exact capitalisation of the first segment only).
 
 ---
 
