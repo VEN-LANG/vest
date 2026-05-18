@@ -1,9 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 import crypto from "crypto";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import CacheModel from "./Models/Cache.js";
 
 /** Optional watcher hook — registered by @lara-node/telescope at boot to avoid circular deps. */
@@ -157,7 +154,11 @@ export class FileCache implements CacheDriver {
   private initialized = false;
 
   constructor(baseDir?: string) {
-    this.dir = baseDir || path.resolve(__dirname, "../../tmp/cache");
+    this.dir =
+      baseDir ||
+      (process.env.CACHE_PATH
+        ? path.resolve(process.cwd(), process.env.CACHE_PATH)
+        : path.resolve(process.cwd(), "storage/cache"));
   }
 
   async init() {
@@ -458,7 +459,11 @@ export class CacheManager implements CacheDriver {
     const driver = (process.env.CACHE_DRIVER || "file").toLowerCase();
     if (driver === "redis") return new RedisCache();
     if (driver === "database" || driver === "db") return new DBCache();
-    return new FileCache();
+    return new FileCache(
+      process.env.CACHE_PATH
+        ? path.resolve(process.cwd(), process.env.CACHE_PATH)
+        : path.resolve(process.cwd(), "storage/cache"),
+    );
   }
 
   private async ensureInit() {

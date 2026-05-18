@@ -1,33 +1,28 @@
 # create-lara-node
 
-Scaffold a new [Lara-Node](https://github.com/venomous-maker/vest) application in seconds.
+Interactive project scaffolder — generates a fully-configured Lara-Node application in seconds.
 
 ## Usage
 
-```bash
+```sh
 pnpm create lara-node
-# or
 pnpm create lara-node my-api
-# or
 npx create-lara-node my-api
 ```
 
-## What It Generates
+## What the CLI asks
 
-The interactive CLI asks you:
-
-1. **Project name** — used as the directory and package name
+1. **Project name** — used as the directory and `package.json` name
 2. **Database driver** — MySQL or MongoDB
 3. **Packages to include** — multiselect from:
-   - `@lara-node/validator` (always included)
-   - `@lara-node/middlewares` (always included)
-   - `@lara-node/events` (events, listeners, subscribers, broadcasting)
-   - `@lara-node/queue` (jobs, scheduler)
-   - `@lara-node/mail` (mailables)
-   - `@lara-node/horizon` (queue dashboard)
-   - `@lara-node/telescope` (debug dashboard)
+   - `@lara-node/events` — events, listeners, subscribers, broadcasting
+   - `@lara-node/queue` — jobs and scheduler
+   - `@lara-node/mail` — mailables
+   - `@lara-node/horizon` — queue monitoring dashboard
+   - `@lara-node/telescope` — debug dashboard
+   - (validator, middlewares, auth, router, core, and db are always included)
 
-## Generated Project Structure
+## Generated project structure
 
 ```
 my-api/
@@ -39,10 +34,10 @@ my-api/
 │   │   │   ├── Controllers/
 │   │   │   │   ├── User/           # AuthController, UserController, RoleController, PermissionController
 │   │   │   │   └── File/           # FileController (multer upload)
-│   │   │   └── Kernel.ts           # Global + named middleware (auth, must-be-active, can, role, throttle)
+│   │   │   └── Kernel.ts           # Global + named middleware (auth, can, role, throttle)
 │   │   ├── Jobs/
-│   │   │   ├── SendMailJob.ts      # Queued email job
-│   │   │   ├── CleanupJob.ts       # Periodic cleanup job
+│   │   │   ├── SendMailJob.ts
+│   │   │   ├── CleanupJob.ts
 │   │   │   └── GenerateReportJob.ts
 │   │   ├── Listeners/              # SendWelcomeEmail, LogUserLogin
 │   │   ├── Mail/
@@ -56,20 +51,20 @@ my-api/
 │   │   │   ├── User/               # User, Role, Permission, UserProfile, RolesUsers, PermissionsRoles
 │   │   │   └── File/               # File
 │   │   ├── Observers/
-│   │   │   └── UserObserver.ts     # creating, created, updating, deleting hooks
+│   │   │   └── UserObserver.ts
 │   │   ├── Providers/
-│   │   │   ├── AppServiceProvider.ts    # IoC singleton registrations
-│   │   │   ├── RouteServiceProvider.ts  # api / web / channels route mounting
-│   │   │   ├── EventServiceProvider.ts  # auto-discovers listeners + subscribers
+│   │   │   ├── AppServiceProvider.ts
+│   │   │   ├── RouteServiceProvider.ts
+│   │   │   ├── EventServiceProvider.ts
 │   │   │   ├── BroadcastServiceProvider.ts
-│   │   │   └── QueueServiceProvider.ts  # queue + scheduler setup
+│   │   │   └── QueueServiceProvider.ts
 │   │   ├── Services/               # AuthService, UserService, RoleService, PermissionService, FileService
 │   │   └── Subscribers/            # UserEventSubscriber
 │   ├── bootstrap/
-│   │   └── app.ts                  # Application + service provider boot
+│   │   └── app.ts                  # Application + provider boot
 │   ├── config/                     # app.config.ts, db.config.ts
 │   ├── database/
-│   │   ├── migrations/             # 7 class-based migrations (users → files)
+│   │   ├── migrations/             # 7 migrations (users → files)
 │   │   └── seeders/                # RolePermissionSeeder, UserSeeder, DatabaseSeeder
 │   ├── routes/
 │   │   ├── api.ts                  # Full CRUD: auth, users, roles, permissions, files
@@ -77,212 +72,129 @@ my-api/
 │   │   └── channels.ts             # Broadcasting channel auth
 │   ├── types/
 │   │   └── express.d.ts            # req.user, req.validate, res.jsonAsync type augmentations
-│   ├── artisan.ts                  # CLI entry point (yargs)
-│   ├── register.ts                 # reflect-metadata + dotenv/config bootstrap
+│   ├── artisan.ts                  # CLI entry point
+│   ├── register.ts                 # reflect-metadata + dotenv bootstrap
 │   └── server.ts                   # HTTP server entry point
 ├── .env.example
 ├── .gitignore
 ├── .swcrc                          # SWC decorator metadata config
-├── tsconfig.json                   # moduleResolution: bundler, emitDecoratorMetadata: true
-├── vite.config.ts
-└── README.md
+├── tsconfig.json
+└── package.json
 ```
 
-## Getting Started
+## After scaffolding
 
-```bash
-pnpm create lara-node my-api
+```sh
 cd my-api
 pnpm install
 cp .env.example .env
 # Edit .env — set DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, JWT_SECRET
 
-pnpm artisan migrate        # create all tables
-pnpm artisan db:seed        # seed admin + user accounts
-pnpm dev                    # start on http://localhost:3000
+pnpm artisan migrate       # create all tables
+pnpm artisan db:seed       # seed admin and user accounts
+pnpm dev                   # start dev server on http://localhost:3000
 ```
 
-> **`--expose-gc` is injected automatically** into every generated `node` script (dev, artisan, worker, horizon). This lets Node expose explicit GC calls so the ORM can release connection pool memory promptly in long-running processes. You will see `--expose-gc` in your generated `package.json` scripts — this is intentional.
->
-> If you run Node directly (e.g. in production or CI) always include the flag:
-> ```bash
-> # HTTP server
-> node --expose-gc dist/server.js
->
-> # Artisan
-> node --expose-gc dist/artisan.js migrate
->
-> # Queue worker
-> node --expose-gc dist/artisan.js queue:work
->
-> # Horizon dashboard
-> node --expose-gc dist/artisan.js horizon:serve
-> ```
+Or with npm:
 
-## API Routes (generated)
+```sh
+npx create-lara-node my-api
+cd my-api
+npm install
+cp .env.example .env
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/api/auth/register` | — | Register |
-| POST | `/api/auth/login` | — | Login (returns JWT) |
-| GET | `/api/auth/me` | ✓ | Current user |
-| GET | `/api/users` | view_users | List users |
-| POST | `/api/users` | create_users | Create user |
-| PUT | `/api/users/:id` | update_users | Update user |
-| DELETE | `/api/users/:id` | delete_users | Delete user |
-| GET | `/api/roles` | view_roles | List roles |
-| POST | `/api/roles/:id/permissions` | add_permissions_to_roles | Sync permissions |
-| POST | `/api/files` | upload_files | Upload file |
-
-## Decorator Support
-
-Uses `@swc-node/register` for full decorator metadata (`emitDecoratorMetadata: true`). No `.js` extensions required in imports (`moduleResolution: "bundler"`).
-
-### IoC & Providers — `@lara-node/core`
-
-| Decorator | Effect |
-|-----------|--------|
-| `@Injectable()` | Marks a class for auto IoC resolution — constructor deps injected automatically |
-| `@Provider()` | Registers a ServiceProvider for `app.discoverProviders()` |
-
-```typescript
-import { ServiceProvider, Provider } from '@lara-node/core';
-
-@Provider()
-export class AppServiceProvider extends ServiceProvider {
-  register() { this.singleton(AuthService); }
-}
+node artisan key:generate
+node artisan migrate
+node artisan serve
 ```
 
-### Route-Model Binding & Controller Routing — `@lara-node/router`
+## Generated API routes
 
-| Decorator | Effect |
-|-----------|--------|
-| `@Bind(name?)` | Registers a Model for route-model binding — `:user` param auto-resolves to a loaded User instance |
-| `@Middleware(alias)` | Registers an IMiddleware class under a named alias (e.g. `'auth'`) |
-| `@Route(prefix, ...mw)` | Marks a controller class with a base route prefix (and optional class-level middleware) |
-| `@Route.get(path, ...mw)` | Registers a `GET` route on a controller method |
-| `@Route.post / .put / .patch / .delete` | Same for other HTTP verbs |
+| Method | Path                              | Auth              | Description            |
+|--------|-----------------------------------|-------------------|------------------------|
+| POST   | `/api/auth/register`              | —                 | Register               |
+| POST   | `/api/auth/login`                 | —                 | Login (returns JWT)    |
+| GET    | `/api/auth/me`                    | auth              | Authenticated user     |
+| GET    | `/api/users`                      | view_users        | List users             |
+| POST   | `/api/users`                      | create_users      | Create user            |
+| PUT    | `/api/users/:id`                  | update_users      | Update user            |
+| DELETE | `/api/users/:id`                  | delete_users      | Delete user            |
+| GET    | `/api/roles`                      | view_roles        | List roles             |
+| POST   | `/api/roles/:id/permissions`      | add_permissions_to_roles | Sync role permissions |
+| POST   | `/api/files`                      | upload_files      | Upload file            |
 
-```typescript
-import { Bind, Middleware, Route } from '@lara-node/router';
+## Default seeded accounts
 
-// Model — auto-resolves :user route params
-@Bind()
-export class User extends Model { ... }
+| Email                  | Password   | Role  |
+|------------------------|------------|-------|
+| admin@example.com      | password   | Admin |
+| user@example.com       | password   | User  |
 
-// Middleware — self-registers as 'auth' alias
-@Middleware('auth')
-export class AuthMiddleware implements IMiddleware { ... }
+## Decorator overview
 
-// Controller — declarative routing
-@Route('/api/users', 'auth')
-export class UserController {
-  @Route.get('/')                            // GET /api/users
-  async index(req: Request, res: Response) { ... }
+The scaffold uses all Lara-Node decorators. Here is a summary of what each does:
 
-  @Route.get('/:user')                       // GET /api/users/:user (auto-bound)
-  async show(req: Request, res: Response) { ... }
+### `@lara-node/core`
 
-  @Route.post('/', 'can:create_users')       // POST /api/users
-  async store(req: Request, res: Response) { ... }
-
-  @Route.put('/:user', 'can:update_users')   // PUT /api/users/:user
-  async update(req: Request, res: Response) { ... }
-
-  @Route.delete('/:user', 'can:delete_users')
-  async destroy(req: Request, res: Response) { ... }
-}
-
-// In RouteServiceProvider.boot():
-const router = RouterBuilder.fromControllers();  // all @Route controllers
-this.app.mountRoutes('/', router.build());
+```ts
+@Injectable()   // marks a class for automatic IoC constructor injection
+@Provider()     // registers a ServiceProvider for app.discoverProviders()
 ```
 
-### Model Observers — `@lara-node/db`
+### `@lara-node/router`
 
-| Decorator | Effect |
-|-----------|--------|
-| `@Observe(ModelClass)` | Auto-wires the decorated Observer to ModelClass — no `User.observe(UserObserver)` bootstrap call needed |
-
-```typescript
-import { Observer, Observe } from '@lara-node/db';
-import { User } from '../Models/User';
-
-@Observe(User)
-export class UserObserver extends Observer<User> {
-  created(user: User) { console.log('User created:', user.getAttribute('email')); }
-  deleting(user: User) { console.log('User deleting:', user.getAttribute('id')); }
-}
+```ts
+@Bind()                     // registers a Model for route-model binding
+@Middleware('alias')        // registers a middleware class under a named alias
+@Route('/prefix', 'auth')   // sets base path + middleware on a controller class
+@Route.get('/path')         // registers a GET route on a controller method
+@Route.post / .put / .patch / .delete
 ```
 
-### Queue Jobs — `@lara-node/queue`
+### `@lara-node/db`
 
-| Decorator / Method | Effect |
-|-------------------|--------|
-| `@Queueable(opts?)` | Registers the job and sets class-level `queue`, `tries`, `timeout`, `connection` defaults |
-| `shouldQueue()` | Override to conditionally skip dispatch — return `false` to discard silently |
-
-```typescript
-import { Job, Queueable } from '@lara-node/queue';
-
-@Queueable({ queue: 'reports', tries: 2, timeout: 300 })
-export class GenerateReportJob extends Job {
-  constructor(private config: ReportConfig) { super(); }
-
-  // Conditionally skip dispatch
-  shouldQueue(): boolean {
-    return !this.config.skipQueue;
-  }
-
-  async handle(): Promise<void> { ... }
-}
-
-// Class-level defaults applied automatically — no boilerplate:
-await GenerateReportJob.dispatch().dispatch();
-// Override per-dispatch when needed:
-await GenerateReportJob.dispatch().onQueue('priority').tries(5).dispatch();
+```ts
+@use(SoftDeletes, Timestamps)  // apply traits to a model
+@Observe(ModelClass)           // auto-wires an observer to a model
 ```
 
-### Events — `@lara-node/events`
+### `@lara-node/queue`
 
-| Decorator | Effect |
-|-----------|--------|
-| `@ListensTo(event)` | Registers listener for auto-discovery by EventServiceProvider |
-| `@ShouldQueue(opts?)` | Marks listener to be processed on a queue |
-| `@AfterCommit()` | Dispatches queued listener only after DB transaction commits |
-| `@Subscriber()` | Marks class as event subscriber for auto-discovery |
-| `@EventName(name)` | Sets custom event name on an Event class |
+```ts
+@Queueable({ queue: 'emails', tries: 3 })  // register job + set defaults
+```
 
-```typescript
-import { ListensTo, ShouldQueue } from '@lara-node/events';
+### `@lara-node/events`
 
-@ListensTo('user.registered')
-@ShouldQueue({ queue: 'notifications', tries: 3 })
-export class SendWelcomeEmail extends Listener<UserRegisteredPayload> {
-  async handle(payload: UserRegisteredPayload): Promise<void> {
-    await Mail.send(new WelcomeEmail(payload.email));
+```ts
+@ListensTo('user.registered')   // register as listener for auto-discovery
+@ShouldQueue                    // process listener on a queue
+@AfterCommit                    // dispatch only after DB transaction commits
+@Subscriber                     // mark class as event subscriber
+```
+
+## `--expose-gc` flag
+
+All generated `package.json` scripts include `--expose-gc`. This lets Node release connection pool and MongoDB client memory promptly, preventing heap bloat in long-running processes.
+
+```json
+{
+  "scripts": {
+    "dev":    "node --expose-gc -r @swc-node/register src/server.ts",
+    "artisan": "node --expose-gc -r @swc-node/register src/artisan.ts"
   }
 }
 ```
 
-### Model Traits — `@lara-node/db`
+When running compiled output in production, include the flag manually:
 
-```typescript
-import { use } from '@lara-node/db';
-import { SoftDeletes, Timestamps, Sluggable, Searchable } from '@lara-node/db';
-
-@use(SoftDeletes, Timestamps)
-export class Post extends Model { ... }
+```sh
+node --expose-gc dist/server.js
+node --expose-gc dist/artisan.js queue:work
 ```
 
-## Default Seeded Accounts
+## Notes
 
-| Email | Password | Role |
-|-------|----------|------|
-| admin@example.com | password | Admin |
-| user@example.com | password | User |
-
-## License
-
-MIT
+- The scaffolder itself has no required environment variables — all configuration is written into the generated project's `.env.example`.
+- `tsconfig.json` is configured with `moduleResolution: "bundler"` and `emitDecoratorMetadata: true`. Do not change the moduleResolution setting — the ORM and router decorators depend on it.
+- The scaffold uses `@swc-node/register` (via `.swcrc`) for TypeScript compilation with full decorator metadata support at runtime.

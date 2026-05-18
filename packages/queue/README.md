@@ -1,94 +1,129 @@
 # @lara-node/queue
 
-Queue system, job scheduler, and background worker for [Lara-Node](https://github.com/venomous-maker/vest). Supports sync, database, and Redis drivers.
+Job queue (sync, database, Redis), cron scheduler, and background worker for [Lara-Node](https://github.com/venomous-maker/vest).
 
 ## Installation
 
-```bash
+```sh
 pnpm add @lara-node/queue
 ```
 
----
+## Quick Start
 
-## Decorators
+```ts
+import { Job, Queueable, Queue } from '@lara-node/queue';
+
+@Queueable({ queue: 'emails', tries: 3 })
+export class SendMailJob extends Job {
+  constructor(private readonly to: string) {
+    super();
+  }
+
+  async handle(): Promise<void> {
+    await mailer.send(this.to);
+  }
+}
+
+// Dispatch
+await SendMailJob.dispatch().dispatch();
+```
+
+Start a worker:
+
+```sh
+node artisan queue:work --connection=redis --queue=emails,default
+```
+
+## Jobs
+
+### `Job` base class
+
+```ts
+export abstract class Job {
+  queue: string;               // target queue name
+  connection: string;          // queue connection name
+  tries: number;               // max attempt count
+  timeout: number;             // execution timeout in seconds
+  backoff: number | number[];  // seconds between retries (can be stepped: [5, 10, 30])
+  delay: number;               // initial delay in seconds
+  shouldBeEncrypted: boolean;  // encrypt payload at rest using APP_KEY
+
+  abstract handle(): Promise<void>;
+
+  // Override to conditionally skip dispatch
+  shouldQueue(): boolean { return true; }
+
+  // Override to handle final failure
+  failed(error: Error): void {}
+
+  // Override to set a retry deadline
+  retryUntil(): Date | null { return null; }
+
+  // Override to add Horizon grouping tags
+  tags(): string[] { return []; }
+}
+```
 
 ### `@Queueable(nameOrOptions?)`
 
-Registers a Job class in the global job registry (required for the worker to deserialize and execute it) and sets class-level defaults for `queue`, `tries`, `timeout`, and `connection`. These defaults are applied automatically on every `dispatch()` call.
+Registers a job in the global registry (required for workers to deserialize it) and sets class-level defaults.
 
-```typescript
+```ts
 import { Job, Queueable } from '@lara-node/queue';
 
-// Basic — registers under class name, uses config defaults
 @Queueable()
-export class SendMailJob extends Job {
-  async handle(): Promise<void> { ... }
+export class BasicJob extends Job {
+  async handle(): Promise<void> { /* ... */ }
 }
 
-// With queue options — applied on every dispatch automatically
-@Queueable({ queue: 'emails', tries: 3 })
-export class SendMailJob extends Job { ... }
-
 @Queueable({ queue: 'reports', tries: 2, timeout: 300 })
-export class GenerateReportJob extends Job { ... }
+export class GenerateReportJob extends Job {
+  async handle(): Promise<void> { /* ... */ }
+}
 
-@Queueable({ queue: 'default', tries: 1, connection: 'redis' })
-export class CleanupJob extends Job { ... }
-
-// Custom registry name (for serialization)
+// Custom serialization name
 @Queueable({ name: 'send-mail', queue: 'emails' })
-export class SendMailJob extends Job { ... }
+export class SendMailJob extends Job {
+  async handle(): Promise<void> { /* ... */ }
+}
 ```
 
-**Options:**
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `name` | `string` | Registry key used for serialization. Defaults to class name. |
-| `queue` | `string` | Target queue name. Overrides the default queue. |
-| `tries` | `number` | Max attempt count. |
-| `timeout` | `number` | Execution timeout in seconds. |
-| `connection` | `string` | Queue connection name (e.g. `'redis'`, `'database'`). |
-
-**Per-dispatch overrides still work:**
-```typescript
-// @Queueable defaults are applied, then fluent overrides on top
-SendMailJob.dispatch().onQueue('urgent').tries(5).dispatch();
-```
-
----
+| Option       | Type     | Description                                           |
+|--------------|----------|-------------------------------------------------------|
+| `name`       | `string` | Registry key for serialization (default: class name)  |
+| `queue`      | `string` | Target queue name                                     |
+| `tries`      | `number` | Max attempt count                                     |
+| `timeout`    | `number` | Execution timeout in seconds                          |
+| `connection` | `string` | Queue connection name (e.g. `redis`, `database`)      |
 
 ### `shouldQueue()` — conditional dispatch
 
-Override `shouldQueue()` on a Job to conditionally skip dispatch. If it returns `false`, `PendingDispatch.dispatch()` discards the job silently — no need to wrap dispatch in an `if` statement.
+Override to skip dispatch without wrapping call sites in `if` statements:
 
-```typescript
+```ts
 @Queueable({ queue: 'notifications' })
 export class NotifyUserJob extends Job {
-  constructor(private user: User) { super(); }
+  constructor(private readonly user: User) { super(); }
 
-  // Skip dispatch if the user has disabled notifications
   shouldQueue(): boolean {
     return this.user.notificationsEnabled;
   }
 
   async handle(): Promise<void> {
-    // Only runs if shouldQueue() returned true
+    await sendPushNotification(this.user.id);
   }
 }
 
-// Clean call-site — no if-statement needed
+// No if-statement needed — job is silently discarded when shouldQueue() returns false
 await NotifyUserJob.dispatch().dispatch();
 ```
 
----
+## Dispatching
 
-## Dispatching Jobs
-
-```typescript
+```ts
 import { Queue } from '@lara-node/queue';
 
-// Static dispatch (uses class-level @Queueable defaults)
+// Via static dispatch — uses @Queueable defaults
 await SendMailJob.dispatch().dispatch();
 
 // Fluent overrides
@@ -101,76 +136,133 @@ await GenerateReportJob
   .dispatch();
 
 // Push an instance directly
-const job = new SendMailJob({ to: 'alice@example.com', subject: 'Hello' });
+const job = new SendMailJob('alice@example.com');
 await Queue.push(job);
 
-// Delayed dispatch
+// Push to a specific queue
+await Queue.pushOn('high', job);
+
+// Delayed dispatch (seconds)
 await Queue.later(60, job);
 
-// Synchronous (bypasses the queue)
+// Synchronous — bypasses the queue, runs handle() inline
 await SendMailJob.dispatchSync();
 
-// After HTTP response
+// After HTTP response is sent
 await SendMailJob.dispatch().afterResponse().dispatch();
 ```
 
----
+### `Queue` facade
 
-## Job Base Class
+```ts
+import { Queue } from '@lara-node/queue';
 
-```typescript
-export abstract class Job {
-  // Properties (can be set via @Queueable or fluent methods)
-  public queue: string;
-  public connection: string;
-  public tries: number;
-  public timeout: number;
-  public backoff: number | number[];
-  public delay: number;
-  public shouldBeEncrypted: boolean;
-
-  // Must implement
-  abstract handle(): Promise<void>;
-
-  // Override to gate dispatch
-  shouldQueue(): boolean { return true; }
-
-  // Override for failure handling
-  failed(error: Error): void {}
-
-  // Override for retry deadline
-  retryUntil(): Date | null { return null; }
-
-  // Override for tags (Horizon grouping)
-  tags(): string[] { return []; }
-}
+await Queue.push(job)             // push to job's queue property
+await Queue.pushOn('high', job)   // push to named queue
+await Queue.later(60, job)        // delay in seconds
+await Queue.size('default')       // pending job count
+await Queue.clear('default')      // clear all jobs in a queue
 ```
 
----
+## Worker
+
+Processes jobs from the queue. Used internally by `node artisan queue:work`.
+
+```ts
+import { Worker } from '@lara-node/queue';
+
+const worker = new Worker('redis', ['high', 'default'], {
+  tries: 3,
+  timeout: 60,
+  sleep: 1,
+  maxJobs: 0,       // 0 = unlimited
+  maxTime: 0,       // 0 = unlimited
+  stopOnEmpty: false,
+});
+
+worker.on('job:processed', (job) => console.log('Done:', job.constructor.name));
+worker.on('job:failed', (job, err) => console.error('Failed:', err.message));
+worker.on('worker:start', () => console.log('Worker started'));
+worker.on('worker:stop', () => console.log('Worker stopped'));
+
+await worker.start();
+```
 
 ## Scheduler
 
-```typescript
+Used inside `Kernel.schedule()`. See `@lara-node/console` for the `Kernel` API.
+
+```ts
 import { scheduler } from '@lara-node/queue';
 
+// Class-based job
 scheduler.job(CleanupJob).daily();
-scheduler.job(GenerateReportJob, { type: 'users', period: 'weekly' }).weekly();
+scheduler.job(GenerateReportJob, { type: 'weekly' }).weekly();
+
+// Artisan command
 scheduler.command('db:prune').hourly();
+scheduler.command('cache:clear').dailyAt('00:00');
+
+// Closure
 scheduler.call(() => console.log('tick')).everyMinute();
+scheduler.call(async () => await sendWeeklyReport()).cron('0 8 * * 1');
 ```
 
----
+### Frequency helpers
 
-## Configuration
+```ts
+.everyMinute()
+.everyFiveMinutes()
+.everyTenMinutes()
+.everyFifteenMinutes()
+.everyThirtyMinutes()
+.hourly()
+.hourlyAt(17)              // :17 past every hour
+.daily()
+.dailyAt('13:00')
+.twiceDaily(1, 13)         // 01:00 and 13:00
+.weekdays()                // Mon–Fri
+.weekends()
+.weekly()
+.monthly()
+.cron('0 8 * * 1')         // custom expression
+.timezone('UTC')
+```
 
-```typescript
+### Modifiers
+
+```ts
+.withoutOverlapping()      // skip if previous run is still active
+.onOneServer()             // only one server runs this task (requires Redis)
+.runInBackground()         // run in a child process
+.sendOutputTo('/tmp/out.log')
+.appendOutputTo('/tmp/out.log')
+.emailOutputTo('admin@example.com')
+```
+
+## Config File
+
+```ts
 // config/queue.config.ts
-export default {
-  default: 'database',
+import { setConfig } from '@lara-node/core';
+
+setConfig('queue', {
+  default: 'redis',
   connections: {
-    sync:     { driver: 'sync' },
-    database: { driver: 'database', table: 'jobs' },
-    redis:    { driver: 'redis', host: 'localhost', port: 6379 },
+    sync: {
+      driver: 'sync',
+    },
+    database: {
+      driver: 'database',
+      table: 'jobs',
+    },
+    redis: {
+      driver: 'redis',
+      connection: 'default',
+      queue: 'default',
+      retry_after: 90,
+      block_for: null,
+    },
   },
   defaults: {
     tries: 3,
@@ -178,11 +270,32 @@ export default {
     maxExceptions: 3,
     backoff: 0,
   },
-};
+});
 ```
 
----
+## `QueueServiceProvider`
 
-## License
+```ts
+import { QueueServiceProvider } from '@lara-node/queue';
 
-MIT
+app.register(QueueServiceProvider);
+```
+
+## Environment Variables
+
+| Variable                | Default   | Description                                               |
+|-------------------------|-----------|-----------------------------------------------------------|
+| `QUEUE_CONNECTION`      | `sync`    | Default driver: `sync`, `database`, or `redis`            |
+| `REDIS_QUEUE_CONNECTION`| `default` | Redis connection name                                     |
+| `REDIS_QUEUE`           | `default` | Redis queue name                                          |
+| `REDIS_HOST`            | `127.0.0.1` | Redis host                                              |
+| `REDIS_PORT`            | `6379`    | Redis port                                                |
+| `REDIS_PASSWORD`        | —         | Redis password                                            |
+| `REDIS_URL`             | —         | Full Redis URL (overrides host/port/password)             |
+| `APP_KEY`               | —         | AES-256-GCM encryption key for `shouldBeEncrypted` jobs   |
+
+## Notes
+
+- The `sync` driver executes jobs inline, blocking the current process. Use only for development or testing.
+- Job payloads are JSON-serialized. Circular references and non-serializable values (e.g. database connections) in job constructor arguments will cause errors at dispatch time.
+- When `shouldBeEncrypted = true`, the full job payload is AES-256-GCM encrypted using `APP_KEY` before being pushed to the queue. The worker decrypts it transparently.

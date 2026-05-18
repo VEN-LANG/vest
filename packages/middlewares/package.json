@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/middlewares",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Predefined class-based middleware for Lara-Node applications",
   "type": "module",
   "main": "./dist/index.cjs",

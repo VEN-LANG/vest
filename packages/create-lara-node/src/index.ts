@@ -13,19 +13,19 @@ import pc from "picocolors";
 import prompts from "prompts";
 
 const VERSIONS: Record<string, string> = {
-  "@lara-node/core":        "0.1.6",
-  "@lara-node/router":      "0.2.3",
-  "@lara-node/db":          "0.1.13",
-  "@lara-node/auth":        "0.1.6",
-  "@lara-node/console":     "0.1.9",
-  "@lara-node/validator":   "0.1.8",
-  "@lara-node/middlewares": "0.1.9",
-  "@lara-node/events":      "0.1.7",
-  "@lara-node/queue":       "0.1.8",
-  "@lara-node/mail":        "0.1.7",
-  "@lara-node/horizon":     "0.1.8",
-  "@lara-node/telescope":   "0.1.8",
-  "@lara-node/cache":       "0.1.6",
+  "@lara-node/core":        "0.1.7",
+  "@lara-node/router":      "0.2.6",
+  "@lara-node/db":          "0.1.14",
+  "@lara-node/auth":        "0.1.7",
+  "@lara-node/console":     "0.1.13",
+  "@lara-node/validator":   "0.1.10",
+  "@lara-node/middlewares": "0.1.11",
+  "@lara-node/events":      "0.1.8",
+  "@lara-node/queue":       "0.1.12",
+  "@lara-node/mail":        "0.1.8",
+  "@lara-node/horizon":     "0.1.11",
+  "@lara-node/telescope":   "0.1.12",
+  "@lara-node/cache":       "0.1.10",
 };
 
 async function main() {

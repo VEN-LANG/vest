@@ -1,7 +1,7 @@
 {
   "name": "@lara-node/console",
-  "version": "0.1.11",
-  "description": "Lara-Node Artisan CLI \u2014 commands, kernel, and scheduler",
+  "version": "0.1.13",
+  "description": "Lara-Node Artisan CLI — commands, kernel, and scheduler",
   "bin": {
     "artisan": "./dist/artisan.js"
   },
@@ -32,7 +32,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@lara-node/cache": "^0.1.7",
+    "@lara-node/cache": "^0.1.9",
     "@lara-node/db": "^0.1.13",
     "@lara-node/events": "^0.1.4",
     "@lara-node/horizon": "^0.1.5",

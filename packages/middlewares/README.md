@@ -1,18 +1,16 @@
 # @lara-node/middlewares
 
-Predefined class-based middleware for Lara-Node applications. Every middleware is a plain class with a `handle()` method, keeping them testable and dependency-injectable.
+Built-in Express middleware classes — async context, request logging, validation, JWT auth, CORS, throttling, and RBAC guards.
 
 ## Installation
 
-```bash
+```sh
 pnpm add @lara-node/middlewares
 ```
 
-## Quick Setup
+## Quick Start
 
-Register the core middleware stack in your Express app:
-
-```typescript
+```ts
 import express from 'express';
 import {
   asyncContext,
@@ -23,40 +21,47 @@ import {
 } from '@lara-node/middlewares';
 
 const app = express();
+
 app.use(express.json());
 app.use(asyncContext);       // async context per request
-app.use(requestLogger);      // colored request log
+app.use(requestLogger);      // colorized request log
 app.use(validatorAttach);    // attaches req.validate()
-app.use(responseExtender);   // adds res.jsonAsync(), auto-serializes Models
+app.use(responseExtender);   // auto-serializes Model instances
 
 // ... routes ...
 
-app.use(errorHandler);       // 4-arg error handler (must be last)
+app.use(errorHandler);       // must be last — handles ValidationError and other errors
 ```
 
 ## Middleware Reference
 
-### AsyncContextMiddleware
+All middleware classes implement `handle(req, res, next)` and expose a `toHandler()` method that returns a bound Express handler.
 
-Stores the request in `AsyncLocalStorage` so it's accessible anywhere in the call stack without prop-drilling:
+### `AsyncContextMiddleware`
 
-```typescript
+Wraps each request in an `AsyncLocalStorage` context so the request and authenticated user are accessible anywhere in the call stack without prop-drilling.
+
+```ts
 import { asyncLocalStorage } from '@lara-node/middlewares';
 
-// Anywhere in the request lifecycle:
+// Anywhere in the request lifecycle (services, repositories, etc.)
 const store = asyncLocalStorage.getStore(); // { req, user? }
+
+function getCurrentUser() {
+  return asyncLocalStorage.getStore()?.user ?? null;
+}
 ```
 
-### RequestLoggerMiddleware
+### `RequestLoggerMiddleware`
 
-Logs `METHOD PATH STATUS TIME IP [user:id]` to stdout on response finish. Color-coded: green (2xx), yellow (4xx), red (5xx).
+Colorized output on response finish: `METHOD PATH STATUS TIME IP [user:id]`. Green for 2xx, yellow for 4xx, red for 5xx.
 
-### ValidatorMiddleware
+### `ValidatorMiddleware`
 
-Attaches `req.validate()` to every request:
+Attaches `req.validate(rules)` to every request. Throws `ValidationError` on failure (caught by `ErrorHandlerMiddleware` → HTTP 422).
 
-```typescript
-// In any controller:
+```ts
+// In a controller
 const data = await req.validate({
   name:  'required|string|min:2|max:100',
   email: 'required|email',
@@ -64,120 +69,150 @@ const data = await req.validate({
 });
 ```
 
-Throws `ValidationError` (caught by `ErrorHandlerMiddleware` → HTTP 422) on failure.
+### `ResponseExtenderMiddleware`
 
-### ResponseExtenderMiddleware
+Adds `res.jsonAsync()` and overrides `res.json()` to automatically call `toJSONAsync()` on `@lara-node/db` Model instances, handling hidden fields, casts, and loaded relations.
 
-Adds `res.jsonAsync()` and overrides `res.json()` to automatically call `model.toJSONAsync()` on `@lara-node/db` Model instances (handles hidden fields, casts, relations):
-
-```typescript
-// All equivalent — Model is auto-serialized:
-res.json(user);
-res.json([user1, user2]);
-res.json(await User.paginate(15, 1));   // QueryResult
-await res.jsonAsync(user);
+```ts
+res.json(user);                           // Model auto-serialized
+res.json([user1, user2]);                 // array of Models
+res.json(await User.paginate(15, 1));     // paginated result
+await res.jsonAsync(user);                // explicit async path
 ```
 
-### AuthMiddleware
+### `AuthMiddleware`
 
-JWT authentication. Verifies `Authorization: Bearer <token>` and optionally loads the user from the database:
+Verifies `Authorization: Bearer <token>` using JWT and optionally loads the full user from the database.
 
-```typescript
+```ts
 import { AuthMiddleware } from '@lara-node/middlewares';
 
 const auth = new AuthMiddleware({
-  // Optional: load full user from DB (adds req.user with roles/permissions)
+  // Load full user with roles and permissions
   userLoader: async (uid) => {
     const user = await User.with(['roles', 'roles.permissions']).find(uid);
     if (!user) return null;
     return {
       id: user.id,
-      roles: user.roles.map(r => r.slug),
-      permissions: user.roles.flatMap(r => r.permissions.map(p => p.slug)),
+      roles: user.roles.map((r) => r.slug),
+      permissions: user.roles.flatMap((r) => r.permissions.map((p) => p.slug)),
     };
   },
   // Optional: decrypt token before verification
   decryptToken: (token) => myDecrypt(token),
 }).toHandler();
 
-app.use('/api/protected', auth);
+app.use('/api', auth);
 ```
 
-If no `userLoader` is provided, `req.user` is populated from the JWT payload (`{ id: sub, roles, permissions }`).
+When `userLoader` is not provided, `req.user` is populated directly from the JWT payload.
 
-### AuthorizeByStatusMiddleware
+### `JwtMiddleware`
 
-Rejects requests where `req.user.status !== 'active'` or `req.user.isActive()` returns false:
+Lighter JWT middleware — verifies `Authorization: Bearer <token>` using `JWT_SECRET` and sets `req.user` from the decoded payload. No database lookup.
 
-```typescript
+```ts
+import { JwtMiddleware } from '@lara-node/middlewares';
+
+app.use('/api', new JwtMiddleware().toHandler());
+```
+
+### `AuthorizeByStatusMiddleware`
+
+Rejects requests where the authenticated user's status is not `active`.
+
+```ts
 import { authorizeByStatus } from '@lara-node/middlewares';
 
 app.use('/api/protected', auth, authorizeByStatus);
 ```
 
-### ErrorHandlerMiddleware
+### `CorsMiddleware`
 
-Express 4-argument error handler. Handles:
-- `ValidationError` → 422 with `{ success: false, errors, messages }`
-- Any `err.status` (400–599) → that status code
-- Everything else → 500
-- `err.stack` included in non-production responses
+Wraps the `cors` npm package.
 
-```typescript
-import { errorHandler } from '@lara-node/middlewares';
-app.use(errorHandler); // must be registered last
+```ts
+import { CorsMiddleware } from '@lara-node/middlewares';
+
+app.use(new CorsMiddleware({
+  origin: ['https://app.example.com'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+}).toHandler());
 ```
 
-## Authorization Helpers
+### `ThrottleMiddleware`
 
-```typescript
+Rate-limit middleware using the `@lara-node/cache` `RateLimiter`.
+
+```ts
+import { ThrottleMiddleware } from '@lara-node/middlewares';
+
+// 60 requests per 60 seconds per IP
+app.use('/api', new ThrottleMiddleware({ maxAttempts: 60, decaySeconds: 60 }).toHandler());
+```
+
+### `RoleMiddleware` and `PermissionMiddleware`
+
+RBAC guards that inspect `req.user.roles` and `req.user.permissions`.
+
+```ts
 import { authorizeRoles, authorizePermissions } from '@lara-node/middlewares';
 
-// Allow only admin or moderator:
+// Allow admin or moderator roles
 router.get('/admin', auth, authorizeRoles('admin', 'moderator'), handler);
 
-// Require a specific permission:
+// Require a specific permission
 router.delete('/users/:id', auth, authorizePermissions('delete_users'), handler);
 ```
 
-## Class-Based Usage
+Or use the class form:
 
-All middleware can also be used as classes (useful for testing or custom wiring):
+```ts
+import { RoleMiddleware, PermissionMiddleware } from '@lara-node/middlewares';
 
-```typescript
-import { AuthMiddleware } from '@lara-node/middlewares';
-
-// Class form:
-const authMiddleware = new AuthMiddleware({ userLoader });
-app.use(authMiddleware.handle.bind(authMiddleware));
-// or:
-app.use(authMiddleware.toHandler());
+router.get('/admin', auth, new RoleMiddleware('admin').toHandler(), handler);
+router.delete('/users/:id', auth, new PermissionMiddleware('delete_users').toHandler(), handler);
 ```
 
-## Express Type Augmentation
+### `ErrorHandlerMiddleware`
 
-This package augments the Express `Request` and `Response` interfaces globally:
+Express 4-argument error handler. Handles:
 
-```typescript
-// req.user is typed:
-req.user?.id          // number | string
-req.user?.roles       // string[]
-req.user?.permissions // string[]
+- `ValidationError` — HTTP 422 with `{ success: false, errors, messages }`
+- `err.status` present — responds with that status code
+- All others — HTTP 500
 
-// req.validate is typed:
-const data = await req.validate<{ email: string }>(rules);
+Stack trace is included in non-production responses.
 
-// res.jsonAsync is typed:
-await res.jsonAsync(model);
+```ts
+import { errorHandler } from '@lara-node/middlewares';
+
+app.use(errorHandler); // must be registered after all routes
 ```
 
-You can also declare these locally in your project via `src/types/express.d.ts` — the `create-lara-node` scaffold generates this file automatically.
+## Registering middleware aliases
 
-## Writing Custom Middleware
+```ts
+import { registerMiddleware } from '@lara-node/core';
+import { JwtMiddleware, ThrottleMiddleware } from '@lara-node/middlewares';
 
-Follow the same class pattern:
+registerMiddleware('auth', JwtMiddleware);
+registerMiddleware('throttle', ThrottleMiddleware);
+```
 
-```typescript
+Or use the `@Middleware('alias')` decorator on the class:
+
+```ts
+import { Middleware } from '@lara-node/middlewares';
+
+@Middleware('auth')
+export class JwtMiddleware { ... }
+```
+
+## Writing custom middleware
+
+```ts
 import { Request, Response, NextFunction } from 'express';
 
 export class MaintenanceModeMiddleware {
@@ -196,22 +231,23 @@ export class MaintenanceModeMiddleware {
 }
 ```
 
-## Async Context Store
+## Express type augmentation
 
-The store is populated by `AsyncContextMiddleware` and augmented by `AuthMiddleware`:
+This package augments the Express `Request` and `Response` interfaces globally:
 
-```typescript
-import { asyncLocalStorage } from '@lara-node/middlewares';
+```ts
+req.user?.id           // number | string
+req.user?.roles        // string[]
+req.user?.permissions  // string[]
 
-function getCurrentUser() {
-  return asyncLocalStorage.getStore()?.user ?? null;
-}
-
-function getCurrentRequest() {
-  return asyncLocalStorage.getStore()?.req;
-}
+const data = await req.validate<{ email: string }>(rules);
+await res.jsonAsync(model);
 ```
 
-## License
+The `create-lara-node` scaffold generates a `src/types/express.d.ts` file with these augmentations automatically.
 
-MIT
+## Environment Variables
+
+| Variable     | Default | Description                                      |
+|--------------|---------|--------------------------------------------------|
+| `JWT_SECRET` | —       | Secret key used by `JwtMiddleware` to verify JWTs|

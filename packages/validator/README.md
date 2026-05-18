@@ -1,16 +1,16 @@
 # @lara-node/validator
 
-Laravel-inspired validation engine for Lara-Node applications.
+Laravel-inspired validation engine — built-in rules, custom rules, async validation, and typed error messages.
 
 ## Installation
 
-```bash
+```sh
 pnpm add @lara-node/validator
 ```
 
-## Usage
+## Quick Start
 
-```typescript
+```ts
 import { validate, ValidationError } from '@lara-node/validator';
 
 const data = await validate(req.body, {
@@ -22,80 +22,47 @@ const data = await validate(req.body, {
 });
 ```
 
-If validation fails, a `ValidationError` is thrown with an `errors` map and `messages` array.
+If validation fails, a `ValidationError` is thrown containing `errors` (field-keyed) and `messages` (flat array). The `ErrorHandlerMiddleware` from `@lara-node/middlewares` catches it and returns HTTP 422 automatically.
 
-## Built-in Rules
+## API
 
-### Presence
-| Rule | Description |
-|------|-------------|
-| `required` | Field must be present and non-empty |
-| `nullable` | Field may be null/undefined (stops further rules) |
-| `sometimes` | Only validate if the field is present |
+### `validate(data, rules, messages?)`
 
-### Type
-| Rule | Description |
-|------|-------------|
-| `string` | Must be a string |
-| `integer` | Must be an integer |
-| `numeric` | Must be a number |
-| `boolean` | Must be true/false/1/0/'true'/'false' |
-| `array` | Must be an array |
-| `json` | Must be valid JSON |
+```ts
+import { validate } from '@lara-node/validator';
 
-### String
-| Rule | Description |
-|------|-------------|
-| `min:n` | Minimum length (string) or value (number) |
-| `max:n` | Maximum length (string) or value (number) |
-| `between:min,max` | Length or value between min and max |
-| `size:n` | Exact length |
-| `email` | Valid email address |
-| `url` | Valid URL |
-| `uuid` | Valid UUID |
-| `regex:/pattern/` | Must match regex |
-| `starts_with:prefix` | Must start with prefix |
-| `ends_with:suffix` | Must end with suffix |
-| `contains:str` | Must contain str |
-| `phone` | Valid phone number (E.164 or common formats) |
+const data = await validate(
+  req.body,
+  { email: 'required|email' },
+  { 'email.required': 'Please enter your email address.' },
+);
+```
 
-### Comparison
-| Rule | Description |
-|------|-------------|
-| `in:a,b,c` | Value must be one of the listed values |
-| `not_in:a,b,c` | Value must not be one of the listed values |
-| `gt:n` | Greater than n |
-| `gte:n` | Greater than or equal to n |
-| `lt:n` | Less than n |
-| `lte:n` | Less than or equal to n |
-| `same:field` | Must equal another field |
-| `different:field` | Must not equal another field |
-| `confirmed` | Must equal `field_confirmation` |
-| `accepted` | Must be truthy (true/1/'yes'/'on') |
-| `declined` | Must be falsy (false/0/'no'/'off') |
+Returns the validated (and type-cast) data on success. Throws `ValidationError` on failure.
 
-### Date
-| Rule | Description |
-|------|-------------|
-| `date` | Valid date string |
-| `date_format:format` | Must match specific format |
-| `before:date` | Must be before a given date |
-| `after:date` | Must be after a given date |
-| `time` | Valid time string (HH:MM or HH:MM:SS) |
-| `datetime` | Valid datetime string |
-| `timezone` | Valid timezone identifier |
+### `ValidationError`
 
-### Database
-| Rule | Description |
-|------|-------------|
-| `exists:table,column` | Record must exist in DB |
-| `unique:table,column` | Value must not exist in DB |
+```ts
+import { ValidationError } from '@lara-node/validator';
 
-## Rule Spec Objects
+try {
+  const data = await validate(body, rules);
+} catch (err) {
+  if (err instanceof ValidationError) {
+    console.log(err.errors);
+    // { email: ['The email field is required.'], name: ['The name field is required.'] }
 
-For more control, use a `RuleSpec` object instead of a pipe-delimited string:
+    console.log(err.messages);
+    // ['The email field is required.', 'The name field is required.']
+  }
+}
+```
 
-```typescript
+### `RuleSpec` — object-style rules
+
+Use a `RuleSpec` object to specify per-rule messages alongside the rule string:
+
+```ts
 const data = await validate(body, {
   email: {
     rule: 'required|email|unique:users,email',
@@ -111,53 +78,131 @@ const data = await validate(body, {
 });
 ```
 
+## Built-in Rules
+
+### Presence
+
+| Rule              | Description                                                  |
+|-------------------|--------------------------------------------------------------|
+| `required`        | Field must be present and non-empty                          |
+| `nullable`        | Field may be null/undefined (stops further rule checks)      |
+| `sometimes`       | Only validate if the field is present in the input           |
+
+### Type
+
+| Rule      | Description                                          |
+|-----------|------------------------------------------------------|
+| `string`  | Must be a string                                     |
+| `integer` | Must be an integer                                   |
+| `numeric` | Must be a number (integer or float)                  |
+| `boolean` | Must be `true`, `false`, `1`, `0`, `'true'`, `'false'` |
+| `array`   | Must be an array                                     |
+| `object`  | Must be a plain object                               |
+| `json`    | Must be valid JSON                                   |
+
+### String
+
+| Rule                 | Description                                         |
+|----------------------|-----------------------------------------------------|
+| `min:n`              | Minimum length (string) or minimum value (number)   |
+| `max:n`              | Maximum length (string) or maximum value (number)   |
+| `between:n,m`        | Length or value between `n` and `m`                 |
+| `size:n`             | Exact length                                        |
+| `email`              | Valid email address                                 |
+| `url`                | Valid URL                                           |
+| `uuid`               | Valid UUID                                          |
+| `ip`                 | Valid IPv4 or IPv6 address                          |
+| `alpha`              | Letters only                                        |
+| `alpha_num`          | Letters and numbers only                            |
+| `alpha_dash`         | Letters, numbers, dashes, and underscores           |
+| `regex:/pattern/`    | Must match the given regular expression             |
+| `starts_with:prefix` | Must start with the given prefix                    |
+| `ends_with:suffix`   | Must end with the given suffix                      |
+| `contains:str`       | Must contain the given substring                    |
+| `digits:n`           | Exactly `n` digits                                  |
+| `digits_between:n,m` | Between `n` and `m` digits                          |
+
+### Comparison
+
+| Rule                   | Description                                              |
+|------------------------|----------------------------------------------------------|
+| `in:a,b,c`             | Value must be one of the listed values                   |
+| `not_in:a,b,c`         | Value must not be one of the listed values               |
+| `same:field`           | Must equal the value of another field                    |
+| `different:field`      | Must differ from the value of another field              |
+| `confirmed`            | Must equal `{field}_confirmation`                        |
+| `accepted`             | Must be truthy (`true`, `1`, `'yes'`, `'on'`)            |
+| `declined`             | Must be falsy (`false`, `0`, `'no'`, `'off'`)            |
+| `gt:n`                 | Greater than `n`                                         |
+| `gte:n`                | Greater than or equal to `n`                             |
+| `lt:n`                 | Less than `n`                                            |
+| `lte:n`                | Less than or equal to `n`                                |
+
+### Date
+
+| Rule                   | Description                            |
+|------------------------|----------------------------------------|
+| `date`                 | Valid date string                      |
+| `datetime`             | Valid datetime string                  |
+| `date_format:format`   | Must match a specific format           |
+| `before:date`          | Must be before the given date          |
+| `after:date`           | Must be after the given date           |
+| `time`                 | Valid time string (`HH:MM` or `HH:MM:SS`) |
+| `timezone`             | Valid timezone identifier              |
+
+### Database
+
+| Rule                     | Description                                    |
+|--------------------------|------------------------------------------------|
+| `exists:table,column`    | A record with this value must exist in the DB  |
+| `unique:table,column`    | No record with this value may exist in the DB  |
+
+### Conditional
+
+| Rule                             | Description                                           |
+|----------------------------------|-------------------------------------------------------|
+| `required_if:field,value`        | Required when another field equals a value            |
+| `required_unless:field,value`    | Required unless another field equals a value          |
+| `required_with:field1,...`       | Required when any of the listed fields are present    |
+| `required_without:field1,...`    | Required when any of the listed fields are absent     |
+
+### File
+
+| Rule            | Description                                      |
+|-----------------|--------------------------------------------------|
+| `mimes:jpg,png` | File MIME type must be one of the given types    |
+| `size:n`        | File size in kilobytes must not exceed `n`       |
+
 ## Custom Rule Functions
 
-```typescript
+```ts
 import { validate, RuleFn } from '@lara-node/validator';
 
-const isEvenNumber: RuleFn = (value, field) => {
-  if (value % 2 !== 0) return `${field} must be an even number`;
+const isEven: RuleFn = (value, field) => {
+  if (Number(value) % 2 !== 0) return `${field} must be an even number`;
   return null;
 };
 
-await validate(body, { quantity: isEvenNumber });
+const data = await validate(body, { quantity: isEven });
 ```
 
-## Conditional Rules
+## Conditional Rule Helpers
 
-```typescript
+```ts
 import { requiredIf, requiredUnless } from '@lara-node/validator';
 
-await validate(body, {
-  // required only when type === 'business'
+const data = await validate(body, {
   company_name: requiredIf('type', 'business'),
-
-  // required unless type is 'guest'
-  email: requiredUnless('type', 'guest'),
+  email:        requiredUnless('type', 'guest'),
 });
 ```
 
-## File Validation
+## Nested Objects and Arrays
 
-```typescript
-import { fileRule, mimes, maxFileSize } from '@lara-node/validator';
-
-await validate({ file: req.file }, {
-  file: [
-    fileRule(),                                   // must be a multer file object
-    mimes(['image/jpeg', 'image/png', 'image/webp']),
-    maxFileSize(5 * 1024 * 1024),                 // 5 MB
-  ],
-});
-```
-
-## Nested Objects
-
-```typescript
+```ts
 import { nestedRule, arrayOfObjectsRule } from '@lara-node/validator';
 
-await validate(body, {
+const data = await validate(body, {
   address: nestedRule({
     street: 'required|string',
     city:   'required|string',
@@ -170,49 +215,45 @@ await validate(body, {
 });
 ```
 
-## Express Integration
+## File Validation
 
-The `@lara-node/middlewares` package attaches `req.validate()` via `ValidatorMiddleware`:
+```ts
+import { fileRule, mimes, maxFileSize } from '@lara-node/validator';
 
-```typescript
-import { ValidatorMiddleware } from '@lara-node/middlewares';
-
-app.use((req, res, next) => new ValidatorMiddleware().handle(req as any, res, next));
-
-// In controllers:
-const data = await req.validate({
-  email: 'required|email',
-  password: 'required|string|min:8',
+const data = await validate({ file: req.file }, {
+  file: [
+    fileRule(),
+    mimes(['image/jpeg', 'image/png', 'image/webp']),
+    maxFileSize(5 * 1024 * 1024),   // 5 MB
+  ],
 });
 ```
 
-## Error Handling
-
-```typescript
-import { ValidationError } from '@lara-node/validator';
-
-try {
-  const data = await validate(body, rules);
-} catch (err) {
-  if (err instanceof ValidationError) {
-    console.log(err.errors);   // { email: ['The email field is required.'] }
-    console.log(err.messages); // ['The email field is required.']
-  }
-}
-```
-
-The `ErrorHandlerMiddleware` from `@lara-node/middlewares` automatically catches `ValidationError` and returns HTTP 422.
-
 ## Custom Messages
 
-```typescript
-await validate(body, rules, {
+Pass a third argument to `validate()` with dotted field-rule keys:
+
+```ts
+const data = await validate(body, rules, {
   'name.required': 'Please enter your full name.',
-  'email.email':   'That doesn\'t look like a valid email.',
+  'email.email':   'That does not look like a valid email.',
   'age.min':       'You must be at least 18 years old.',
 });
 ```
 
-## License
+## Express Integration
 
-MIT
+The `@lara-node/middlewares` package attaches `req.validate()` via `ValidatorMiddleware`. All rules and error handling work identically:
+
+```ts
+const data = await req.validate({
+  email:    'required|email',
+  password: 'required|string|min:8',
+});
+```
+
+## Notes
+
+- `exists` and `unique` rules perform live database queries via `@lara-node/db`. Do not use them outside of a context where the database is initialized.
+- Rules are applied left-to-right. `nullable` stops processing when the field is null or undefined, so subsequent rules do not execute.
+- `confirmed` looks for a `{field}_confirmation` key in the same input object. For a field named `password`, it expects `password_confirmation`.
