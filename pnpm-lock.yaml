@@ -148,8 +148,8 @@ importers:
   packages/auth:
     dependencies:
       '@lara-node/router':
-        specifier: workspace:^
-        version: link:../router
+        specifier: ^0.1.6
+        version: 0.1.9(@lara-node/core@packages+core)(@types/node@24.12.4)
       bcrypt:
         specifier: ^6.0.0
         version: 6.0.0
@@ -188,8 +188,8 @@ importers:
   packages/cache:
     dependencies:
       '@lara-node/db':
-        specifier: workspace:^
-        version: link:../db
+        specifier: ^0.1.13
+        version: 0.1.13(@lara-node/core@packages+core)(@types/node@24.12.4)
       redis:
         specifier: ^5.10.0
         version: 5.12.1
@@ -213,26 +213,44 @@ importers:
         specifier: ^3.2.3
         version: 3.2.4(@types/node@24.12.4)(jiti@2.7.0)(tsx@4.21.0)
 
+  packages/carbon:
+    devDependencies:
+      '@types/node':
+        specifier: ^24.12.2
+        version: 24.12.4
+      rimraf:
+        specifier: ^6.0.1
+        version: 6.1.3
+      tsdown:
+        specifier: ^0.12.9
+        version: 0.12.9(oxc-resolver@11.19.1(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0))(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.3
+        version: 3.2.4(@types/node@24.12.4)(jiti@2.7.0)(tsx@4.21.0)
+
   packages/console:
     dependencies:
       '@lara-node/cache':
-        specifier: workspace:^
-        version: link:../cache
+        specifier: ^0.1.7
+        version: 0.1.8(@lara-node/core@packages+core)(@types/node@24.12.4)
       '@lara-node/db':
-        specifier: workspace:^
-        version: link:../db
+        specifier: ^0.1.13
+        version: 0.1.13(@lara-node/core@packages+core)(@types/node@24.12.4)
       '@lara-node/events':
-        specifier: workspace:^
-        version: link:../events
+        specifier: ^0.1.4
+        version: 0.1.7(@lara-node/core@packages+core)(@types/node@24.12.4)
       '@lara-node/horizon':
-        specifier: workspace:^
-        version: link:../horizon
+        specifier: ^0.1.5
+        version: 0.1.10(@lara-node/core@packages+core)(@types/node@24.12.4)
       '@lara-node/queue':
-        specifier: workspace:^
-        version: link:../queue
+        specifier: ^0.1.4
+        version: 0.1.11(@lara-node/core@packages+core)(@types/node@24.12.4)
       '@lara-node/router':
-        specifier: workspace:^
-        version: link:../router
+        specifier: ^0.1.6
+        version: 0.1.9(@lara-node/core@packages+core)(@types/node@24.12.4)
       dotenv:
         specifier: ^17.2.3
         version: 17.4.2
@@ -358,8 +376,8 @@ importers:
   packages/events:
     dependencies:
       '@lara-node/queue':
-        specifier: workspace:^
-        version: link:../queue
+        specifier: ^0.1.4
+        version: 0.1.11(@lara-node/core@packages+core)(@types/node@24.12.4)
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -392,17 +410,17 @@ importers:
   packages/horizon:
     dependencies:
       '@lara-node/cache':
-        specifier: workspace:^
-        version: link:../cache
+        specifier: ^0.1.7
+        version: 0.1.8(@lara-node/core@packages+core)(@types/node@24.12.4)
       '@lara-node/events':
-        specifier: workspace:^
-        version: link:../events
+        specifier: ^0.1.4
+        version: 0.1.7(@lara-node/core@packages+core)(@types/node@24.12.4)
       '@lara-node/queue':
-        specifier: workspace:^
-        version: link:../queue
+        specifier: ^0.1.4
+        version: 0.1.11(@lara-node/core@packages+core)(@types/node@24.12.4)
       '@lara-node/router':
-        specifier: workspace:^
-        version: link:../router
+        specifier: ^0.1.6
+        version: 0.1.9(@lara-node/core@packages+core)(@types/node@24.12.4)
       express:
         specifier: ^5.2.1
         version: 5.2.1
@@ -432,11 +450,11 @@ importers:
   packages/mail:
     dependencies:
       '@lara-node/events':
-        specifier: workspace:^
-        version: link:../events
+        specifier: ^0.1.4
+        version: 0.1.7(@lara-node/core@packages+core)(@types/node@24.12.4)
       '@lara-node/queue':
-        specifier: workspace:^
-        version: link:../queue
+        specifier: ^0.1.4
+        version: 0.1.11(@lara-node/core@packages+core)(@types/node@24.12.4)
       nodemailer:
         specifier: ^8.0.1
         version: 8.0.7
@@ -465,12 +483,15 @@ importers:
 
   packages/middlewares:
     dependencies:
+      '@lara-node/core':
+        specifier: ^0.1.5
+        version: 0.1.6
       '@lara-node/db':
-        specifier: workspace:^
-        version: link:../db
+        specifier: ^0.1.13
+        version: 0.1.13(@lara-node/core@0.1.6)(@types/node@24.12.4)
       '@lara-node/validator':
-        specifier: workspace:^
-        version: link:../validator
+        specifier: ^0.1.6
+        version: 0.1.9(@lara-node/core@0.1.6)(@types/node@24.12.4)
       express:
         specifier: ^5.2.1
         version: 5.2.1
@@ -500,11 +521,11 @@ importers:
   packages/queue:
     dependencies:
       '@lara-node/cache':
-        specifier: workspace:^
-        version: link:../cache
+        specifier: ^0.1.7
+        version: 0.1.8(@lara-node/core@packages+core)(@types/node@24.12.4)
       '@lara-node/db':
-        specifier: workspace:^
-        version: link:../db
+        specifier: ^0.1.13
+        version: 0.1.13(@lara-node/core@packages+core)(@types/node@24.12.4)
       cron-parser:
         specifier: ^5.5.0
         version: 5.5.0
@@ -537,11 +558,11 @@ importers:
   packages/router:
     dependencies:
       '@lara-node/cache':
-        specifier: workspace:^
-        version: link:../cache
+        specifier: ^0.1.7
+        version: 0.1.8(@lara-node/core@packages+core)(@types/node@24.12.4)
       '@lara-node/db':
-        specifier: workspace:^
-        version: link:../db
+        specifier: ^0.1.13
+        version: 0.1.13(@lara-node/core@packages+core)(@types/node@24.12.4)
       express:
         specifier: ^5.2.1
         version: 5.2.1
@@ -574,23 +595,23 @@ importers:
   packages/telescope:
     dependencies:
       '@lara-node/cache':
-        specifier: workspace:^
-        version: link:../cache
+        specifier: ^0.1.7
+        version: 0.1.8(@lara-node/core@packages+core)(@types/node@24.12.4)
       '@lara-node/db':
-        specifier: workspace:^
-        version: link:../db
+        specifier: ^0.1.13
+        version: 0.1.13(@lara-node/core@packages+core)(@types/node@24.12.4)
       '@lara-node/events':
-        specifier: workspace:^
-        version: link:../events
+        specifier: ^0.1.4
+        version: 0.1.7(@lara-node/core@packages+core)(@types/node@24.12.4)
       '@lara-node/horizon':
-        specifier: workspace:^
-        version: link:../horizon
+        specifier: ^0.1.5
+        version: 0.1.10(@lara-node/core@packages+core)(@types/node@24.12.4)
       '@lara-node/queue':
-        specifier: workspace:^
-        version: link:../queue
+        specifier: ^0.1.4
+        version: 0.1.11(@lara-node/core@packages+core)(@types/node@24.12.4)
       '@lara-node/router':
-        specifier: workspace:^
-        version: link:../router
+        specifier: ^0.1.6
+        version: 0.1.9(@lara-node/core@packages+core)(@types/node@24.12.4)
       express:
         specifier: ^5.2.1
         version: 5.2.1
@@ -620,8 +641,8 @@ importers:
   packages/validator:
     dependencies:
       '@lara-node/db':
-        specifier: workspace:^
-        version: link:../db
+        specifier: ^0.1.13
+        version: 0.1.13(@lara-node/core@0.1.6)(@types/node@24.12.4)
     devDependencies:
       '@types/node':
         specifier: ^24.12.2
@@ -852,6 +873,42 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@lara-node/cache@0.1.8':
+    resolution: {integrity: sha512-sQ6mEnyuq9GhCwPB98pezz5i6lHdUcKMbSu5T0CmqyBx/Fj3WWTHpYAq7NV21t+7SRRB04pnCrdKcs2XHzkWlg==}
+    peerDependencies:
+      '@lara-node/core': ^0.1.5
+
+  '@lara-node/core@0.1.6':
+    resolution: {integrity: sha512-88DV+6D3xDBSVZPZbKl5qX9SLkn1UHwBhWxhqyLeShmvG7edcnZWadmybTy1QfMvIhhaTkCvL5ffMf1FkEJlPA==}
+
+  '@lara-node/db@0.1.13':
+    resolution: {integrity: sha512-cmyPflMzoYK3ozx9tCjpFKSeMkIWJIIzmbLe1jar4567s5JuyhQqRaO92Y3w8wHnVOjPJiVYWvvD4E6a7mz6CA==}
+    peerDependencies:
+      '@lara-node/core': ^0.1.5
+
+  '@lara-node/events@0.1.7':
+    resolution: {integrity: sha512-DmtmmnpecpJHVCRY027I4iekFqGLqMifQuMjV+eviNmJz1PMhKR3sqnAS+o1Wp8LBe28Au6oq+DMEW80i02zfw==}
+    peerDependencies:
+      '@lara-node/core': ^0.1.5
+
+  '@lara-node/horizon@0.1.10':
+    resolution: {integrity: sha512-xm77XLW49FkoOu/O//0wXg60gpv298nS922Q8vGIBECW9qZZtL/PEyid+/QzjaEUggywWq1mpAv6y/90jemADg==}
+    peerDependencies:
+      '@lara-node/core': ^0.1.5
+
+  '@lara-node/queue@0.1.11':
+    resolution: {integrity: sha512-h1vyFkN8SRi0mGyE3SD5qxyO04HkrnEkAGfohujhTgvhXetYvTwUYtaJwqqpE8h9zu5lNM6M9+PoHZePJNQn7Q==}
+    peerDependencies:
+      '@lara-node/core': ^0.1.5
+
+  '@lara-node/router@0.1.9':
+    resolution: {integrity: sha512-+1mBGnVIMGXFW6wsdT8COKs7QKozPnPVwmt0AmIS7bE9E6YyTNYby5sLn3AeuPksi/pa1TOR30bWfXHHN43K8Q==}
+    peerDependencies:
+      '@lara-node/core': ^0.1.5
+
+  '@lara-node/validator@0.1.9':
+    resolution: {integrity: sha512-wLMiqtGqvErJNwxZJekxEe8O/SsrN5yfFgt1afJq38ImFYxrrPdZZICo3xIhWgGBWE2UaX4ZFakhJd+64CIn8w==}
 
   '@mongodb-js/saslprep@1.4.11':
     resolution: {integrity: sha512-o9rAHc0IpIjuPSxRutWpE1F62x7n+4mVS4rCNHkzhIUMQcc18bb6xEq5wd2NdN0WjepIyXIppRshYI2kQDOZVA==}
@@ -2955,6 +3012,160 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@lara-node/cache@0.1.8(@lara-node/core@packages+core)(@types/node@24.12.4)':
+    dependencies:
+      '@lara-node/core': link:packages/core
+      '@lara-node/db': 0.1.13(@lara-node/core@packages+core)(@types/node@24.12.4)
+      redis: 5.12.1
+    transitivePeerDependencies:
+      - '@aws-sdk/credential-providers'
+      - '@mongodb-js/zstd'
+      - '@node-rs/xxhash'
+      - '@opentelemetry/api'
+      - '@types/node'
+      - gcp-metadata
+      - kerberos
+      - mongodb-client-encryption
+      - snappy
+      - socks
+
+  '@lara-node/core@0.1.6':
+    dependencies:
+      cors: 2.8.6
+      express: 5.2.1
+      reflect-metadata: 0.2.2
+    transitivePeerDependencies:
+      - supports-color
+
+  '@lara-node/db@0.1.13(@lara-node/core@0.1.6)(@types/node@24.12.4)':
+    dependencies:
+      '@lara-node/core': 0.1.6
+      mongodb: 7.2.0
+      mysql2: 3.22.3(@types/node@24.12.4)
+      reflect-metadata: 0.2.2
+    transitivePeerDependencies:
+      - '@aws-sdk/credential-providers'
+      - '@mongodb-js/zstd'
+      - '@types/node'
+      - gcp-metadata
+      - kerberos
+      - mongodb-client-encryption
+      - snappy
+      - socks
+
+  '@lara-node/db@0.1.13(@lara-node/core@packages+core)(@types/node@24.12.4)':
+    dependencies:
+      '@lara-node/core': link:packages/core
+      mongodb: 7.2.0
+      mysql2: 3.22.3(@types/node@24.12.4)
+      reflect-metadata: 0.2.2
+    transitivePeerDependencies:
+      - '@aws-sdk/credential-providers'
+      - '@mongodb-js/zstd'
+      - '@types/node'
+      - gcp-metadata
+      - kerberos
+      - mongodb-client-encryption
+      - snappy
+      - socks
+
+  '@lara-node/events@0.1.7(@lara-node/core@packages+core)(@types/node@24.12.4)':
+    dependencies:
+      '@lara-node/core': link:packages/core
+      '@lara-node/queue': 0.1.11(@lara-node/core@packages+core)(@types/node@24.12.4)
+      reflect-metadata: 0.2.2
+      ws: 8.20.1
+    transitivePeerDependencies:
+      - '@aws-sdk/credential-providers'
+      - '@mongodb-js/zstd'
+      - '@node-rs/xxhash'
+      - '@opentelemetry/api'
+      - '@types/node'
+      - bufferutil
+      - gcp-metadata
+      - kerberos
+      - mongodb-client-encryption
+      - snappy
+      - socks
+      - utf-8-validate
+
+  '@lara-node/horizon@0.1.10(@lara-node/core@packages+core)(@types/node@24.12.4)':
+    dependencies:
+      '@lara-node/cache': 0.1.8(@lara-node/core@packages+core)(@types/node@24.12.4)
+      '@lara-node/core': link:packages/core
+      '@lara-node/events': 0.1.7(@lara-node/core@packages+core)(@types/node@24.12.4)
+      '@lara-node/queue': 0.1.11(@lara-node/core@packages+core)(@types/node@24.12.4)
+      '@lara-node/router': 0.1.9(@lara-node/core@packages+core)(@types/node@24.12.4)
+      express: 5.2.1
+    transitivePeerDependencies:
+      - '@aws-sdk/credential-providers'
+      - '@mongodb-js/zstd'
+      - '@node-rs/xxhash'
+      - '@opentelemetry/api'
+      - '@types/node'
+      - bufferutil
+      - gcp-metadata
+      - kerberos
+      - mongodb-client-encryption
+      - snappy
+      - socks
+      - supports-color
+      - utf-8-validate
+
+  '@lara-node/queue@0.1.11(@lara-node/core@packages+core)(@types/node@24.12.4)':
+    dependencies:
+      '@lara-node/cache': 0.1.8(@lara-node/core@packages+core)(@types/node@24.12.4)
+      '@lara-node/core': link:packages/core
+      '@lara-node/db': 0.1.13(@lara-node/core@packages+core)(@types/node@24.12.4)
+      cron-parser: 5.5.0
+      redis: 5.12.1
+      reflect-metadata: 0.2.2
+    transitivePeerDependencies:
+      - '@aws-sdk/credential-providers'
+      - '@mongodb-js/zstd'
+      - '@node-rs/xxhash'
+      - '@opentelemetry/api'
+      - '@types/node'
+      - gcp-metadata
+      - kerberos
+      - mongodb-client-encryption
+      - snappy
+      - socks
+
+  '@lara-node/router@0.1.9(@lara-node/core@packages+core)(@types/node@24.12.4)':
+    dependencies:
+      '@lara-node/cache': 0.1.8(@lara-node/core@packages+core)(@types/node@24.12.4)
+      '@lara-node/core': link:packages/core
+      '@lara-node/db': 0.1.13(@lara-node/core@packages+core)(@types/node@24.12.4)
+      express: 5.2.1
+      reflect-metadata: 0.2.2
+    transitivePeerDependencies:
+      - '@aws-sdk/credential-providers'
+      - '@mongodb-js/zstd'
+      - '@node-rs/xxhash'
+      - '@opentelemetry/api'
+      - '@types/node'
+      - gcp-metadata
+      - kerberos
+      - mongodb-client-encryption
+      - snappy
+      - socks
+      - supports-color
+
+  '@lara-node/validator@0.1.9(@lara-node/core@0.1.6)(@types/node@24.12.4)':
+    dependencies:
+      '@lara-node/db': 0.1.13(@lara-node/core@0.1.6)(@types/node@24.12.4)
+    transitivePeerDependencies:
+      - '@aws-sdk/credential-providers'
+      - '@lara-node/core'
+      - '@mongodb-js/zstd'
+      - '@types/node'
+      - gcp-metadata
+      - kerberos
+      - mongodb-client-encryption
+      - snappy
+      - socks
 
   '@mongodb-js/saslprep@1.4.11':
     dependencies:
