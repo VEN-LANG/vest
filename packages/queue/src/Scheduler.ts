@@ -177,6 +177,14 @@ export class Schedule {
     return this.tasks;
   }
 
+  /** Run a registered task by name immediately, bypassing its cron schedule. */
+  async runNow(taskName: string): Promise<boolean> {
+    const task = this.tasks.find((t) => t.name === taskName);
+    if (!task) return false;
+    await this.runTask(task);
+    return true;
+  }
+
   getDueTasks(): ScheduledTask[] {
     const now = new Date();
     return this.tasks.filter((task) => this.isDue(task, now));

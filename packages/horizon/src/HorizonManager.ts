@@ -2,6 +2,7 @@ import { Worker } from "@lara-node/queue";
 import { scheduler } from "@lara-node/queue";
 import { Queue } from "@lara-node/queue";
 import { horizonMetrics, writeHorizonSignal } from "./HorizonMetrics.js";
+import type { SchedulerTaskInfo } from "./HorizonMetrics.js";
 import { WorkerOptions } from "@lara-node/queue";
 import { getEventDispatcher } from "@lara-node/events";
 import { queueConfig } from "@lara-node/queue";
@@ -17,6 +18,9 @@ import { queueConfig } from "@lara-node/queue";
 |
 | Worker control (pause/resume/stop) always writes a Cache signal so the
 | artisan worker process picks it up on its next idle check.
+|
+| workerDefs are persisted to cache so the dashboard can list and restart
+| workers even across process boundaries.
 |
 */
 
@@ -44,6 +48,7 @@ class HorizonManagerClass {
         const startedAt = new Date();
         this.workers.set(id, { worker, startedAt });
         this.workerDefs.set(id, def);
+        this.persistWorkerDefs();
 
         let jobStartTime = 0;
         let stoppedByMemory = false;
@@ -137,7 +142,6 @@ class HorizonManagerClass {
 
             // Memory-exceeded stops require a full process restart to clear the heap.
             // In-process restart reuses the same heap and will immediately trip the limit again.
-            // PM2 (or the supervisor) will restart the process cleanly.
             if (stoppedByMemory) {
                 console.log(`[Horizon] Worker ${id} exiting process for clean memory restart — supervisor will restart.`);
                 process.exit(1);
@@ -162,15 +166,12 @@ class HorizonManagerClass {
             stoppedByMemory = true;
             console.log(
                 `[Horizon] Worker ${id} hit memory limit (${memoryMb}/${limitMb} MB) — ` +
-                `trimming Telescope store...`,
+                `restarting process...`,
             );
-            // Trim before GC runs so V8 has something to reclaim.
-            TelescopeStore.trim(0.25);
         });
 
         // Heartbeat — refreshes both the worker snapshot TTL AND the IDs list
         // so neither ever silently expires while the worker is running.
-        // Fires every 20 s (well within the 90 s snapshot TTL).
         const heartbeat = setInterval(() => {
             if (!worker.isRunning()) {
                 clearInterval(heartbeat);
@@ -195,7 +196,7 @@ class HorizonManagerClass {
 
     pauseWorker(id: string): boolean {
         const w = this.workers.get(id);
-        if (w) w.worker.pause(); // immediate for in-process
+        if (w) w.worker.pause();
         writeHorizonSignal(id, "pause").catch(() => {});
         return true;
     }
@@ -203,11 +204,9 @@ class HorizonManagerClass {
     resumeWorker(id: string): boolean {
         const w = this.workers.get(id);
         if (w) {
-            // Worker is alive (paused) — just unpause it
             w.worker.resume();
             writeHorizonSignal(id, "resume").catch(() => {});
         } else {
-            // Worker was stopped — restart it from its saved definition
             const def = this.workerDefs.get(id);
             if (def) {
                 console.log(`[Horizon] Restarting stopped worker ${id}...`);
@@ -222,25 +221,38 @@ class HorizonManagerClass {
     stopWorker(id: string): boolean {
         const entry = this.workers.get(id);
         if (entry) {
-            // Remove from the active map first so the memory-exceeded handler
-            // sees it as intentionally stopped and does not auto-restart.
             this.workers.delete(id);
             entry.worker.stop();
             horizonMetrics.removeWorker(id).catch(() => {});
         }
-        // Keep workerDefs so the worker can be restarted via resumeWorker.
         writeHorizonSignal(id, "stop").catch(() => {});
         return true;
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Scheduler
+    | Worker Definitions — persisted to cache for cross-process visibility
     |--------------------------------------------------------------------------
     */
 
-    getSchedulerTasks() {
-        return scheduler.getTasks().map((t) => ({
+    private persistWorkerDefs(): void {
+        horizonMetrics.writeWorkerDefs(Array.from(this.workerDefs.values())).catch(() => {});
+    }
+
+    async getWorkerDefs(): Promise<WorkerDefinition[]> {
+        const local = Array.from(this.workerDefs.values());
+        if (local.length > 0) return local;
+        return horizonMetrics.readWorkerDefs();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Scheduler — cross-process via cache
+    |--------------------------------------------------------------------------
+    */
+
+    async getSchedulerTasks(): Promise<SchedulerTaskInfo[]> {
+        const local = scheduler.getTasks().map((t) => ({
             name: t.name,
             expression: t.expression,
             description: t.description,
@@ -248,6 +260,48 @@ class HorizonManagerClass {
             lastRun: t.lastRun,
             nextRun: t.nextRun,
         }));
+        if (local.length > 0) {
+            // Refresh cache so the dashboard process can see current task state
+            horizonMetrics.writeSchedulerTasks(local).catch(() => {});
+            return local;
+        }
+        // Cross-process: HTTP server has no local scheduler — read from cache
+        return horizonMetrics.readSchedulerTasks();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Scheduler — run a task immediately by name
+    |--------------------------------------------------------------------------
+    */
+
+    async runSchedulerTask(name: string): Promise<boolean> {
+        const local = scheduler.getTasks().find((t) => t.name === name);
+        if (local) return scheduler.runNow(name);
+        // Cross-process: can't run tasks registered in another process
+        return false;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Queue — pending jobs and purge
+    |--------------------------------------------------------------------------
+    */
+
+    async getQueueJobs(queue: string, connection?: string): Promise<any[]> {
+        try {
+            return await Queue.getJobs(queue, connection);
+        } catch {
+            return [];
+        }
+    }
+
+    async purgeQueue(queue: string, connection?: string): Promise<number> {
+        try {
+            return await Queue.clear(queue, connection);
+        } catch {
+            return 0;
+        }
     }
 
     /*

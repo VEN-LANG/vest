@@ -91,8 +91,8 @@ export function activateJobWatcher(): void {
 
             for (const job of newJobs.reverse()) { // record oldest→newest
                 // Skip if already recorded by the in-process dispatcher (same UUID in store)
-                const alreadyRecorded = TelescopeStore
-                    .getEntries({ type: "job", limit: 50 })
+                const alreadyRecorded = (await TelescopeStore
+                    .getEntries({ type: "job", limit: 50 }))
                     .some((e) => e.content.uuid === job.uuid);
                 if (alreadyRecorded) continue;
 

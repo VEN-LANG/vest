@@ -24,9 +24,14 @@ function truncateValue(value: any): any {
   }
 }
 
+// Suppress internal framework keys to prevent infinite recursion:
+// Telescope writes to Cache → CacheWatcher records it → writes to Cache → ...
+const IGNORED_PREFIXES = ["telescope:", "horizon:"];
+
 export const CacheWatcher = {
   record(data: CacheRecord): void {
     if (!telescopeConfig.watchers.cache) return;
+    if (IGNORED_PREFIXES.some((p) => data.key.startsWith(p))) return;
 
     const tags: string[] = [];
     if (data.type === "get" || data.type === "has") {

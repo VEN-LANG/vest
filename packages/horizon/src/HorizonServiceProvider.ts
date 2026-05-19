@@ -96,6 +96,24 @@ export class HorizonServiceProvider extends ServiceProvider {
       }
     });
 
+    router.get("/api/queues/:name/jobs", async (req, res) => {
+      const conn = (req.query as any).connection as string | undefined;
+      try {
+        res.json(await HorizonManager.getQueueJobs(req.params.name, conn));
+      } catch (e: any) {
+        res.status(500).json({ error: e.message });
+      }
+    });
+
+    router.delete("/api/queues/:name", async (req, res) => {
+      const conn = (req.query as any).connection as string | undefined;
+      try {
+        res.json({ purged: await HorizonManager.purgeQueue(req.params.name, conn) });
+      } catch (e: any) {
+        res.status(500).json({ error: e.message });
+      }
+    });
+
     /*
     |--------------------------------------------------------------------------
     | API — Jobs
@@ -143,8 +161,34 @@ export class HorizonServiceProvider extends ServiceProvider {
     | API — Scheduler
     |--------------------------------------------------------------------------
     */
-    router.get("/api/scheduler", (_req, res) => {
-      res.json(HorizonManager.getSchedulerTasks());
+    router.get("/api/scheduler", async (_req, res) => {
+      res.json(await HorizonManager.getSchedulerTasks());
+    });
+
+    router.post("/api/scheduler/:name/run", async (req, res) => {
+      try {
+        const ok = await HorizonManager.runSchedulerTask(decodeURIComponent(req.params.name));
+        if (!ok) { res.status(404).json({ error: "Task not found or running in another process" }); return; }
+        res.json({ success: true });
+      } catch (e: any) {
+        res.status(500).json({ error: e.message });
+      }
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | API — Start worker (from dashboard)
+    |--------------------------------------------------------------------------
+    */
+    router.post("/api/workers", (req, res) => {
+      const def = req.body as import("./HorizonManager.js").WorkerDefinition;
+      if (!def?.id) { res.status(400).json({ error: "id required" }); return; }
+      HorizonManager.startWorker(def);
+      res.json({ success: true, id: def.id });
+    });
+
+    router.get("/api/workers/defs", async (_req, res) => {
+      res.json(await HorizonManager.getWorkerDefs());
     });
 
     /*

@@ -106,10 +106,10 @@ export class TelescopeServiceProvider extends ServiceProvider {
     | API — Entries
     |--------------------------------------------------------------------------
     */
-    router.get("/api/entries", (req, res) => {
+    router.get("/api/entries", async (req, res) => {
       const q = req.query as Record<string, string>;
       res.json(
-        TelescopeStore.getEntries({
+        await TelescopeStore.getEntries({
           type: q.type as any,
           limit: q.limit ? parseInt(q.limit, 10) : 100,
           before: q.before,
@@ -119,15 +119,15 @@ export class TelescopeServiceProvider extends ServiceProvider {
       );
     });
 
-    router.get("/api/entries/:id", (req, res) => {
-      const entry = TelescopeStore.getEntry(req.params.id);
+    router.get("/api/entries/:id", async (req, res) => {
+      const entry = await TelescopeStore.getEntry(req.params.id);
       if (!entry) return res.status(404).json({ error: "Entry not found" });
       res.json(entry);
     });
 
-    router.delete("/api/entries", (req, res) => {
+    router.delete("/api/entries", async (req, res) => {
       const type = (req.query as any).type;
-      TelescopeStore.clear(type);
+      await TelescopeStore.clear(type);
       res.json({ cleared: true });
     });
 
@@ -136,72 +136,45 @@ export class TelescopeServiceProvider extends ServiceProvider {
     | API — Stats
     |--------------------------------------------------------------------------
     */
-    router.get("/api/stats", (_req, res) => res.json(TelescopeStore.stats()));
+    router.get("/api/stats", async (_req, res) => res.json(await TelescopeStore.stats()));
 
     /*
     |--------------------------------------------------------------------------
-    | API — Per-minute chart metrics (computed from in-memory store)
+    | API — Per-minute chart metrics (read from Cache-backed buckets)
     |--------------------------------------------------------------------------
     */
-    router.get("/api/metrics", (req, res) => {
+    router.get("/api/metrics", async (req, res) => {
       const minutes = Math.min(parseInt((req.query as any).minutes || "60", 10), 180);
-      const now = Date.now();
-      const currentMinute = Math.floor(now / 60_000) * 60_000;
+      const currentMinute = Math.floor(Date.now() / 60_000) * 60_000;
 
-      // Build empty buckets for the last N minutes
-      const reqBuckets: Record<
-        number,
-        { ts: number; count: number; totalDuration: number; errors: number; durations: number[] }
-      > = {};
-      const queryBuckets: Record<
-        number,
-        { ts: number; count: number; totalDuration: number; slowCount: number }
-      > = {};
-
-      for (let i = 0; i < minutes; i++) {
-        const ts = currentMinute - (minutes - 1 - i) * 60_000;
-        reqBuckets[ts] = { ts, count: 0, totalDuration: 0, errors: 0, durations: [] };
-        queryBuckets[ts] = { ts, count: 0, totalDuration: 0, slowCount: 0 };
-      }
-
-      // Fill from entries
-      for (const entry of TelescopeStore.getEntries({ type: "request", limit: 2000 })) {
-        const ts = Math.floor(new Date(entry.createdAt).getTime() / 60_000) * 60_000;
-        const b = reqBuckets[ts];
-        if (!b) continue;
-        const dur = entry.content.duration ?? 0;
-        b.count++;
-        b.totalDuration += dur;
-        b.durations.push(dur);
-        if ((entry.content.status ?? 200) >= 400) b.errors++;
-      }
-      for (const entry of TelescopeStore.getEntries({ type: "query", limit: 2000 })) {
-        const ts = Math.floor(new Date(entry.createdAt).getTime() / 60_000) * 60_000;
-        const b = queryBuckets[ts];
-        if (!b) continue;
-        const dur = entry.content.duration ?? 0;
-        b.count++;
-        b.totalDuration += dur;
-        if (dur > 100) b.slowCount++;
-      }
-
-      const requests = Object.values(reqBuckets).map((b) => {
-        const sorted = [...b.durations].sort((a, n) => a - n);
-        return {
-          ts: b.ts,
-          count: b.count,
-          avgDuration: b.count ? Math.round(b.totalDuration / b.count) : 0,
-          p95Duration: sorted.length ? (sorted[Math.floor(sorted.length * 0.95)] ?? 0) : 0,
-          errors: b.errors,
-        };
-      });
-
-      const queries = Object.values(queryBuckets).map((b) => ({
-        ts: b.ts,
-        count: b.count,
-        avgDuration: b.count ? Math.round(b.totalDuration / b.count) : 0,
-        slowCount: b.slowCount,
-      }));
+      const [requests, queries] = await Promise.all([
+        Promise.all(
+          Array.from({ length: minutes }, async (_, i) => {
+            const ts = currentMinute - (minutes - 1 - i) * 60_000;
+            const b = await TelescopeStore.getRequestBucket(ts);
+            const sorted = [...(b?.durations ?? [])].sort((a, n) => a - n);
+            return {
+              ts,
+              count: b?.count ?? 0,
+              avgDuration: b?.count ? Math.round(b.totalDuration / b.count) : 0,
+              p95Duration: sorted.length ? (sorted[Math.floor(sorted.length * 0.95)] ?? 0) : 0,
+              errors: b?.errors ?? 0,
+            };
+          }),
+        ),
+        Promise.all(
+          Array.from({ length: minutes }, async (_, i) => {
+            const ts = currentMinute - (minutes - 1 - i) * 60_000;
+            const b = await TelescopeStore.getQueryBucket(ts);
+            return {
+              ts,
+              count: b?.count ?? 0,
+              avgDuration: b?.count ? Math.round(b.totalDuration / b.count) : 0,
+              slowCount: b?.slowCount ?? 0,
+            };
+          }),
+        ),
+      ]);
 
       res.json({ requests, queries });
     });
@@ -211,15 +184,20 @@ export class TelescopeServiceProvider extends ServiceProvider {
     | API — Slowest requests and queries
     |--------------------------------------------------------------------------
     */
-    router.get("/api/slow", (req, res) => {
+    router.get("/api/slow", async (req, res) => {
       const limit = parseInt((req.query as any).limit || "10", 10);
-      const requests = TelescopeStore.getEntries({ type: "request", limit: 500 })
-        .sort((a, b) => (b.content.duration ?? 0) - (a.content.duration ?? 0))
-        .slice(0, limit);
-      const queries = TelescopeStore.getEntries({ type: "query", limit: 500 })
-        .sort((a, b) => (b.content.duration ?? 0) - (a.content.duration ?? 0))
-        .slice(0, limit);
-      res.json({ requests, queries });
+      const [reqEntries, qryEntries] = await Promise.all([
+        TelescopeStore.getEntries({ type: "request", limit: 500 }),
+        TelescopeStore.getEntries({ type: "query", limit: 500 }),
+      ]);
+      res.json({
+        requests: reqEntries
+          .sort((a, b) => (b.content.duration ?? 0) - (a.content.duration ?? 0))
+          .slice(0, limit),
+        queries: qryEntries
+          .sort((a, b) => (b.content.duration ?? 0) - (a.content.duration ?? 0))
+          .slice(0, limit),
+      });
     });
 
     expressApp.use(basePath, router);
