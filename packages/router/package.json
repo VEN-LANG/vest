@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/router",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Lara-Node Express router builder, middleware stack, and OpenAPI generator",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -29,7 +29,6 @@
   },
   "dependencies": {
     "@lara-node/cache": "^0.1.7",
-    "@lara-node/db": "^0.1.13",
     "express": "^5.2.1",
     "reflect-metadata": "^0.2.2"
   },
@@ -43,6 +42,7 @@
     "@lara-node/core": "workspace:^"
   },
   "peerDependencies": {
-    "@lara-node/core": "^0.1.5"
+    "@lara-node/core": "^0.1.5",
+    "@lara-node/db": "^0.1.13"
   }
 }
