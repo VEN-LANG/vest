@@ -46,6 +46,7 @@ class HorizonManagerClass {
         this.workerDefs.set(id, def);
 
         let jobStartTime = 0;
+        let stoppedByMemory = false;
 
         worker.on("worker:start", ({ connection: conn, queues: qs }) => {
             horizonMetrics.registerWorker(id, {
@@ -134,8 +135,16 @@ class HorizonManagerClass {
             horizonMetrics.updateWorker(id, { status: "stopped" }).catch(() => {});
             clearInterval(heartbeat);
 
-            // If still in the workers map, the stop was self-initiated (memory limit,
-            // queue:restart signal, stopWhenEmpty, etc.) — auto-restart after a short delay.
+            // Memory-exceeded stops require a full process restart to clear the heap.
+            // In-process restart reuses the same heap and will immediately trip the limit again.
+            // The supervisor (PM2 or similar) will restart the process cleanly.
+            if (stoppedByMemory) {
+                console.log(`[Horizon] Worker ${id} exiting process for clean memory restart — supervisor will restart.`);
+                process.exit(1);
+            }
+
+            // If still in the workers map, the stop was self-initiated (queue:restart signal,
+            // stopWhenEmpty, etc.) — auto-restart in-process after a short delay.
             // stopWorker() removes from the map BEFORE calling worker.stop(), so explicit
             // stops never reach this branch.
             if (this.workers.has(id)) {
@@ -150,10 +159,10 @@ class HorizonManagerClass {
         });
 
         worker.on("worker:memory-exceeded", ({ memoryMb, limitMb }: { memoryMb: number; limitMb: number }) => {
+            stoppedByMemory = true;
             console.log(
-                `[Horizon] Worker ${id} hit memory limit (${memoryMb}/${limitMb} MB) — stopping for restart...`,
+                `[Horizon] Worker ${id} hit memory limit (${memoryMb}/${limitMb} MB) — trimming in-memory state...`,
             );
-            // Restart is handled uniformly by the worker:stop handler above.
         });
 
         // Heartbeat — refreshes both the worker snapshot TTL AND the IDs list

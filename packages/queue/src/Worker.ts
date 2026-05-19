@@ -116,9 +116,20 @@ export class Worker extends EventEmitter {
       // or always after a job runs (idleTicks reset to 0 after processing).
       if (this.idleTicks % Worker.IDLE_CHECK_INTERVAL === 0) {
         if (this.memoryExceeded()) {
-          console.log("[Worker] Memory limit exceeded, stopping...");
-          this.stop();
-          break;
+          const memMb = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+          console.log(`[Worker] Memory limit reached (${memMb} MB / ${this.options.memory} MB) — attempting GC recovery...`);
+          // Notify listeners first so they can free disposable memory before GC runs
+          this.emit("worker:memory-exceeded", { memoryMb: memMb, limitMb: this.options.memory });
+          if (typeof (global as any).gc === "function") (global as any).gc();
+          await this.sleep(500);
+          if (!this.memoryExceeded()) {
+            const recovered = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+            console.log(`[Worker] Memory recovered after GC (${recovered} MB), continuing...`);
+          } else {
+            console.log("[Worker] Memory still exceeded after GC — stopping for supervisor restart.");
+            this.stop();
+            break;
+          }
         }
 
         // Batch all cache lookups in parallel
