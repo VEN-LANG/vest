@@ -137,7 +137,7 @@ class HorizonManagerClass {
 
             // Memory-exceeded stops require a full process restart to clear the heap.
             // In-process restart reuses the same heap and will immediately trip the limit again.
-            // The supervisor (PM2 or similar) will restart the process cleanly.
+            // PM2 (or the supervisor) will restart the process cleanly.
             if (stoppedByMemory) {
                 console.log(`[Horizon] Worker ${id} exiting process for clean memory restart — supervisor will restart.`);
                 process.exit(1);
@@ -161,8 +161,11 @@ class HorizonManagerClass {
         worker.on("worker:memory-exceeded", ({ memoryMb, limitMb }: { memoryMb: number; limitMb: number }) => {
             stoppedByMemory = true;
             console.log(
-                `[Horizon] Worker ${id} hit memory limit (${memoryMb}/${limitMb} MB) — trimming in-memory state...`,
+                `[Horizon] Worker ${id} hit memory limit (${memoryMb}/${limitMb} MB) — ` +
+                `trimming Telescope store...`,
             );
+            // Trim before GC runs so V8 has something to reclaim.
+            TelescopeStore.trim(0.25);
         });
 
         // Heartbeat — refreshes both the worker snapshot TTL AND the IDs list

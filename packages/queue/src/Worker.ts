@@ -40,9 +40,9 @@ export class Worker extends EventEmitter {
   private readonly horizonCtrlPrefix: string;
 
   constructor(
-    connectionName?: string,
-    queues: string | string[] = "default",
-    options: WorkerOptions = {},
+      connectionName?: string,
+      queues: string | string[] = "default",
+      options: WorkerOptions = {},
   ) {
     super();
 
@@ -84,7 +84,7 @@ export class Worker extends EventEmitter {
     this.jobsProcessed = 0;
 
     console.log(
-      `[Worker] Starting on connection [${this.connectionName}] processing queues: ${this.queues.join(", ")}`,
+        `[Worker] Starting on connection [${this.connectionName}] processing queues: ${this.queues.join(", ")}`,
     );
     this.emit("worker:start", { connection: this.connectionName, queues: this.queues });
 
@@ -232,7 +232,7 @@ export class Worker extends EventEmitter {
       try {
         if (this.options.verbose) {
           console.log(
-            `[Worker] Polling queue [${queue}] on connection [${this.connectionName}]...`,
+              `[Worker] Polling queue [${queue}] on connection [${this.connectionName}]...`,
           );
         }
         const job = await Queue.pop(queue, this.connectionName);
@@ -305,7 +305,7 @@ export class Worker extends EventEmitter {
     const retryUntilExpired = job.retryUntil != null && Date.now() > job.retryUntil;
 
     const shouldFailPermanently =
-      retryUntilExpired || job.attempts >= maxTries || job.exceptionCount >= maxExceptions;
+        retryUntilExpired || job.attempts >= maxTries || job.exceptionCount >= maxExceptions;
 
     const driver = Queue.connection(this.connectionName);
 
@@ -313,17 +313,17 @@ export class Worker extends EventEmitter {
       const delay = this.calculateBackoff(job);
 
       console.log(
-        `[Worker] Releasing job for retry — attempt ${job.attempts}/${maxTries}, ` +
+          `[Worker] Releasing job for retry — attempt ${job.attempts}/${maxTries}, ` +
           `exceptions ${job.exceptionCount}/${maxExceptions}, delay ${delay}s`,
       );
 
       await driver.release(job, delay, job.queue);
     } else {
       const reason = retryUntilExpired
-        ? "retryUntil deadline passed"
-        : job.exceptionCount >= maxExceptions
-          ? `maxExceptions (${maxExceptions}) reached`
-          : `maxTries (${maxTries}) reached`;
+          ? "retryUntil deadline passed"
+          : job.exceptionCount >= maxExceptions
+              ? `maxExceptions (${maxExceptions}) reached`
+              : `maxTries (${maxTries}) reached`;
 
       console.log(`[Worker] Job failed permanently after ${job.attempts} attempt(s): ${reason}`);
 

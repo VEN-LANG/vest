@@ -41,9 +41,9 @@
     "@lara-node/cache": "^0.1.7",
     "@lara-node/db": "^0.1.13",
     "@lara-node/events": "^0.1.4",
-    "@lara-node/horizon": "^0.1.5",
-    "@lara-node/queue": "^0.1.4",
-    "@lara-node/router": "^0.1.6",
+    "@lara-node/horizon": "^0.1.13",
+    "@lara-node/queue": "^0.1.14",
+    "@lara-node/router": "^0.2.7",
     "express": "^5.2.1"
   },
   "devDependencies": {

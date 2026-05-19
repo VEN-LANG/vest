@@ -28,7 +28,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@lara-node/router": "^0.1.6",
+    "@lara-node/router": "^0.2.7",
     "bcrypt": "^6.0.0",
     "jsonwebtoken": "^9.0.3"
   },

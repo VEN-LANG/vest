@@ -30,8 +30,8 @@ import type { Middleware as MiddlewareEntry } from "./Middleware/MiddlewareStack
  * // req.params.user is a loaded User instance
  */
 export function Bind(name?: string) {
-  return function <T extends abstract new (...args: any[]) => Model>(target: T): T {
-    RouterBuilder.registerModel(name ?? target.name.toLowerCase(), target as unknown as typeof Model);
+  return function <T extends typeof Model>(target: T): T {
+    RouterBuilder.registerModel(name ?? target.name.toLowerCase(), target);
     return target;
   };
 }
@@ -63,8 +63,8 @@ export function Bind(name?: string) {
  * g.get('/profile', 'auth', [UserController, 'profile']);
  */
 export function Middleware(alias: string) {
-  return function <T extends new (...args: any[]) => any>(target: T): T {
-    registerMiddleware(alias, target as unknown as MiddlewareEntry);
+  return function <T extends MiddlewareEntry>(target: T): T {
+    registerMiddleware(alias, target);
     return target;
   };
 }

@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/horizon",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "Lara-Node Horizon — queue monitoring dashboard",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -40,8 +40,8 @@
   "dependencies": {
     "@lara-node/cache": "^0.1.7",
     "@lara-node/events": "^0.1.4",
-    "@lara-node/queue": "^0.1.4",
-    "@lara-node/router": "^0.1.6",
+    "@lara-node/queue": "^0.1.14",
+    "@lara-node/router": "^0.2.7",
     "express": "^5.2.1"
   },
   "devDependencies": {

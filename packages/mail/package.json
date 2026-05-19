@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@lara-node/events": "^0.1.4",
-    "@lara-node/queue": "^0.1.4",
+    "@lara-node/queue": "^0.1.14",
     "nodemailer": "^8.0.1"
   },
   "devDependencies": {
