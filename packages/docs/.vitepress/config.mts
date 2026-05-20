@@ -42,7 +42,6 @@ export default defineConfig({
         text: "CLI Tools",
         items: [
           { text: "Create LaraNode", link: "/cli/create-laranode" },
-          { text: "Create Vest", link: "/cli/create-vest" },
         ],
       },
     ],
@@ -213,7 +212,6 @@ export default defineConfig({
           text: "CLI Tools",
           items: [
             { text: "Create LaraNode", link: "/cli/create-laranode" },
-            { text: "Create Vest", link: "/cli/create-vest" },
           ],
         },
       ],

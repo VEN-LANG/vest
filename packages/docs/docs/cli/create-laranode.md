@@ -75,5 +75,4 @@ Uses `@lara-node/*` package namespace:
 ## Next Steps
 
 - [Getting Started](/guide/getting-started) -- Quick start
-- [Create Vest](/cli/create-vest) -- Alternative scaffolder
 - [Project Structure](/guide/project-structure) -- Directory layout

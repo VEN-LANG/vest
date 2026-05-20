@@ -45,5 +45,4 @@ Welcome to the LaraNode Framework documentation.
 
 ## CLI Tools
 
-- [create-laranode](/cli/create-laranode) -- Main scaffolder
-- [create-vest](/cli/create-vest) -- Alternative scaffolder
+- [create-laranode](/cli/create-laranode) -- Scaffold new apps
