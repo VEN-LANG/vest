@@ -13,19 +13,19 @@ import pc from "picocolors";
 import prompts from "prompts";
 
 const VERSIONS: Record<string, string> = {
-  "@lara-node/core":        "0.1.7",
-  "@lara-node/router":      "0.2.6",
-  "@lara-node/db":          "0.1.14",
-  "@lara-node/auth":        "0.1.7",
-  "@lara-node/console":     "0.1.13",
-  "@lara-node/validator":   "0.1.10",
+  "@lara-node/core": "0.1.7",
+  "@lara-node/router": "0.2.6",
+  "@lara-node/db": "0.1.14",
+  "@lara-node/auth": "0.1.7",
+  "@lara-node/console": "0.1.13",
+  "@lara-node/validator": "0.1.10",
   "@lara-node/middlewares": "0.1.11",
-  "@lara-node/events":      "0.1.8",
-  "@lara-node/queue":       "0.1.12",
-  "@lara-node/mail":        "0.1.8",
-  "@lara-node/horizon":     "0.1.11",
-  "@lara-node/telescope":   "0.1.12",
-  "@lara-node/cache":       "0.1.10",
+  "@lara-node/events": "0.1.8",
+  "@lara-node/queue": "0.1.12",
+  "@lara-node/mail": "0.1.8",
+  "@lara-node/horizon": "0.1.11",
+  "@lara-node/telescope": "0.1.12",
+  "@lara-node/cache": "0.1.10",
 };
 
 async function main() {
@@ -57,13 +57,50 @@ async function main() {
         name: "packages",
         message: "Select packages to include:",
         choices: [
-          { title: "@lara-node/validator   (validation engine) [core]", value: "validator", selected: true },
-          { title: "@lara-node/middlewares (class-based middleware) [core]", value: "middlewares", selected: true },
-          { title: "@lara-node/events      (events + broadcasting)", value: "events", selected: true },
-          { title: "@lara-node/queue       (job queue + scheduler)", value: "queue", selected: true },
+          {
+            title: "@lara-node/validator   (validation engine) [core]",
+            value: "validator",
+            selected: true,
+          },
+          {
+            title: "@lara-node/middlewares (class-based middleware) [core]",
+            value: "middlewares",
+            selected: true,
+          },
+          {
+            title: "@lara-node/events      (events + broadcasting)",
+            value: "events",
+            selected: true,
+          },
+          {
+            title: "@lara-node/queue       (job queue + scheduler)",
+            value: "queue",
+            selected: true,
+          },
           { title: "@lara-node/mail        (mail drivers)", value: "mail", selected: true },
           { title: "@lara-node/horizon     (queue dashboard)", value: "horizon", selected: false },
-          { title: "@lara-node/telescope   (debug dashboard)", value: "telescope", selected: false },
+          {
+            title: "@lara-node/telescope   (debug dashboard)",
+            value: "telescope",
+            selected: false,
+          },
+        ],
+      },
+      {
+        type: "multiselect",
+        name: "dev tools",
+        message: "select linter and formatter",
+        choices: [
+          {
+            title: "oxlint",
+            value: "oxlint",
+            selected: false,
+          },
+          {
+            title: "oxfmt",
+            value: "oxfmt",
+            selected: false,
+          },
         ],
       },
     ],
@@ -109,6 +146,8 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
   const hasMail = opts.packages.includes("mail");
   const hasHorizon = opts.packages.includes("horizon");
   const hasTelescope = opts.packages.includes("telescope");
+  const hasOxlint = opts.packages.includes("oxlint");
+  const hasOxfmt = opts.packages.includes("oxfmt");
 
   // ── Directories (must come first so all file writes succeed) ──────────────────
   for (const dd of [
@@ -133,7 +172,8 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
     "src/routes",
     "src/types",
     "uploads/files",
-  ]) d(dir, dd);
+  ])
+    d(dir, dd);
 
   const coreDeps = new Set(["core", "db", "router", "auth", "console", "validator", "middlewares"]);
 
@@ -166,8 +206,9 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
       "migrate:fresh": `node ${REG} src/artisan.ts migrate:fresh`,
       "db:seed": `node ${REG} src/artisan.ts db:seed`,
       test: "vitest run",
-      lint: "oxlint src",
       typecheck: "tsc --noEmit",
+      ...(hasOxlint ? { lint: "oxlint src", "lint:fix": "oxlint src --fix" } : {}),
+      ...(hasOxfmt ? { fmt: "oxfmt", "fmt:check": "oxfmt --check" } : {}),
     },
     dependencies: {
       ...Object.fromEntries(laraNodeDeps.map((p) => [p, `^${VERSIONS[p] ?? "0.1.0"}`])),
@@ -192,14 +233,170 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
       "@swc-node/register": "^1.10.9",
       "@swc/core": "^1.11.0",
       "tsconfig-paths": "^4.2.0",
-      oxlint: "^0.16.6",
       tsdown: "^0.12.9",
       typescript: "^5.9.3",
       vitest: "^3.2.3",
+      ...(hasOxlint ? { oxlint: "1.66" } : {}),
+      ...(hasOxfmt ? { oxfmt: "0.51" } : {}),
     },
   };
 
   w(dir, "package.json", JSON.stringify(packageJson, null, 2));
+
+  // oxlint & oxfmt configs
+  if (hasOxlint) {
+    w(
+      dir,
+      ".oxlintrc.json",
+      JSON.stringify({
+        $schema: "./node_modules/oxlint/configuration_schema.json",
+        plugins: ["react", "unicorn", "typescript", "oxc"],
+        categories: {},
+        rules: {
+          "for-direction": "warn",
+          "no-async-promise-executor": "warn",
+          "no-caller": "warn",
+          "no-class-assign": "warn",
+          "no-compare-neg-zero": "warn",
+          "no-cond-assign": "warn",
+          "no-const-assign": "warn",
+          "no-constant-binary-expression": "warn",
+          "no-constant-condition": "warn",
+          "no-control-regex": "warn",
+          "no-debugger": "warn",
+          "no-delete-var": "warn",
+          "no-dupe-class-members": "warn",
+          "no-dupe-else-if": "warn",
+          "no-dupe-keys": "warn",
+          "no-duplicate-case": "warn",
+          "no-empty-character-class": "warn",
+          "no-empty-pattern": "warn",
+          "no-empty-static-block": "warn",
+          "no-eval": "warn",
+          "no-ex-assign": "warn",
+          "no-extra-boolean-cast": "warn",
+          "no-func-assign": "warn",
+          "no-global-assign": "warn",
+          "no-import-assign": "warn",
+          "no-invalid-regexp": "warn",
+          "no-irregular-whitespace": "warn",
+          "no-loss-of-precision": "warn",
+          "no-new-native-nonconstructor": "warn",
+          "no-nonoctal-decimal-escape": "warn",
+          "no-obj-calls": "warn",
+          "no-self-assign": "warn",
+          "no-setter-return": "warn",
+          "no-shadow-restricted-names": "warn",
+          "no-sparse-arrays": "warn",
+          "no-this-before-super": "warn",
+          "no-unsafe-finally": "warn",
+          "no-unsafe-negation": "warn",
+          "no-unsafe-optional-chaining": "warn",
+          "no-unused-labels": "warn",
+          "no-unused-private-class-members": "warn",
+          "no-unused-vars": "warn",
+          "no-useless-backreference": "warn",
+          "no-useless-catch": "warn",
+          "no-useless-escape": "warn",
+          "no-useless-rename": "warn",
+          "no-with": "warn",
+          "require-yield": "warn",
+          "use-isnan": "warn",
+          "valid-typeof": "warn",
+          "oxc/bad-array-method-on-arguments": "warn",
+          "oxc/bad-char-at-comparison": "warn",
+          "oxc/bad-comparison-sequence": "warn",
+          "oxc/bad-min-max-func": "warn",
+          "oxc/bad-object-literal-comparison": "warn",
+          "oxc/bad-replace-all-arg": "warn",
+          "oxc/const-comparisons": "warn",
+          "oxc/double-comparisons": "warn",
+          "oxc/erasing-op": "warn",
+          "oxc/missing-throw": "warn",
+          "oxc/number-arg-out-of-range": "warn",
+          "oxc/only-used-in-recursion": "warn",
+          "oxc/uninvoked-array-callback": "warn",
+          "react/forward-ref-uses-ref": "warn",
+          "react/jsx-key": "warn",
+          "react/jsx-no-duplicate-props": "warn",
+          "react/jsx-no-target-blank": "warn",
+          "react/jsx-no-undef": "warn",
+          "react/jsx-props-no-spread-multi": "warn",
+          "react/no-children-prop": "warn",
+          "react/no-danger-with-children": "warn",
+          "react/no-direct-mutation-state": "warn",
+          "react/no-find-dom-node": "warn",
+          "react/no-is-mounted": "warn",
+          "react/no-render-return-value": "warn",
+          "react/no-string-refs": "warn",
+          "react/void-dom-elements-no-children": "warn",
+          "typescript/no-duplicate-enum-values": "warn",
+          "typescript/no-extra-non-null-assertion": "warn",
+          "typescript/no-misused-new": "warn",
+          "typescript/no-non-null-asserted-optional-chain": "warn",
+          "typescript/no-this-alias": "warn",
+          "typescript/no-unnecessary-parameter-property-assignment": "warn",
+          "typescript/no-unsafe-declaration-merging": "warn",
+          "typescript/no-useless-empty-export": "warn",
+          "typescript/no-wrapper-object-types": "warn",
+          "typescript/prefer-as-const": "warn",
+          "typescript/triple-slash-reference": "warn",
+          "unicorn/no-await-in-promise-methods": "warn",
+          "unicorn/no-empty-file": "warn",
+          "unicorn/no-invalid-fetch-options": "warn",
+          "unicorn/no-invalid-remove-event-listener": "warn",
+          "unicorn/no-new-array": "warn",
+          "unicorn/no-single-promise-in-promise-methods": "warn",
+          "unicorn/no-thenable": "warn",
+          "unicorn/no-unnecessary-await": "warn",
+          "unicorn/no-useless-fallback-in-spread": "warn",
+          "unicorn/no-useless-length-check": "warn",
+          "unicorn/no-useless-spread": "warn",
+          "unicorn/prefer-set-size": "warn",
+          "unicorn/prefer-string-starts-ends-with": "warn",
+        },
+        settings: {
+          "jsx-a11y": {
+            polymorphicPropName: null,
+            components: {},
+          },
+          next: {
+            rootDir: [],
+          },
+          react: {
+            formComponents: [],
+            linkComponents: [],
+          },
+          jsdoc: {
+            ignorePrivate: false,
+            ignoreInternal: false,
+            ignoreReplacesDocs: true,
+            overrideReplacesDocs: true,
+            augmentsExtendsReplacesDocs: false,
+            implementsReplacesDocs: false,
+            exemptDestructuredRootsFromChecks: false,
+            tagNamePreference: {},
+          },
+        },
+        env: {
+          builtin: true,
+        },
+        globals: {},
+        ignorePatterns: [],
+      }),
+    );
+  }
+
+  if (hasOxfmt) {
+    w(
+      dir,
+      ".oxfmtrc.json",
+      JSON.stringify({
+        $schema: "./node_modules/oxfmt/configuration_schema.json",
+        ignorePatterns: [],
+      }),
+    );
+  }
 
   // ── tsconfig.json ─────────────────────────────────────────────────────────────
   w(
@@ -1493,11 +1690,16 @@ export class FileController {
   ];
   if (hasEvents) {
     appProviderImports.push(`import { EventServiceProvider } from './EventServiceProvider';`);
-    appProviderImports.push(`import { BroadcastServiceProvider } from './BroadcastServiceProvider';`);
+    appProviderImports.push(
+      `import { BroadcastServiceProvider } from './BroadcastServiceProvider';`,
+    );
   }
-  if (hasQueue) appProviderImports.push(`import { QueueServiceProvider } from './QueueServiceProvider';`);
-  if (hasHorizon) appProviderImports.push(`import { HorizonServiceProvider } from '@lara-node/horizon';`);
-  if (hasTelescope) appProviderImports.push(`import { TelescopeServiceProvider } from '@lara-node/telescope';`);
+  if (hasQueue)
+    appProviderImports.push(`import { QueueServiceProvider } from './QueueServiceProvider';`);
+  if (hasHorizon)
+    appProviderImports.push(`import { HorizonServiceProvider } from '@lara-node/horizon';`);
+  if (hasTelescope)
+    appProviderImports.push(`import { TelescopeServiceProvider } from '@lara-node/telescope';`);
 
   w(
     dir,
@@ -1598,11 +1800,15 @@ export class RouteServiceProvider extends ServiceProvider {
     const { webRoutesBuilder } = require('@routes/web');
     registerRouteBuilder(webRoutesBuilder, 'web', '/', this.app);
   }
-  ${hasEvents ? `
+  ${
+    hasEvents
+      ? `
   protected mapChannelRoutes(): void {
     const { channelRouter } = require('@routes/channels');
     this.app.mountRoutes('/broadcasting', channelRouter);
-  }` : ""}
+  }`
+      : ""
+  }
 }
 `,
   );
@@ -1653,7 +1859,11 @@ export class UserNotification extends Event {
 `,
     );
 
-    w(dir, "src/app/Events/index.ts", `export * from './UserEvents';\nexport * from './BroadcastEvents';\n`);
+    w(
+      dir,
+      "src/app/Events/index.ts",
+      `export * from './UserEvents';\nexport * from './BroadcastEvents';\n`,
+    );
 
     // ── Listeners ────────────────────────────────────────────────────────────────
     w(
@@ -2790,8 +3000,9 @@ export default {
 `,
   );
 
-  const dbConfigContent = opts.database === "mysql"
-    ? `const dbName = '${name.replace(/-/g, "_")}';
+  const dbConfigContent =
+    opts.database === "mysql"
+      ? `const dbName = '${name.replace(/-/g, "_")}';
 
 export const dbConfig = {
   connection: process.env.DB_CONNECTION || 'mysql',
@@ -2809,7 +3020,7 @@ export const dbConfig = {
   socketPath: process.env.DB_SOCKET_PATH || process.env.DB_SOCKET || undefined,
 };
 `
-    : `const dbName = '${name.replace(/-/g, "_")}';
+      : `const dbName = '${name.replace(/-/g, "_")}';
 
 export const dbConfig = {
   connection: process.env.DB_CONNECTION || 'mongodb',
@@ -2831,7 +3042,8 @@ export const dbConfig = {
   w(
     dir,
     "src/config/db.config.ts",
-    dbConfigContent + `
+    dbConfigContent +
+      `
 export async function initDatabase() {
   const { initDatabase: init } = await import('@lara-node/db');
   return init();
@@ -3215,7 +3427,9 @@ g.post('/login', 'throttle:10', [AuthController, 'login']);
 | \`DB_NAME\` | \`${name.replace(/-/g, "_")}\` | Database / schema name |
 | \`SKIP_DB\` | — | Set to \`1\` to skip DB init in CI/test |
 
-${opts.database === "mysql" ? `### Database — MySQL
+${
+  opts.database === "mysql"
+    ? `### Database — MySQL
 
 | Variable | Default | Description |
 |---|---|---|
@@ -3224,7 +3438,8 @@ ${opts.database === "mysql" ? `### Database — MySQL
 | \`DB_USER\` | \`root\` | Username |
 | \`DB_PASSWORD\` | _(empty)_ | Password |
 | \`DB_POOL_LIMIT\` | \`10\` | Connection pool size |
-| \`DB_SOCKET_PATH\` | — | Unix socket path (overrides host/port) |` : `### Database — MongoDB
+| \`DB_SOCKET_PATH\` | — | Unix socket path (overrides host/port) |`
+    : `### Database — MongoDB
 
 | Variable | Default | Description |
 |---|---|---|
@@ -3234,7 +3449,8 @@ ${opts.database === "mysql" ? `### Database — MySQL
 | \`MONGO_REPLICA_SET\` | — | Replica set name |
 | \`MONGO_DIRECT_CONNECTION\` | auto | \`true\` / \`false\` |
 | \`MONGO_RETRY_WRITES\` | auto | \`true\` / \`false\` |
-| \`MONGO_SERVER_SELECTION_TIMEOUT_MS\` | \`10000\` | Timeout in ms |`}
+| \`MONGO_SERVER_SELECTION_TIMEOUT_MS\` | \`10000\` | Timeout in ms |`
+}
 
 ### Mail / Queue / Broadcast
 
@@ -3258,7 +3474,9 @@ No \`.js\` extensions needed in imports (\`moduleResolution: "bundler"\`).
 `,
   );
 
-  console.log(`  ${pc.dim("Scaffolded:")} models, services, controllers, kernel, routes, migrations, seeders, observers, events, listeners, subscribers, commands, mail, jobs, scheduler, README`);
+  console.log(
+    `  ${pc.dim("Scaffolded:")} models, services, controllers, kernel, routes, migrations, seeders, observers, events, listeners, subscribers, commands, mail, jobs, scheduler, README`,
+  );
 }
 
 main().catch((err) => {
