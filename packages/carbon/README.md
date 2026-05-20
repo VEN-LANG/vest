@@ -11,10 +11,10 @@ pnpm add @lara-node/carbon
 ## Quick Start
 
 ```ts
-import { Carbon, CarbonImmutable, MONDAY, FRIDAY } from '@lara-node/carbon';
+import { Carbon, CarbonImmutable, MONDAY, FRIDAY } from "@lara-node/carbon";
 
 const now = Carbon.now();
-console.log(now.format('YYYY-MM-DD HH:mm:ss'));
+console.log(now.format("YYYY-MM-DD HH:mm:ss"));
 
 // Navigate to next Monday
 const nextMonday = now.next(MONDAY).startOfDay();
@@ -23,7 +23,7 @@ console.log(nextMonday.toDateOnlyString());
 // Immutable — original is never modified
 const base = CarbonImmutable.now();
 const nextWeek = base.addDays(7);
-console.log(base.toDateOnlyString());     // unchanged
+console.log(base.toDateOnlyString()); // unchanged
 console.log(nextWeek.toDateOnlyString()); // 7 days later
 ```
 
@@ -36,38 +36,38 @@ The main class. Extends `Date` — any `Carbon` instance can be passed where a `
 #### Static factories
 
 ```ts
-Carbon.now()                              // current date/time
-Carbon.today()                            // today at midnight
-Carbon.tomorrow()                         // tomorrow at midnight
-Carbon.yesterday()                        // yesterday at midnight
-Carbon.from('2025-06-15')                 // parse ISO/common string
-Carbon.fromTimestamp(1723625400)          // from Unix timestamp (seconds)
-Carbon.fromFormat('14/08/2025', 'DD/MM/YYYY') // custom format string
-Carbon.min(a, b, c)                       // earliest of the given dates
-Carbon.max(a, b, c)                       // latest of the given dates
+Carbon.now(); // current date/time
+Carbon.today(); // today at midnight
+Carbon.tomorrow(); // tomorrow at midnight
+Carbon.yesterday(); // yesterday at midnight
+Carbon.from("2025-06-15"); // parse ISO/common string
+Carbon.fromTimestamp(1723625400); // from Unix timestamp (seconds)
+Carbon.fromFormat("14/08/2025", "DD/MM/YYYY"); // custom format string
+Carbon.min(a, b, c); // earliest of the given dates
+Carbon.max(a, b, c); // latest of the given dates
 ```
 
 #### Getters
 
-| Property         | Type       | Description                              |
-|------------------|------------|------------------------------------------|
-| `.year`          | `number`   | Full year (e.g. 2025)                    |
-| `.month`         | `number`   | Month 1–12                               |
-| `.day`           | `number`   | Day of month 1–31                        |
-| `.hour`          | `number`   | Hours 0–23                               |
-| `.minute`        | `number`   | Minutes 0–59                             |
-| `.second`        | `number`   | Seconds 0–59                             |
-| `.millisecond`   | `number`   | Milliseconds 0–999                       |
-| `.dayOfWeek`     | `WeekDay`  | 0 (Sun) – 6 (Sat)                        |
-| `.timestamp`     | `number`   | Unix timestamp (seconds)                 |
-| `.quarter`       | `number`   | Quarter 1–4                              |
-| `.weekOfYear`    | `number`   | ISO week number                          |
-| `.dayOfYear`     | `number`   | Day of year 1–366                        |
-| `.age`           | `number`   | Years elapsed since this date            |
-| `.monthName`     | `string`   | e.g. `"August"`                          |
-| `.shortMonthName`| `string`   | e.g. `"Aug"`                             |
-| `.dayName`       | `string`   | e.g. `"Thursday"`                        |
-| `.shortDayName`  | `string`   | e.g. `"Thu"`                             |
+| Property          | Type      | Description                   |
+| ----------------- | --------- | ----------------------------- |
+| `.year`           | `number`  | Full year (e.g. 2025)         |
+| `.month`          | `number`  | Month 1–12                    |
+| `.day`            | `number`  | Day of month 1–31             |
+| `.hour`           | `number`  | Hours 0–23                    |
+| `.minute`         | `number`  | Minutes 0–59                  |
+| `.second`         | `number`  | Seconds 0–59                  |
+| `.millisecond`    | `number`  | Milliseconds 0–999            |
+| `.dayOfWeek`      | `WeekDay` | 0 (Sun) – 6 (Sat)             |
+| `.timestamp`      | `number`  | Unix timestamp (seconds)      |
+| `.quarter`        | `number`  | Quarter 1–4                   |
+| `.weekOfYear`     | `number`  | ISO week number               |
+| `.dayOfYear`      | `number`  | Day of year 1–366             |
+| `.age`            | `number`  | Years elapsed since this date |
+| `.monthName`      | `string`  | e.g. `"August"`               |
+| `.shortMonthName` | `string`  | e.g. `"Aug"`                  |
+| `.dayName`        | `string`  | e.g. `"Thursday"`             |
+| `.shortDayName`   | `string`  | e.g. `"Thu"`                  |
 
 #### Start / end of period
 
@@ -106,20 +106,20 @@ date.sub(2, 'month')
 #### Diff methods
 
 ```ts
-const a = Carbon.from('2025-01-01');
-const b = Carbon.from('2025-08-14');
+const a = Carbon.from("2025-01-01");
+const b = Carbon.from("2025-08-14");
 
-a.diffInDays(b)         // 225
-a.diffInWeeks(b)        // 32.14...
-a.diffInMonths(b)       // 7
-a.diffInHours(b)
-a.diffInMinutes(b)
-a.diffInSeconds(b)
-a.diffAbsInDays(b)      // always positive
+a.diffInDays(b); // 225
+a.diffInWeeks(b); // 32.14...
+a.diffInMonths(b); // 7
+a.diffInHours(b);
+a.diffInMinutes(b);
+a.diffInSeconds(b);
+a.diffAbsInDays(b); // always positive
 
-Carbon.from('2025-08-01').diffForHumans()  // "13 days ago"
-Carbon.from('2025-09-01').diffForHumans()  // "18 days from now"
-date.humanize()                             // alias for diffForHumans()
+Carbon.from("2025-08-01").diffForHumans(); // "13 days ago"
+Carbon.from("2025-09-01").diffForHumans(); // "18 days from now"
+date.humanize(); // alias for diffForHumans()
 ```
 
 #### Comparisons
@@ -144,64 +144,64 @@ date.isBetween(start, end, true)    // inclusive
 #### Navigation
 
 ```ts
-import { MONDAY, FRIDAY } from '@lara-node/carbon';
+import { MONDAY, FRIDAY } from "@lara-node/carbon";
 
-date.next(MONDAY)       // next Monday
-date.previous(FRIDAY)   // previous Friday
-date.nextWeekday()      // next working day (skip weekends)
-date.previousWeekday()
+date.next(MONDAY); // next Monday
+date.previous(FRIDAY); // previous Friday
+date.nextWeekday(); // next working day (skip weekends)
+date.previousWeekday();
 
-date.nthOfMonth(1, MONDAY)   // 1st Monday of the month
-date.nthOfMonth(3, FRIDAY)   // 3rd Friday
-date.nthOfMonth(-1, FRIDAY)  // last Friday of the month
+date.nthOfMonth(1, MONDAY); // 1st Monday of the month
+date.nthOfMonth(3, FRIDAY); // 3rd Friday
+date.nthOfMonth(-1, FRIDAY); // last Friday of the month
 ```
 
 #### Formatting
 
 ```ts
-date.format('YYYY-MM-DD HH:mm:ss')
-date.format('dddd, MMMM D, YYYY')   // Thursday, August 14, 2025
-date.format('h:mm A')               // 9:30 AM
-date.toDateOnlyString()             // "2025-08-14"
-date.toDateTimeString()             // "2025-08-14 09:30:00"
-date.toTimeOnlyString()             // "09:30:00"
-date.toISOString()
-date.toAtomString()
-date.toRfc2822String()
+date.format("YYYY-MM-DD HH:mm:ss");
+date.format("dddd, MMMM D, YYYY"); // Thursday, August 14, 2025
+date.format("h:mm A"); // 9:30 AM
+date.toDateOnlyString(); // "2025-08-14"
+date.toDateTimeString(); // "2025-08-14 09:30:00"
+date.toTimeOnlyString(); // "09:30:00"
+date.toISOString();
+date.toAtomString();
+date.toRfc2822String();
 ```
 
 Supported format tokens:
 
-| Token  | Output example     |
-|--------|--------------------|
-| `YYYY` | 2025               |
-| `MM`   | 08                 |
-| `DD`   | 14                 |
-| `MMMM` | August             |
-| `MMM`  | Aug                |
-| `dddd` | Thursday           |
-| `ddd`  | Thu                |
-| `HH`   | 09                 |
-| `hh`   | 09 (12-hr)         |
-| `mm`   | 30                 |
-| `ss`   | 00                 |
-| `SSS`  | 000                |
-| `A`    | AM / PM            |
-| `Q`    | 3 (quarter)        |
-| `X`    | Unix timestamp (s) |
-| `x`    | Unix timestamp (ms)|
+| Token  | Output example      |
+| ------ | ------------------- |
+| `YYYY` | 2025                |
+| `MM`   | 08                  |
+| `DD`   | 14                  |
+| `MMMM` | August              |
+| `MMM`  | Aug                 |
+| `dddd` | Thursday            |
+| `ddd`  | Thu                 |
+| `HH`   | 09                  |
+| `hh`   | 09 (12-hr)          |
+| `mm`   | 30                  |
+| `ss`   | 00                  |
+| `SSS`  | 000                 |
+| `A`    | AM / PM             |
+| `Q`    | 3 (quarter)         |
+| `X`    | Unix timestamp (s)  |
+| `x`    | Unix timestamp (ms) |
 
 ### `CarbonImmutable`
 
 Drop-in replacement for `Carbon`. All fluent methods return a new `CarbonImmutable` instance. Calling any native mutable `Date` method directly throws.
 
 ```ts
-import { CarbonImmutable } from '@lara-node/carbon';
+import { CarbonImmutable } from "@lara-node/carbon";
 
 const d = CarbonImmutable.now();
-const next = d.addDays(7);  // returns new CarbonImmutable
+const next = d.addDays(7); // returns new CarbonImmutable
 
-d.setDate(1);               // throws: "cannot call mutable method setDate"
+d.setDate(1); // throws: "cannot call mutable method setDate"
 ```
 
 ### `CarbonInterval`
@@ -209,38 +209,35 @@ d.setDate(1);               // throws: "cannot call mutable method setDate"
 Represents a duration.
 
 ```ts
-import { CarbonInterval, Carbon } from '@lara-node/carbon';
+import { CarbonInterval, Carbon } from "@lara-node/carbon";
 
 const iv = CarbonInterval.days(30);
-iv.humanize();      // "30 days"
-iv.totalSeconds;    // 2592000
+iv.humanize(); // "30 days"
+iv.totalSeconds; // 2592000
 
-const iv2 = CarbonInterval.between(
-  Carbon.from('2025-01-01'),
-  Carbon.from('2025-08-14')
-);
+const iv2 = CarbonInterval.between(Carbon.from("2025-01-01"), Carbon.from("2025-08-14"));
 iv2.humanize(); // "7 months, 13 days"
 
 // Named constructors
-CarbonInterval.years(1)
-CarbonInterval.months(3)
-CarbonInterval.weeks(2)
-CarbonInterval.days(10)
-CarbonInterval.hours(6)
-CarbonInterval.minutes(45)
-CarbonInterval.seconds(30)
+CarbonInterval.years(1);
+CarbonInterval.months(3);
+CarbonInterval.weeks(2);
+CarbonInterval.days(10);
+CarbonInterval.hours(6);
+CarbonInterval.minutes(45);
+CarbonInterval.seconds(30);
 
 // Computed totals
-iv.totalDays
-iv.totalHours
-iv.totalMinutes
-iv.totalSeconds
+iv.totalDays;
+iv.totalHours;
+iv.totalMinutes;
+iv.totalSeconds;
 
 // Arithmetic
-iv.add(CarbonInterval.hours(5))
-iv.multiply(2)
+iv.add(CarbonInterval.hours(5));
+iv.multiply(2);
 
-iv.toSpec()  // { years, months, weeks, days, hours, minutes, seconds }
+iv.toSpec(); // { years, months, weeks, days, hours, minutes, seconds }
 ```
 
 ### `CarbonPeriod`
@@ -248,31 +245,32 @@ iv.toSpec()  // { years, months, weeks, days, hours, minutes, seconds }
 Iterable date range.
 
 ```ts
-import { CarbonPeriod, Carbon } from '@lara-node/carbon';
+import { CarbonPeriod, Carbon } from "@lara-node/carbon";
 
-const period = CarbonPeriod
-  .between(Carbon.from('2025-08-01'), Carbon.from('2025-08-31'))
-  .everyDay();
+const period = CarbonPeriod.between(
+  Carbon.from("2025-08-01"),
+  Carbon.from("2025-08-31"),
+).everyDay();
 
 for (const date of period) {
   console.log(date.toDateOnlyString());
 }
 
-period.toArray()              // Carbon[]
-period.count()                // 31
-period.contains(Carbon.today())
+period.toArray(); // Carbon[]
+period.count(); // 31
+period.contains(Carbon.today());
 
 // Custom steps
-CarbonPeriod.between(start, end).every(3, 'day')
-CarbonPeriod.between(start, end).everyWeek()
-CarbonPeriod.between(start, end).everyMonth()
-CarbonPeriod.between(start, end).everyDay().exclusive()  // end not included
+CarbonPeriod.between(start, end).every(3, "day");
+CarbonPeriod.between(start, end).everyWeek();
+CarbonPeriod.between(start, end).everyMonth();
+CarbonPeriod.between(start, end).everyDay().exclusive(); // end not included
 ```
 
 ### Weekday constants
 
 ```ts
-import { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY } from '@lara-node/carbon';
+import { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY } from "@lara-node/carbon";
 ```
 
 ## Notes

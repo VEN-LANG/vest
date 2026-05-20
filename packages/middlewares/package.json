@@ -2,6 +2,10 @@
   "name": "@lara-node/middlewares",
   "version": "0.1.11",
   "description": "Predefined class-based middleware for Lara-Node applications",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -13,10 +17,6 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
   "publishConfig": {
     "access": "public"
   },
@@ -27,8 +27,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@lara-node/validator": "^0.1.6",
     "@lara-node/db": "^0.1.13",
+    "@lara-node/validator": "^0.1.6",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
@@ -40,7 +40,7 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "express": "^5.2.1",
-    "@lara-node/core": "^0.1.5"
+    "@lara-node/core": "^0.1.5",
+    "express": "^5.2.1"
   }
 }

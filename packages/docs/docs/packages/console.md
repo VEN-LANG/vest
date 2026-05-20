@@ -26,10 +26,10 @@ pnpm exec artisan [command]
 
 ## Key Exports
 
-| Export | Description |
-|--------|-------------|
+| Export    | Description        |
+| --------- | ------------------ |
 | `Command` | Base command class |
-| `Kernel` | Command kernel |
+| `Kernel`  | Command kernel     |
 
 ## Next Steps
 

@@ -151,9 +151,13 @@ export function resolveMessage(
   const candidates = [`${field}.${variantCode}`, `${field}.${code}`, variantCode, code];
   for (const c of candidates) {
     if (custom && custom[c]) return formatMessage(custom[c], { ...meta, attribute: attrLabel });
-    if (defaultMessages[c]) return formatMessage(defaultMessages[c], { ...meta, attribute: attrLabel });
+    if (defaultMessages[c])
+      return formatMessage(defaultMessages[c], { ...meta, attribute: attrLabel });
   }
-  return formatMessage(defaultMessages.invalid || "Invalid value", { ...meta, attribute: attrLabel });
+  return formatMessage(defaultMessages.invalid || "Invalid value", {
+    ...meta,
+    attribute: attrLabel,
+  });
 }
 
 export async function validate<T extends Record<string, any>>(
@@ -201,7 +205,10 @@ export async function validate<T extends Record<string, any>>(
       const isLast = i === segs.length - 1;
       const numeric = /^\d+$/.test(s);
       const key: any = numeric ? Number(s) : s;
-      if (isLast) { cur[key] = value; return; }
+      if (isLast) {
+        cur[key] = value;
+        return;
+      }
       if (cur[key] === undefined || cur[key] === null) {
         const nextSeg = segs[i + 1];
         cur[key] = /^\d+$/.test(nextSeg) ? [] : {};
@@ -217,7 +224,10 @@ export async function validate<T extends Record<string, any>>(
     const results: string[] = [];
 
     function recurse(current: any, idx: number, prefix: string) {
-      if (idx >= segs.length) { results.push(prefix.replace(/^\./, "")); return; }
+      if (idx >= segs.length) {
+        results.push(prefix.replace(/^\./, ""));
+        return;
+      }
       const seg = segs[idx];
       if (seg === "*" || seg === "") {
         if (Array.isArray(current)) {
@@ -227,17 +237,25 @@ export async function validate<T extends Record<string, any>>(
         } else {
           const parentPath = prefix.replace(/^\./, "");
           let parentVal: any = undefined;
-          try { parentVal = parentPath ? getAtPath(obj, parentPath) : obj; } catch { parentVal = undefined; }
+          try {
+            parentVal = parentPath ? getAtPath(obj, parentPath) : obj;
+          } catch {
+            parentVal = undefined;
+          }
           if (typeof parentVal === "string") {
             try {
               const parsed = JSON.parse(parentVal);
               if (Array.isArray(parsed)) {
-                for (let i = 0; i < parsed.length; i++) recurse(parsed[i], idx + 1, prefix + "." + i);
+                for (let i = 0; i < parsed.length; i++)
+                  recurse(parsed[i], idx + 1, prefix + "." + i);
                 return;
               }
             } catch {}
             if (parentVal.includes(",")) {
-              const parts = parentVal.split(",").map((s: string) => s.trim()).filter(Boolean);
+              const parts = parentVal
+                .split(",")
+                .map((s: string) => s.trim())
+                .filter(Boolean);
               for (let i = 0; i < parts.length; i++) recurse(parts[i], idx + 1, prefix + "." + i);
               return;
             }
@@ -301,7 +319,10 @@ export async function validate<T extends Record<string, any>>(
             }
           } catch {}
           if (parentVal.includes(",")) {
-            const parts = parentVal.split(",").map((s: string) => s.trim()).filter(Boolean);
+            const parts = parentVal
+              .split(",")
+              .map((s: string) => s.trim())
+              .filter(Boolean);
             for (let i = 0; i < parts.length; i++) pathsToValidate.push(`${parentPath}.${i}`);
             continue;
           }
@@ -318,7 +339,10 @@ export async function validate<T extends Record<string, any>>(
       if (typeof fieldRule === "function") {
         const res = await (fieldRule as RuleFn)(raw, field, out);
         if (res === true) continue;
-        if (res === false) { pushError(field, "invalid", { value: raw, kind: typeof raw }); continue; }
+        if (res === false) {
+          pushError(field, "invalid", { value: raw, kind: typeof raw });
+          continue;
+        }
         if (res && (res as any).ok === false) {
           pushError(field, (res as any).message || "invalid", { value: raw, kind: typeof raw });
           continue;
@@ -330,7 +354,10 @@ export async function validate<T extends Record<string, any>>(
         continue;
       }
 
-      const parts = String(fieldRule).split("|").map((s) => s.trim()).filter(Boolean);
+      const parts = String(fieldRule)
+        .split("|")
+        .map((s) => s.trim())
+        .filter(Boolean);
       const isRequired = parts.includes("required");
       const isNullable = parts.includes("nullable");
       const isSometimes = parts.includes("sometimes");
@@ -340,30 +367,80 @@ export async function validate<T extends Record<string, any>>(
       let conditionalRequired = false;
       for (const p of parts) {
         if (p.startsWith("required_if:")) {
-          const [condField, ...values] = p.slice("required_if:".length).split(",").map((s) => s.trim());
-          if (values.some((v) => v === String(getAtPath(out, condField) ?? ""))) conditionalRequired = true;
+          const [condField, ...values] = p
+            .slice("required_if:".length)
+            .split(",")
+            .map((s) => s.trim());
+          if (values.some((v) => v === String(getAtPath(out, condField) ?? "")))
+            conditionalRequired = true;
         } else if (p.startsWith("required_unless:")) {
-          const [condField, ...values] = p.slice("required_unless:".length).split(",").map((s) => s.trim());
-          if (!values.some((v) => v === String(getAtPath(out, condField) ?? ""))) conditionalRequired = true;
+          const [condField, ...values] = p
+            .slice("required_unless:".length)
+            .split(",")
+            .map((s) => s.trim());
+          if (!values.some((v) => v === String(getAtPath(out, condField) ?? "")))
+            conditionalRequired = true;
         } else if (p.startsWith("required_with:")) {
-          const fields = p.slice("required_with:".length).split(",").map((s) => s.trim());
-          if (fields.some((f) => { const v = getAtPath(out, f); return v !== undefined && v !== null && v !== ""; })) conditionalRequired = true;
+          const fields = p
+            .slice("required_with:".length)
+            .split(",")
+            .map((s) => s.trim());
+          if (
+            fields.some((f) => {
+              const v = getAtPath(out, f);
+              return v !== undefined && v !== null && v !== "";
+            })
+          )
+            conditionalRequired = true;
         } else if (p.startsWith("required_with_all:")) {
-          const fields = p.slice("required_with_all:".length).split(",").map((s) => s.trim());
-          if (fields.every((f) => { const v = getAtPath(out, f); return v !== undefined && v !== null && v !== ""; })) conditionalRequired = true;
+          const fields = p
+            .slice("required_with_all:".length)
+            .split(",")
+            .map((s) => s.trim());
+          if (
+            fields.every((f) => {
+              const v = getAtPath(out, f);
+              return v !== undefined && v !== null && v !== "";
+            })
+          )
+            conditionalRequired = true;
         } else if (p.startsWith("required_without:")) {
-          const fields = p.slice("required_without:".length).split(",").map((s) => s.trim());
-          if (fields.some((f) => { const v = getAtPath(out, f); return v === undefined || v === null || v === ""; })) conditionalRequired = true;
+          const fields = p
+            .slice("required_without:".length)
+            .split(",")
+            .map((s) => s.trim());
+          if (
+            fields.some((f) => {
+              const v = getAtPath(out, f);
+              return v === undefined || v === null || v === "";
+            })
+          )
+            conditionalRequired = true;
         } else if (p.startsWith("required_without_all:")) {
-          const fields = p.slice("required_without_all:".length).split(",").map((s) => s.trim());
-          if (fields.every((f) => { const v = getAtPath(out, f); return v === undefined || v === null || v === ""; })) conditionalRequired = true;
+          const fields = p
+            .slice("required_without_all:".length)
+            .split(",")
+            .map((s) => s.trim());
+          if (
+            fields.every((f) => {
+              const v = getAtPath(out, f);
+              return v === undefined || v === null || v === "";
+            })
+          )
+            conditionalRequired = true;
         }
       }
 
       const effectiveRequired = isRequired || conditionalRequired;
       if (isSometimes && !present) continue;
-      if (isPresent && raw === undefined) { pushError(field, "present", { value: raw }); continue; }
-      if (effectiveRequired && !present) { pushError(field, "required", { value: raw }); continue; }
+      if (isPresent && raw === undefined) {
+        pushError(field, "present", { value: raw });
+        continue;
+      }
+      if (effectiveRequired && !present) {
+        pushError(field, "required", { value: raw });
+        continue;
+      }
       if (!present && (isNullable || !effectiveRequired)) continue;
 
       let val: any = raw;
@@ -371,9 +448,15 @@ export async function validate<T extends Record<string, any>>(
 
       for (const p of parts) {
         if (["required", "nullable", "sometimes", "present"].includes(p)) continue;
-        if (p.startsWith("required_if:") || p.startsWith("required_unless:") ||
-          p.startsWith("required_with:") || p.startsWith("required_with_all:") ||
-          p.startsWith("required_without:") || p.startsWith("required_without_all:")) continue;
+        if (
+          p.startsWith("required_if:") ||
+          p.startsWith("required_unless:") ||
+          p.startsWith("required_with:") ||
+          p.startsWith("required_with_all:") ||
+          p.startsWith("required_without:") ||
+          p.startsWith("required_without_all:")
+        )
+          continue;
         if (failed) break;
 
         switch (true) {
@@ -382,17 +465,26 @@ export async function validate<T extends Record<string, any>>(
             break;
           case p === "email": {
             if (typeof val !== "string") val = String(val);
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { pushError(field, "email", { value: val, kind: "string" }); failed = true; }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+              pushError(field, "email", { value: val, kind: "string" });
+              failed = true;
+            }
             break;
           }
           case p === "int" || p === "integer": {
             const intVal = parseInt(val, 10);
-            if (Number.isNaN(intVal)) { pushError(field, "integer", { value: val, kind: typeof val }); failed = true; } else val = intVal;
+            if (Number.isNaN(intVal)) {
+              pushError(field, "integer", { value: val, kind: typeof val });
+              failed = true;
+            } else val = intVal;
             break;
           }
           case p === "numeric" || p === "float" || p === "double": {
             const numVal = Number(val);
-            if (Number.isNaN(numVal)) { pushError(field, "numeric", { value: val, kind: typeof val }); failed = true; } else val = numVal;
+            if (Number.isNaN(numVal)) {
+              pushError(field, "numeric", { value: val, kind: typeof val });
+              failed = true;
+            } else val = numVal;
             break;
           }
           case p === "boolean":
@@ -400,102 +492,215 @@ export async function validate<T extends Record<string, any>>(
               const lv = val.toLowerCase();
               if (["true", "1", "yes", "on"].includes(lv)) val = true;
               else if (["false", "0", "no", "off"].includes(lv)) val = false;
-              else { pushError(field, "boolean", { value: val, kind: typeof val }); failed = true; }
-            } else if (typeof val !== "boolean") { pushError(field, "boolean", { value: val, kind: typeof val }); failed = true; }
+              else {
+                pushError(field, "boolean", { value: val, kind: typeof val });
+                failed = true;
+              }
+            } else if (typeof val !== "boolean") {
+              pushError(field, "boolean", { value: val, kind: typeof val });
+              failed = true;
+            }
             break;
           case p === "array":
             if (!Array.isArray(val)) {
               if (typeof val === "string") {
-                try { const p2 = JSON.parse(val); if (Array.isArray(p2)) val = p2; else { pushError(field, "array", { value: val, kind: typeof val }); failed = true; } }
-                catch { pushError(field, "array", { value: val, kind: typeof val }); failed = true; }
-              } else { pushError(field, "array", { value: val, kind: typeof val }); failed = true; }
+                try {
+                  const p2 = JSON.parse(val);
+                  if (Array.isArray(p2)) val = p2;
+                  else {
+                    pushError(field, "array", { value: val, kind: typeof val });
+                    failed = true;
+                  }
+                } catch {
+                  pushError(field, "array", { value: val, kind: typeof val });
+                  failed = true;
+                }
+              } else {
+                pushError(field, "array", { value: val, kind: typeof val });
+                failed = true;
+              }
             }
             break;
           case p === "json":
             if (typeof val === "string") {
-              try { val = JSON.parse(val); } catch { pushError(field, "json", { value: val, kind: typeof val }); failed = true; }
+              try {
+                val = JSON.parse(val);
+              } catch {
+                pushError(field, "json", { value: val, kind: typeof val });
+                failed = true;
+              }
             }
             break;
           case p === "date": {
             const date = parseDate(val);
-            if (!date) { pushError(field, "date", { value: val, kind: typeof val }); failed = true; } else val = date;
+            if (!date) {
+              pushError(field, "date", { value: val, kind: typeof val });
+              failed = true;
+            } else val = date;
             break;
           }
           case p === "url":
-            try { new URL(val); } catch { pushError(field, "url", { value: val, kind: typeof val }); failed = true; }
+            try {
+              new URL(val);
+            } catch {
+              pushError(field, "url", { value: val, kind: typeof val });
+              failed = true;
+            }
             break;
           case p === "uuid":
-            if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(val))) {
-              pushError(field, "uuid", { value: val, kind: typeof val }); failed = true;
+            if (
+              !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+                String(val),
+              )
+            ) {
+              pushError(field, "uuid", { value: val, kind: typeof val });
+              failed = true;
             }
             break;
           case p === "phone": {
             const phoneRegex = /^(\+\d{1,3}[\s-]?)?([0-9]|\(\d{1,4}\))[\d\s-]{5,}$/;
             const cleaned = String(val).replace(/[\s\-()]/g, "");
             const dc = cleaned.replace(/\D/g, "").length;
-            if (!phoneRegex.test(String(val)) || dc < 7 || dc > 15) { pushError(field, "phone", { value: val, kind: typeof val }); failed = true; }
+            if (!phoneRegex.test(String(val)) || dc < 7 || dc > 15) {
+              pushError(field, "phone", { value: val, kind: typeof val });
+              failed = true;
+            }
             break;
           }
-          case p.startsWith("min:"): await handleMinRule(field, val, p); break;
-          case p.startsWith("max:"): await handleMaxRule(field, val, p); break;
-          case p.startsWith("size:"): await handleSizeRule(field, val, p); break;
-          case p.startsWith("between:"): await handleBetweenRule(field, val, p); break;
-          case p.startsWith("in:"): await handleInRule(field, val, p); break;
-          case p.startsWith("not_in:"): await handleNotInRule(field, val, p); break;
-          case p.startsWith("exists:"):
-            if (!((raw === undefined || raw === null || raw === "") && parts.includes("nullable"))) await handleExistsRule(field, val, p);
+          case p.startsWith("min:"):
+            await handleMinRule(field, val, p);
             break;
-          case p.startsWith("unique:"): await handleUniqueRule(field, val, p); break;
-          case p.startsWith("regex:"): await handleRegexRule(field, val, p); break;
-          case p.startsWith("starts_with:"): await handleStartsWithRule(field, val, p); break;
-          case p.startsWith("ends_with:"): await handleEndsWithRule(field, val, p); break;
-          case p.startsWith("contains:"): await handleContainsRule(field, val, p); break;
-          case p.startsWith("gt:"): await handleComparisonRule(field, val, p, "gt", out); break;
-          case p.startsWith("gte:"): await handleComparisonRule(field, val, p, "gte", out); break;
-          case p.startsWith("lt:"): await handleComparisonRule(field, val, p, "lt", out); break;
-          case p.startsWith("lte:"): await handleComparisonRule(field, val, p, "lte", out); break;
-          case p.startsWith("before:"): await handleDateComparisonRule(field, val, p, "before", out); break;
-          case p.startsWith("before_or_equal:"): await handleDateComparisonRule(field, val, p, "before_or_equal", out); break;
-          case p.startsWith("after:"): await handleDateComparisonRule(field, val, p, "after", out); break;
-          case p.startsWith("after_or_equal:"): await handleDateComparisonRule(field, val, p, "after_or_equal", out); break;
-          case p.startsWith("date_equals:"): await handleDateComparisonRule(field, val, p, "date_equals", out); break;
-          case p.startsWith("date_format:"): await handleDateFormatRule(field, raw, p); break;
+          case p.startsWith("max:"):
+            await handleMaxRule(field, val, p);
+            break;
+          case p.startsWith("size:"):
+            await handleSizeRule(field, val, p);
+            break;
+          case p.startsWith("between:"):
+            await handleBetweenRule(field, val, p);
+            break;
+          case p.startsWith("in:"):
+            await handleInRule(field, val, p);
+            break;
+          case p.startsWith("not_in:"):
+            await handleNotInRule(field, val, p);
+            break;
+          case p.startsWith("exists:"):
+            if (!((raw === undefined || raw === null || raw === "") && parts.includes("nullable")))
+              await handleExistsRule(field, val, p);
+            break;
+          case p.startsWith("unique:"):
+            await handleUniqueRule(field, val, p);
+            break;
+          case p.startsWith("regex:"):
+            await handleRegexRule(field, val, p);
+            break;
+          case p.startsWith("starts_with:"):
+            await handleStartsWithRule(field, val, p);
+            break;
+          case p.startsWith("ends_with:"):
+            await handleEndsWithRule(field, val, p);
+            break;
+          case p.startsWith("contains:"):
+            await handleContainsRule(field, val, p);
+            break;
+          case p.startsWith("gt:"):
+            await handleComparisonRule(field, val, p, "gt", out);
+            break;
+          case p.startsWith("gte:"):
+            await handleComparisonRule(field, val, p, "gte", out);
+            break;
+          case p.startsWith("lt:"):
+            await handleComparisonRule(field, val, p, "lt", out);
+            break;
+          case p.startsWith("lte:"):
+            await handleComparisonRule(field, val, p, "lte", out);
+            break;
+          case p.startsWith("before:"):
+            await handleDateComparisonRule(field, val, p, "before", out);
+            break;
+          case p.startsWith("before_or_equal:"):
+            await handleDateComparisonRule(field, val, p, "before_or_equal", out);
+            break;
+          case p.startsWith("after:"):
+            await handleDateComparisonRule(field, val, p, "after", out);
+            break;
+          case p.startsWith("after_or_equal:"):
+            await handleDateComparisonRule(field, val, p, "after_or_equal", out);
+            break;
+          case p.startsWith("date_equals:"):
+            await handleDateComparisonRule(field, val, p, "date_equals", out);
+            break;
+          case p.startsWith("date_format:"):
+            await handleDateFormatRule(field, raw, p);
+            break;
           case p === "time":
-            if (typeof val !== "string" || !/^\d{2}:\d{2}(:\d{2})?$/.test(val)) { pushError(field, "time", { value: val }); failed = true; }
+            if (typeof val !== "string" || !/^\d{2}:\d{2}(:\d{2})?$/.test(val)) {
+              pushError(field, "time", { value: val });
+              failed = true;
+            }
             break;
           case p === "datetime": {
             const dtVal = parseDate(val);
-            if (!dtVal) { pushError(field, "datetime", { value: val }); failed = true; } else val = dtVal;
+            if (!dtVal) {
+              pushError(field, "datetime", { value: val });
+              failed = true;
+            } else val = dtVal;
             break;
           }
           case p === "timezone":
-            try { Intl.DateTimeFormat(undefined, { timeZone: String(val) }); }
-            catch { pushError(field, "timezone", { value: val }); failed = true; }
+            try {
+              Intl.DateTimeFormat(undefined, { timeZone: String(val) });
+            } catch {
+              pushError(field, "timezone", { value: val });
+              failed = true;
+            }
             break;
           case p === "accepted":
-            if (![true, 1, "1", "yes", "on"].includes(val)) { pushError(field, "accepted", { value: val }); failed = true; }
+            if (![true, 1, "1", "yes", "on"].includes(val)) {
+              pushError(field, "accepted", { value: val });
+              failed = true;
+            }
             break;
           case p === "declined":
-            if (![false, 0, "0", "no", "off"].includes(val)) { pushError(field, "declined", { value: val }); failed = true; }
+            if (![false, 0, "0", "no", "off"].includes(val)) {
+              pushError(field, "declined", { value: val });
+              failed = true;
+            }
             break;
           case p === "confirmed": {
             const cf = `${field}_confirmation`;
-            if (out && (out[cf] || out["confirmation_" + field] || out[field + "_confirmed"] || out["confirmed_" + field] || out["confirm_" + field]) !== val) {
-              pushError(field, "confirmed", { other: cf }); failed = true;
+            if (
+              out &&
+              (out[cf] ||
+                out["confirmation_" + field] ||
+                out[field + "_confirmed"] ||
+                out["confirmed_" + field] ||
+                out["confirm_" + field]) !== val
+            ) {
+              pushError(field, "confirmed", { other: cf });
+              failed = true;
             }
             break;
           }
           case p.startsWith("different:"): {
             const df = p.split(":")[1];
-            if (out && out[df] === val) { pushError(field, "different", { other: df }); failed = true; }
+            if (out && out[df] === val) {
+              pushError(field, "different", { other: df });
+              failed = true;
+            }
             break;
           }
           case p.startsWith("same:"): {
             const sf = p.split(":")[1];
-            if (out && out[sf] !== val) { pushError(field, "same", { other: sf }); failed = true; }
+            if (out && out[sf] !== val) {
+              pushError(field, "same", { other: sf });
+              failed = true;
+            }
             break;
           }
-          default: break;
+          default:
+            break;
         }
       }
 
@@ -524,51 +729,78 @@ export async function validate<T extends Record<string, any>>(
 
   async function handleMinRule(field: string, val: any, rule: string) {
     const arg = Number(rule.split(":")[1]);
-    if (typeof val === "number" && val < arg) pushError(field, "min", { min: arg, value: val, kind: "numeric" });
-    else if (typeof val === "string" && val.length < arg) pushError(field, "min", { min: arg, value: val, kind: "string" });
-    else if (Array.isArray(val) && val.length < arg) pushError(field, "min", { min: arg, value: val, kind: "array" });
+    if (typeof val === "number" && val < arg)
+      pushError(field, "min", { min: arg, value: val, kind: "numeric" });
+    else if (typeof val === "string" && val.length < arg)
+      pushError(field, "min", { min: arg, value: val, kind: "string" });
+    else if (Array.isArray(val) && val.length < arg)
+      pushError(field, "min", { min: arg, value: val, kind: "array" });
   }
 
   async function handleMaxRule(field: string, val: any, rule: string) {
     const arg = Number(rule.split(":")[1]);
-    if (typeof val === "number" && val > arg) pushError(field, "max", { max: arg, value: val, kind: "numeric" });
-    else if (typeof val === "string" && val.length > arg) pushError(field, "max", { max: arg, value: val, kind: "string" });
-    else if (Array.isArray(val) && val.length > arg) pushError(field, "max", { max: arg, value: val, kind: "array" });
+    if (typeof val === "number" && val > arg)
+      pushError(field, "max", { max: arg, value: val, kind: "numeric" });
+    else if (typeof val === "string" && val.length > arg)
+      pushError(field, "max", { max: arg, value: val, kind: "string" });
+    else if (Array.isArray(val) && val.length > arg)
+      pushError(field, "max", { max: arg, value: val, kind: "array" });
   }
 
   async function handleSizeRule(field: string, val: any, rule: string) {
     const arg = Number(rule.split(":")[1]);
-    if (typeof val === "number" && val !== arg) pushError(field, "size", { size: arg, value: val, kind: "numeric" });
-    else if (typeof val === "string" && val.length !== arg) pushError(field, "size", { size: arg, value: val, kind: "string" });
-    else if (Array.isArray(val) && val.length !== arg) pushError(field, "size", { size: arg, value: val, kind: "array" });
+    if (typeof val === "number" && val !== arg)
+      pushError(field, "size", { size: arg, value: val, kind: "numeric" });
+    else if (typeof val === "string" && val.length !== arg)
+      pushError(field, "size", { size: arg, value: val, kind: "string" });
+    else if (Array.isArray(val) && val.length !== arg)
+      pushError(field, "size", { size: arg, value: val, kind: "array" });
   }
 
   async function handleBetweenRule(field: string, val: any, rule: string) {
     const [min, max] = rule.split(":")[1].split(",").map(Number);
-    if (typeof val === "number" && (val < min || val > max)) pushError(field, "between", { min, max, value: val, kind: "numeric" });
-    else if (typeof val === "string" && (val.length < min || val.length > max)) pushError(field, "between", { min, max, value: val, kind: "string" });
-    else if (Array.isArray(val) && (val.length < min || val.length > max)) pushError(field, "between", { min, max, value: val, kind: "array" });
+    if (typeof val === "number" && (val < min || val > max))
+      pushError(field, "between", { min, max, value: val, kind: "numeric" });
+    else if (typeof val === "string" && (val.length < min || val.length > max))
+      pushError(field, "between", { min, max, value: val, kind: "string" });
+    else if (Array.isArray(val) && (val.length < min || val.length > max))
+      pushError(field, "between", { min, max, value: val, kind: "array" });
   }
 
   async function handleInRule(field: string, val: any, rule: string) {
-    const opts = rule.split(":")[1].split(",").map((s) => s.trim());
-    if (!opts.includes(String(val))) pushError(field, "in", { value: val, values: opts.join(", ") });
+    const opts = rule
+      .split(":")[1]
+      .split(",")
+      .map((s) => s.trim());
+    if (!opts.includes(String(val)))
+      pushError(field, "in", { value: val, values: opts.join(", ") });
   }
 
   async function handleNotInRule(field: string, val: any, rule: string) {
-    const opts = rule.split(":")[1].split(",").map((s) => s.trim());
-    if (opts.includes(String(val))) pushError(field, "not_in", { value: val, values: opts.join(", ") });
+    const opts = rule
+      .split(":")[1]
+      .split(",")
+      .map((s) => s.trim());
+    if (opts.includes(String(val)))
+      pushError(field, "not_in", { value: val, values: opts.join(", ") });
   }
 
   async function handleExistsRule(field: string, val: any, rule: string) {
     try {
       const spec = rule.split(":")[1];
       let [table, column] = spec.split(",");
-      table = (table || "").trim(); column = (column || "id").trim();
-      class VM extends Model { static table = table; static primaryKey = "id"; static fillable = [column]; }
+      table = (table || "").trim();
+      column = (column || "id").trim();
+      class VM extends Model {
+        static table = table;
+        static primaryKey = "id";
+        static fillable = [column];
+      }
       const exists = await VM.query().where(column, "=", val).exists();
       if (!exists) pushError(field, "exists", { value: val, table, column });
-    } catch { pushError(field, "exists", { value: val }); }
+    } catch {
+      pushError(field, "exists", { value: val });
+    }
   }
 
   async function handleUniqueRule(field: string, val: any, rule: string) {
@@ -577,33 +809,57 @@ export async function validate<T extends Record<string, any>>(
       const partsSpec = spec.split(",").map((s) => s.trim());
       const table = partsSpec[0];
       const column = partsSpec[1] || "id";
-      const exceptArg = partsSpec[2]; const exceptArg2 = partsSpec[3];
-      class VM extends Model { static table = table; static primaryKey = "id"; static fillable = [column]; }
-      let exceptColumn = VM.primaryKey, exceptValue = exceptArg;
-      if (exceptArg2 !== undefined) { exceptColumn = exceptArg; exceptValue = exceptArg2; }
+      const exceptArg = partsSpec[2];
+      const exceptArg2 = partsSpec[3];
+      class VM extends Model {
+        static table = table;
+        static primaryKey = "id";
+        static fillable = [column];
+      }
+      let exceptColumn = VM.primaryKey,
+        exceptValue = exceptArg;
+      if (exceptArg2 !== undefined) {
+        exceptColumn = exceptArg;
+        exceptValue = exceptArg2;
+      }
       let q = VM.query().where(column, "=", val);
       if (exceptValue !== undefined && exceptValue !== null && String(exceptValue) !== "") {
-        q = q.where(function (query: any) { query.where(exceptColumn, "!=", exceptValue); });
+        q = q.where(function (query: any) {
+          query.where(exceptColumn, "!=", exceptValue);
+        });
       }
       if (await q.exists()) pushError(field, "unique", { value: val, table, column });
-    } catch { pushError(field, "unique", { value: val }); }
+    } catch {
+      pushError(field, "unique", { value: val });
+    }
   }
 
   async function handleRegexRule(field: string, val: any, rule: string) {
     const pattern = rule.split(":")[1];
     try {
-      if (!new RegExp(pattern).test(String(val))) pushError(field, "regex", { value: val, pattern });
-    } catch { pushError(field, "regex_invalid", { value: val, pattern }); }
+      if (!new RegExp(pattern).test(String(val)))
+        pushError(field, "regex", { value: val, pattern });
+    } catch {
+      pushError(field, "regex_invalid", { value: val, pattern });
+    }
   }
 
   async function handleStartsWithRule(field: string, val: any, rule: string) {
-    const prefixes = rule.split(":")[1].split(",").map((s) => s.trim());
-    if (!prefixes.some((p2) => String(val).startsWith(p2))) pushError(field, "starts_with", { value: val, prefixes: prefixes.join(", ") });
+    const prefixes = rule
+      .split(":")[1]
+      .split(",")
+      .map((s) => s.trim());
+    if (!prefixes.some((p2) => String(val).startsWith(p2)))
+      pushError(field, "starts_with", { value: val, prefixes: prefixes.join(", ") });
   }
 
   async function handleEndsWithRule(field: string, val: any, rule: string) {
-    const suffixes = rule.split(":")[1].split(",").map((s) => s.trim());
-    if (!suffixes.some((s) => String(val).endsWith(s))) pushError(field, "ends_with", { value: val, suffixes: suffixes.join(", ") });
+    const suffixes = rule
+      .split(":")[1]
+      .split(",")
+      .map((s) => s.trim());
+    if (!suffixes.some((s) => String(val).endsWith(s)))
+      pushError(field, "ends_with", { value: val, suffixes: suffixes.join(", ") });
   }
 
   async function handleContainsRule(field: string, val: any, rule: string) {
@@ -611,58 +867,123 @@ export async function validate<T extends Record<string, any>>(
     if (!String(val).includes(substring)) pushError(field, "contains", { value: val, substring });
   }
 
-  async function handleComparisonRule(field: string, val: any, rule: string, operator: string, payload: any) {
+  async function handleComparisonRule(
+    field: string,
+    val: any,
+    rule: string,
+    operator: string,
+    payload: any,
+  ) {
     const otherField = rule.split(":")[1];
     const otherValue = payload ? getAtPath(payload, otherField) : undefined;
     if (otherValue === undefined) return;
-    const numVal = Number(val), numOther = Number(otherValue);
+    const numVal = Number(val),
+      numOther = Number(otherValue);
     if (!isNaN(numVal) && !isNaN(numOther)) {
-      const ok = operator === "gt" ? numVal > numOther : operator === "gte" ? numVal >= numOther : operator === "lt" ? numVal < numOther : numVal <= numOther;
+      const ok =
+        operator === "gt"
+          ? numVal > numOther
+          : operator === "gte"
+            ? numVal >= numOther
+            : operator === "lt"
+              ? numVal < numOther
+              : numVal <= numOther;
       if (!ok) pushError(field, operator, { field: otherField, value: val, other: otherValue });
       return;
     }
-    const dv = parseDate(val), dOther = parseDate(otherValue);
+    const dv = parseDate(val),
+      dOther = parseDate(otherValue);
     if (dv && dOther) {
-      const tv = dv.getTime(), to = dOther.getTime();
-      const ok = operator === "gt" ? tv > to : operator === "gte" ? tv >= to : operator === "lt" ? tv < to : tv <= to;
+      const tv = dv.getTime(),
+        to = dOther.getTime();
+      const ok =
+        operator === "gt"
+          ? tv > to
+          : operator === "gte"
+            ? tv >= to
+            : operator === "lt"
+              ? tv < to
+              : tv <= to;
       if (!ok) pushError(field, operator, { field: otherField, value: val, other: otherValue });
       return;
     }
-    const sv = String(val), so = String(otherValue);
-    const ok = operator === "gt" ? sv > so : operator === "gte" ? sv >= so : operator === "lt" ? sv < so : sv <= so;
+    const sv = String(val),
+      so = String(otherValue);
+    const ok =
+      operator === "gt"
+        ? sv > so
+        : operator === "gte"
+          ? sv >= so
+          : operator === "lt"
+            ? sv < so
+            : sv <= so;
     if (!ok) pushError(field, operator, { field: otherField, value: val, other: otherValue });
   }
 
-  async function handleDateComparisonRule(field: string, val: any, rule: string, operator: string, payload: any) {
+  async function handleDateComparisonRule(
+    field: string,
+    val: any,
+    rule: string,
+    operator: string,
+    payload: any,
+  ) {
     const otherField = rule.split(":")[1];
     let otherRaw = payload ? getAtPath(payload, otherField) : undefined;
     if (otherRaw === undefined) otherRaw = otherField;
     if (typeof otherRaw === "string") {
       const lower = otherRaw.toLowerCase().trim();
-      if (lower === "today") { const t = new Date(); t.setHours(0,0,0,0); otherRaw = t; }
-      else if (lower === "yesterday") { const t = new Date(); t.setDate(t.getDate()-1); t.setHours(0,0,0,0); otherRaw = t; }
-      else if (lower === "tomorrow") { const t = new Date(); t.setDate(t.getDate()+1); t.setHours(0,0,0,0); otherRaw = t; }
-      else {
-        const rm = lower.match(/^(today|yesterday|tomorrow|now)([+-])(\d+)(days?|weeks?|months?|years?)$/);
+      if (lower === "today") {
+        const t = new Date();
+        t.setHours(0, 0, 0, 0);
+        otherRaw = t;
+      } else if (lower === "yesterday") {
+        const t = new Date();
+        t.setDate(t.getDate() - 1);
+        t.setHours(0, 0, 0, 0);
+        otherRaw = t;
+      } else if (lower === "tomorrow") {
+        const t = new Date();
+        t.setDate(t.getDate() + 1);
+        t.setHours(0, 0, 0, 0);
+        otherRaw = t;
+      } else {
+        const rm = lower.match(
+          /^(today|yesterday|tomorrow|now)([+-])(\d+)(days?|weeks?|months?|years?)$/,
+        );
         if (rm) {
           const [, anchor, sign, numStr, unit] = rm;
           const n = parseInt(numStr, 10) * (sign === "+" ? 1 : -1);
-          const t = new Date(); t.setHours(0,0,0,0);
-          if (anchor === "yesterday") t.setDate(t.getDate()-1);
-          if (anchor === "tomorrow") t.setDate(t.getDate()+1);
-          if (unit.startsWith("day")) t.setDate(t.getDate()+n);
-          if (unit.startsWith("week")) t.setDate(t.getDate()+n*7);
-          if (unit.startsWith("month")) t.setMonth(t.getMonth()+n);
-          if (unit.startsWith("year")) t.setFullYear(t.getFullYear()+n);
+          const t = new Date();
+          t.setHours(0, 0, 0, 0);
+          if (anchor === "yesterday") t.setDate(t.getDate() - 1);
+          if (anchor === "tomorrow") t.setDate(t.getDate() + 1);
+          if (unit.startsWith("day")) t.setDate(t.getDate() + n);
+          if (unit.startsWith("week")) t.setDate(t.getDate() + n * 7);
+          if (unit.startsWith("month")) t.setMonth(t.getMonth() + n);
+          if (unit.startsWith("year")) t.setFullYear(t.getFullYear() + n);
           otherRaw = t;
         }
       }
     }
-    const dv = parseDate(val), dOther = parseDate(otherRaw);
-    if (!dv) { pushError(field, "date", { value: val }); return; }
+    const dv = parseDate(val),
+      dOther = parseDate(otherRaw);
+    if (!dv) {
+      pushError(field, "date", { value: val });
+      return;
+    }
     if (!dOther) return;
-    const tv = dv.getTime(), to = dOther.getTime();
-    const ok = operator === "before" ? tv < to : operator === "before_or_equal" ? tv <= to : operator === "after" ? tv > to : operator === "after_or_equal" ? tv >= to : tv === to;
+    const tv = dv.getTime(),
+      to = dOther.getTime();
+    const ok =
+      operator === "before"
+        ? tv < to
+        : operator === "before_or_equal"
+          ? tv <= to
+          : operator === "after"
+            ? tv > to
+            : operator === "after_or_equal"
+              ? tv >= to
+              : tv === to;
     if (!ok) pushError(field, operator, { field: otherField, value: val, other: otherRaw });
   }
 
@@ -670,69 +991,91 @@ export async function validate<T extends Record<string, any>>(
     const format = rule.slice("date_format:".length);
     const strVal = String(val);
     const tokenMap: Record<string, string> = {
-      YYYY: "\\d{4}", YY: "\\d{2}", MM: "(?:0[1-9]|1[0-2])", DD: "(?:0[1-9]|[12]\\d|3[01])",
-      HH: "(?:[01]\\d|2[0-3])", mm: "[0-5]\\d", ss: "[0-5]\\d", SSS: "\\d{3}", Z: "(?:Z|[+-]\\d{2}:\\d{2})",
+      YYYY: "\\d{4}",
+      YY: "\\d{2}",
+      MM: "(?:0[1-9]|1[0-2])",
+      DD: "(?:0[1-9]|[12]\\d|3[01])",
+      HH: "(?:[01]\\d|2[0-3])",
+      mm: "[0-5]\\d",
+      ss: "[0-5]\\d",
+      SSS: "\\d{3}",
+      Z: "(?:Z|[+-]\\d{2}:\\d{2})",
     };
     let pattern = format.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     for (const token of Object.keys(tokenMap).sort((a, b) => b.length - a.length)) {
-      pattern = pattern.replace(new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"), tokenMap[token]);
+      pattern = pattern.replace(
+        new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
+        tokenMap[token],
+      );
     }
-    if (!new RegExp("^" + pattern + "$").test(strVal)) pushError(field, "date_format", { value: val, format });
+    if (!new RegExp("^" + pattern + "$").test(strVal))
+      pushError(field, "date_format", { value: val, format });
   }
 }
 
 export const requiredIf =
   (otherField: string, value: any): RuleFn =>
-    async (val, _field, payload) => {
-      if (payload && payload[otherField] === value) {
-        if (val === undefined || val === null || val === "") return { ok: false, message: "required" };
-      }
-      return true;
-    };
+  async (val, _field, payload) => {
+    if (payload && payload[otherField] === value) {
+      if (val === undefined || val === null || val === "")
+        return { ok: false, message: "required" };
+    }
+    return true;
+  };
 
 export const requiredUnless =
   (otherField: string, value: any): RuleFn =>
-    async (val, _field, payload) => {
-      if (payload && payload[otherField] !== value) {
-        if (val === undefined || val === null || val === "") return { ok: false, message: "required" };
-      }
-      return true;
-    };
+  async (val, _field, payload) => {
+    if (payload && payload[otherField] !== value) {
+      if (val === undefined || val === null || val === "")
+        return { ok: false, message: "required" };
+    }
+    return true;
+  };
 
 export const fileRule: RuleFn = async (value) => {
   if (!value) return true;
-  if (typeof value === "object" && (value instanceof File || ("name" in value && "size" in value))) return true;
+  if (typeof value === "object" && (value instanceof File || ("name" in value && "size" in value)))
+    return true;
   return { ok: false, message: "file" };
 };
 
 export const mimes =
   (allowedTypes: string[]): RuleFn =>
-    async (value) => {
-      if (!value) return true;
-      let fileName = typeof value === "string" ? value : (value?.name || "");
-      const extension = fileName.split(".").pop()?.toLowerCase() || "";
-      const mimeTypes: Record<string, string[]> = {
-        jpg: ["image/jpeg"], jpeg: ["image/jpeg"], png: ["image/png"],
-        gif: ["image/gif"], pdf: ["application/pdf"],
-        doc: ["application/msword"],
-        docx: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
-      };
-      const allowedExts = allowedTypes.map((type) => {
-        for (const [ext, mimes2] of Object.entries(mimeTypes)) if (mimes2.includes(type)) return ext;
-        return type.split("/").pop();
-      }).filter(Boolean);
-      if (!allowedExts.includes(extension)) return { ok: false, message: "mimes", value: allowedTypes.join(", ") };
-      return true;
+  async (value) => {
+    if (!value) return true;
+    let fileName = typeof value === "string" ? value : value?.name || "";
+    const extension = fileName.split(".").pop()?.toLowerCase() || "";
+    const mimeTypes: Record<string, string[]> = {
+      jpg: ["image/jpeg"],
+      jpeg: ["image/jpeg"],
+      png: ["image/png"],
+      gif: ["image/gif"],
+      pdf: ["application/pdf"],
+      doc: ["application/msword"],
+      docx: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
     };
+    const allowedExts = allowedTypes
+      .map((type) => {
+        for (const [ext, mimes2] of Object.entries(mimeTypes))
+          if (mimes2.includes(type)) return ext;
+        return type.split("/").pop();
+      })
+      .filter(Boolean);
+    if (!allowedExts.includes(extension))
+      return { ok: false, message: "mimes", value: allowedTypes.join(", ") };
+    return true;
+  };
 
 export const maxFileSize =
   (maxSizeInMB: number): RuleFn =>
-    async (value) => {
-      if (!value) return true;
-      const fileSize = value instanceof File ? value.size : (value?.size || 0);
-      if (fileSize > maxSizeInMB * 1024 * 1024) return { ok: false, message: "max_file_size", value: maxSizeInMB };
-      return true;
-    };
+  async (value) => {
+    if (!value) return true;
+    const fileSize = value instanceof File ? value.size : value?.size || 0;
+    if (fileSize > maxSizeInMB * 1024 * 1024)
+      return { ok: false, message: "max_file_size", value: maxSizeInMB };
+    return true;
+  };
 
 export const phoneRule: RuleFn = (value) => {
   if (!value) return true;
@@ -747,11 +1090,16 @@ export const creditCardRule: RuleFn = (value) => {
   if (!value) return true;
   const str = String(value).replace(/\s+/g, "");
   if (!/^\d+$/.test(str)) return { ok: false, message: "credit_card" };
-  let sum = 0, isEven = false;
+  let sum = 0,
+    isEven = false;
   for (let i = str.length - 1; i >= 0; i--) {
     let digit = parseInt(str.charAt(i), 10);
-    if (isEven) { digit *= 2; if (digit > 9) digit -= 9; }
-    sum += digit; isEven = !isEven;
+    if (isEven) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+    sum += digit;
+    isEven = !isEven;
   }
   if (sum % 10 !== 0) return { ok: false, message: "credit_card" };
   return true;
@@ -759,27 +1107,39 @@ export const creditCardRule: RuleFn = (value) => {
 
 export const nestedRule =
   (rules: Record<string, RuleSpec>): RuleFn =>
-    async (value) => {
-      if (value === undefined || value === null) return true;
-      if (typeof value !== "object" || Array.isArray(value)) return { ok: false, message: "object" };
-      try { await validate(value, rules); return true; }
-      catch { return { ok: false, message: "nested_validation_failed" }; }
-    };
+  async (value) => {
+    if (value === undefined || value === null) return true;
+    if (typeof value !== "object" || Array.isArray(value)) return { ok: false, message: "object" };
+    try {
+      await validate(value, rules);
+      return true;
+    } catch {
+      return { ok: false, message: "nested_validation_failed" };
+    }
+  };
 
 export const arrayOfObjectsRule =
   (rules: Record<string, RuleSpec>): RuleFn =>
-    async (value) => {
-      if (value === undefined || value === null) return true;
-      let array: any[];
-      if (Array.isArray(value)) array = value;
-      else if (typeof value === "string") {
-        try { const p = JSON.parse(value); array = Array.isArray(p) ? p : [p]; }
-        catch { return { ok: false, message: "array" }; }
-      } else array = [value];
-      for (let i = 0; i < array.length; i++) {
-        if (typeof array[i] !== "object" || Array.isArray(array[i])) return { ok: false, message: "object_array" };
-        try { await validate(array[i], rules); }
-        catch { return { ok: false, message: `items[${i}].validation_failed` }; }
+  async (value) => {
+    if (value === undefined || value === null) return true;
+    let array: any[];
+    if (Array.isArray(value)) array = value;
+    else if (typeof value === "string") {
+      try {
+        const p = JSON.parse(value);
+        array = Array.isArray(p) ? p : [p];
+      } catch {
+        return { ok: false, message: "array" };
       }
-      return { ok: true, value: array };
-    };
+    } else array = [value];
+    for (let i = 0; i < array.length; i++) {
+      if (typeof array[i] !== "object" || Array.isArray(array[i]))
+        return { ok: false, message: "object_array" };
+      try {
+        await validate(array[i], rules);
+      } catch {
+        return { ok: false, message: `items[${i}].validation_failed` };
+      }
+    }
+    return { ok: true, value: array };
+  };

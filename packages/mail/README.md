@@ -11,17 +11,17 @@ pnpm add @lara-node/mail
 ## Quick Start
 
 ```ts
-import { Mail } from '@lara-node/mail';
-import { WelcomeMail } from './app/Mail/WelcomeMail';
+import { Mail } from "@lara-node/mail";
+import { WelcomeMail } from "./app/Mail/WelcomeMail";
 
 // Send immediately
-await Mail.to('alice@example.com').send(new WelcomeMail(user));
+await Mail.to("alice@example.com").send(new WelcomeMail(user));
 
 // Queue for background delivery
-await Mail.to('alice@example.com').queue(new WelcomeMail(user));
+await Mail.to("alice@example.com").queue(new WelcomeMail(user));
 
 // Schedule for later
-await Mail.to('alice@example.com').later(new WelcomeMail(user), 300); // 5 min delay
+await Mail.to("alice@example.com").later(new WelcomeMail(user), 300); // 5 min delay
 ```
 
 ## Creating a Mailable
@@ -29,7 +29,7 @@ await Mail.to('alice@example.com').later(new WelcomeMail(user), 300); // 5 min d
 Extend the `Mailable` base class and implement `build()`:
 
 ```ts
-import { Mailable } from '@lara-node/mail';
+import { Mailable } from "@lara-node/mail";
 
 interface User {
   name: string;
@@ -42,9 +42,8 @@ export class WelcomeMail extends Mailable {
   }
 
   build(): this {
-    return this
-      .subject(`Welcome, ${this.user.name}!`)
-      .from('hello@example.com', 'My App')
+    return this.subject(`Welcome, ${this.user.name}!`)
+      .from("hello@example.com", "My App")
       .html(`<h1>Hello ${this.user.name}</h1><p>Thanks for signing up.</p>`)
       .text(`Hello ${this.user.name}. Thanks for signing up.`);
   }
@@ -56,20 +55,20 @@ export class WelcomeMail extends Mailable {
 All methods return `this` for chaining and must be called inside `build()`.
 
 ```ts
-this.subject('Your order has shipped')
-this.from('noreply@example.com')
-this.from('noreply@example.com', 'My App')
-this.html('<p>Hello</p>')
-this.text('Hello')
-this.attach('/path/to/invoice.pdf')
-this.attach('/path/to/file.csv', { filename: 'report.csv', contentType: 'text/csv' })
-this.cc('manager@example.com')
-this.bcc('archive@example.com')
-this.replyTo('support@example.com')
-this.priority('high')          // 'high' | 'normal' | 'low'
-this.tag('transactional')      // tag for analytics / filtering
-this.mailer('smtp')            // override the default mailer for this message
-this.with({ code: '123456' })  // pass data to the template (if using a view engine)
+this.subject("Your order has shipped");
+this.from("noreply@example.com");
+this.from("noreply@example.com", "My App");
+this.html("<p>Hello</p>");
+this.text("Hello");
+this.attach("/path/to/invoice.pdf");
+this.attach("/path/to/file.csv", { filename: "report.csv", contentType: "text/csv" });
+this.cc("manager@example.com");
+this.bcc("archive@example.com");
+this.replyTo("support@example.com");
+this.priority("high"); // 'high' | 'normal' | 'low'
+this.tag("transactional"); // tag for analytics / filtering
+this.mailer("smtp"); // override the default mailer for this message
+this.with({ code: "123456" }); // pass data to the template (if using a view engine)
 ```
 
 ## `Mail` Facade
@@ -79,17 +78,17 @@ this.with({ code: '123456' })  // pass data to the template (if using a view eng
 Returns a `PendingMail` builder.
 
 ```ts
-Mail.to('alice@example.com')
-Mail.to(['alice@example.com', 'bob@example.com'])
-Mail.to({ address: 'alice@example.com', name: 'Alice' })
+Mail.to("alice@example.com");
+Mail.to(["alice@example.com", "bob@example.com"]);
+Mail.to({ address: "alice@example.com", name: "Alice" });
 ```
 
 ### `PendingMail` methods
 
 ```ts
-await pending.send(mailable)              // send synchronously
-await pending.queue(mailable)             // dispatch to queue
-await pending.later(mailable, delaySeconds) // dispatch after a delay
+await pending.send(mailable); // send synchronously
+await pending.queue(mailable); // dispatch to queue
+await pending.later(mailable, delaySeconds); // dispatch after a delay
 ```
 
 ### Sending to multiple recipients
@@ -107,30 +106,30 @@ for (const user of users) {
 Configure multiple mailers in `config/mail.ts`:
 
 ```ts
-import { setConfig } from '@lara-node/core';
+import { setConfig } from "@lara-node/core";
 
-setConfig('mail', {
-  default: 'smtp',
+setConfig("mail", {
+  default: "smtp",
   mailers: {
     smtp: {
-      transport: 'smtp',
+      transport: "smtp",
       host: process.env.MAIL_HOST,
       port: Number(process.env.MAIL_PORT ?? 587),
       username: process.env.MAIL_USERNAME,
       password: process.env.MAIL_PASSWORD,
-      encryption: process.env.MAIL_ENCRYPTION ?? 'tls',
+      encryption: process.env.MAIL_ENCRYPTION ?? "tls",
     },
     log: {
-      transport: 'log',
+      transport: "log",
     },
     failover: {
-      transport: 'failover',
-      mailers: ['smtp', 'log'],
+      transport: "failover",
+      mailers: ["smtp", "log"],
     },
   },
   from: {
-    address: process.env.MAIL_FROM_ADDRESS ?? 'hello@example.com',
-    name: process.env.MAIL_FROM_NAME ?? 'My App',
+    address: process.env.MAIL_FROM_ADDRESS ?? "hello@example.com",
+    name: process.env.MAIL_FROM_NAME ?? "My App",
   },
 });
 ```
@@ -138,30 +137,30 @@ setConfig('mail', {
 Override the mailer for a single message:
 
 ```ts
-this.mailer('log');  // inside build()
+this.mailer("log"); // inside build()
 ```
 
 ## `MailServiceProvider`
 
 ```ts
-import { MailServiceProvider } from '@lara-node/mail';
+import { MailServiceProvider } from "@lara-node/mail";
 
 app.register(MailServiceProvider);
 ```
 
 ## Environment Variables
 
-| Variable               | Default    | Description                                                |
-|------------------------|------------|------------------------------------------------------------|
-| `MAIL_MAILER`          | `smtp`     | Default mailer name                                        |
-| `MAIL_HOST`            | —          | SMTP host                                                  |
-| `MAIL_PORT`            | `1025`     | SMTP port                                                  |
-| `MAIL_USERNAME`        | —          | SMTP username                                              |
-| `MAIL_PASSWORD`        | —          | SMTP password                                              |
-| `MAIL_ENCRYPTION`      | —          | `tls`, `ssl`, or empty                                     |
-| `MAIL_FROM_ADDRESS`    | —          | Default sender address                                     |
-| `MAIL_FROM_NAME`       | —          | Default sender display name                                |
-| `MAIL_FAILOVER_MAILERS`| —          | Comma-separated mailers for the failover driver            |
+| Variable                | Default | Description                                     |
+| ----------------------- | ------- | ----------------------------------------------- |
+| `MAIL_MAILER`           | `smtp`  | Default mailer name                             |
+| `MAIL_HOST`             | —       | SMTP host                                       |
+| `MAIL_PORT`             | `1025`  | SMTP port                                       |
+| `MAIL_USERNAME`         | —       | SMTP username                                   |
+| `MAIL_PASSWORD`         | —       | SMTP password                                   |
+| `MAIL_ENCRYPTION`       | —       | `tls`, `ssl`, or empty                          |
+| `MAIL_FROM_ADDRESS`     | —       | Default sender address                          |
+| `MAIL_FROM_NAME`        | —       | Default sender display name                     |
+| `MAIL_FAILOVER_MAILERS` | —       | Comma-separated mailers for the failover driver |
 
 ## Notes
 

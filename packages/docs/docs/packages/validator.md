@@ -22,29 +22,29 @@ Features include:
 ## Quick Start
 
 ```typescript
-import { validate } from '@lara-node/validator'
+import { validate } from "@lara-node/validator";
 
 const data = validate(req.body, {
-  name: 'required|string|max:255',
-  email: 'required|email|unique:users,email',
-  password: 'required|min:8|confirmed',
-  age: 'integer|between:18,100',
-})
+  name: "required|string|max:255",
+  email: "required|email|unique:users,email",
+  password: "required|min:8|confirmed",
+  age: "integer|between:18,100",
+});
 ```
 
 ## Key Exports
 
-| Export | Description |
-|--------|-------------|
-| `validate()` | Main validation function |
-| `ValidationError` | Error with messages |
-| `RuleFn` | Custom rule type |
-| `requiredIf()` | Conditional required |
-| `fileRule` | File validation |
-| `mimes()` | MIME type validation |
-| `maxFileSize()` | File size validation |
-| `phoneRule` | Phone validation |
-| `creditCardRule` | Credit card validation |
+| Export            | Description              |
+| ----------------- | ------------------------ |
+| `validate()`      | Main validation function |
+| `ValidationError` | Error with messages      |
+| `RuleFn`          | Custom rule type         |
+| `requiredIf()`    | Conditional required     |
+| `fileRule`        | File validation          |
+| `mimes()`         | MIME type validation     |
+| `maxFileSize()`   | File size validation     |
+| `phoneRule`       | Phone validation         |
+| `creditCardRule`  | Credit card validation   |
 
 ## Next Steps
 

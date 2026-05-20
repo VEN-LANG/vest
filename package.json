@@ -12,11 +12,12 @@
     "test:coverage": "vitest run --coverage",
     "lint": "oxlint packages apps",
     "typecheck": "pnpm -r --filter './packages/*' typecheck",
-    "format": "oxfmt packages apps",
+    "format": "oxfmt packages/ apps",
     "format:check": "oxfmt --check packages apps",
     "clean": "pnpm -r --filter './packages/*' clean",
     "create-lara-node": "node packages/create-lara-node/dist/index.js",
-    "docs:dev": "pnpm -r --filter './packages/docs' docs:dev"
+    "docs:dev": "pnpm -r --filter './packages/docs' docs:dev",
+    "docs:build": "pnpm -r --filter './packages/docs' docs:build"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.3",

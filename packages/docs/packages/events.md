@@ -33,12 +33,12 @@ class UserRegistered {
 ### Define a Listener
 
 ```typescript
-import { ListensTo } from '@lara-node/events'
+import { ListensTo } from "@lara-node/events";
 
 @ListensTo(UserRegistered)
 class SendWelcomeEmail {
   async handle(event: UserRegistered) {
-    await Mail.to(event.user.email).send(new WelcomeMail(event.user))
+    await Mail.to(event.user.email).send(new WelcomeMail(event.user));
   }
 }
 ```
@@ -46,26 +46,26 @@ class SendWelcomeEmail {
 ### Dispatch an Event
 
 ```typescript
-import { event } from '@lara-node/events'
+import { event } from "@lara-node/events";
 
-await event(new UserRegistered(user))
+await event(new UserRegistered(user));
 ```
 
 ## Key Exports
 
-| Export | Description |
-|--------|-------------|
-| `EventDispatcher` | Event dispatcher |
-| `event()` | Dispatch helper |
-| `on()` | Register listener |
-| `once()` | Register one-time listener |
-| `off()` | Remove listener |
-| `@ListensTo()` | Listener decorator |
-| `@ShouldQueue` | Queue listener |
-| `@AfterCommit` | After transaction |
-| `@Subscriber` | Subscriber decorator |
-| `Broadcast` | Broadcast facade |
-| `Channel` | Channel types |
+| Export            | Description                |
+| ----------------- | -------------------------- |
+| `EventDispatcher` | Event dispatcher           |
+| `event()`         | Dispatch helper            |
+| `on()`            | Register listener          |
+| `once()`          | Register one-time listener |
+| `off()`           | Remove listener            |
+| `@ListensTo()`    | Listener decorator         |
+| `@ShouldQueue`    | Queue listener             |
+| `@AfterCommit`    | After transaction          |
+| `@Subscriber`     | Subscriber decorator       |
+| `Broadcast`       | Broadcast facade           |
+| `Channel`         | Channel types              |
 
 ## Next Steps
 

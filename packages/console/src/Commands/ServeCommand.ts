@@ -55,7 +55,6 @@ export class ServeCommand extends Command {
         const { existsSync } = await import("fs");
         const { spawn } = await import("child_process");
 
-
         // Pick source (dev) or compiled output (prod)
         let targetPath: string;
         let nodeArgs: string[];

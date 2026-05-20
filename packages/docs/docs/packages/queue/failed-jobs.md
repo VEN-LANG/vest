@@ -36,19 +36,19 @@ pnpm exec artisan queue:flush-failed
 ## Programmatic Access
 
 ```typescript
-import { Queue } from '@lara-node/queue'
+import { Queue } from "@lara-node/queue";
 
 // Get failed jobs
-const failed = Queue.getFailedJobs()
+const failed = Queue.getFailedJobs();
 
 // Retry failed
-await Queue.retryFailed(jobId)
+await Queue.retryFailed(jobId);
 
 // Forget failed
-await Queue.forgetFailed(jobId)
+await Queue.forgetFailed(jobId);
 
 // Flush all failed
-await Queue.flushFailed()
+await Queue.flushFailed();
 ```
 
 ## Job Failed Callback
@@ -61,7 +61,7 @@ class ProcessPodcast extends Job {
 
   async failed(error: Error) {
     // Called when job fails after all retries
-    await Notification.send(admin, 'Job failed: ' + error.message)
+    await Notification.send(admin, "Job failed: " + error.message);
   }
 }
 ```
@@ -73,7 +73,7 @@ Set a time limit for retries:
 ```typescript
 class ProcessPodcast extends Job {
   retryUntil() {
-    return Date.now() + 3600000 // 1 hour from now
+    return Date.now() + 3600000; // 1 hour from now
   }
 }
 ```

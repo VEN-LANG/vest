@@ -110,25 +110,25 @@ node artisan serve
 
 ## Generated API routes
 
-| Method | Path                              | Auth              | Description            |
-|--------|-----------------------------------|-------------------|------------------------|
-| POST   | `/api/auth/register`              | —                 | Register               |
-| POST   | `/api/auth/login`                 | —                 | Login (returns JWT)    |
-| GET    | `/api/auth/me`                    | auth              | Authenticated user     |
-| GET    | `/api/users`                      | view_users        | List users             |
-| POST   | `/api/users`                      | create_users      | Create user            |
-| PUT    | `/api/users/:id`                  | update_users      | Update user            |
-| DELETE | `/api/users/:id`                  | delete_users      | Delete user            |
-| GET    | `/api/roles`                      | view_roles        | List roles             |
-| POST   | `/api/roles/:id/permissions`      | add_permissions_to_roles | Sync role permissions |
-| POST   | `/api/files`                      | upload_files      | Upload file            |
+| Method | Path                         | Auth                     | Description           |
+| ------ | ---------------------------- | ------------------------ | --------------------- |
+| POST   | `/api/auth/register`         | —                        | Register              |
+| POST   | `/api/auth/login`            | —                        | Login (returns JWT)   |
+| GET    | `/api/auth/me`               | auth                     | Authenticated user    |
+| GET    | `/api/users`                 | view_users               | List users            |
+| POST   | `/api/users`                 | create_users             | Create user           |
+| PUT    | `/api/users/:id`             | update_users             | Update user           |
+| DELETE | `/api/users/:id`             | delete_users             | Delete user           |
+| GET    | `/api/roles`                 | view_roles               | List roles            |
+| POST   | `/api/roles/:id/permissions` | add_permissions_to_roles | Sync role permissions |
+| POST   | `/api/files`                 | upload_files             | Upload file           |
 
 ## Default seeded accounts
 
-| Email                  | Password   | Role  |
-|------------------------|------------|-------|
-| admin@example.com      | password   | Admin |
-| user@example.com       | password   | User  |
+| Email             | Password | Role  |
+| ----------------- | -------- | ----- |
+| admin@example.com | password | Admin |
+| user@example.com  | password | User  |
 
 ## Decorator overview
 
@@ -180,7 +180,7 @@ All generated `package.json` scripts include `--expose-gc`. This lets Node relea
 ```json
 {
   "scripts": {
-    "dev":    "node --expose-gc -r @swc-node/register src/server.ts",
+    "dev": "node --expose-gc -r @swc-node/register src/server.ts",
     "artisan": "node --expose-gc -r @swc-node/register src/artisan.ts"
   }
 }

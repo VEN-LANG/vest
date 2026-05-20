@@ -24,20 +24,20 @@ Features include:
 Horizon is automatically registered when you install the `HorizonServiceProvider`:
 
 ```typescript
-import { HorizonServiceProvider } from '@lara-node/horizon'
+import { HorizonServiceProvider } from "@lara-node/horizon";
 
-app.register(HorizonServiceProvider)
+app.register(HorizonServiceProvider);
 ```
 
 Visit `/horizon` to access the dashboard.
 
 ## Key Exports
 
-| Export | Description |
-|--------|-------------|
-| `HorizonManager` | Worker manager |
-| `horizonMetrics` | Metrics storage |
-| `HorizonDashboard` | HTTP dashboard |
+| Export                   | Description       |
+| ------------------------ | ----------------- |
+| `HorizonManager`         | Worker manager    |
+| `horizonMetrics`         | Metrics storage   |
+| `HorizonDashboard`       | HTTP dashboard    |
 | `HorizonServiceProvider` | Auto-registration |
 
 ## Next Steps

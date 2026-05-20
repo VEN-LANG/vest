@@ -17,50 +17,50 @@ Visit `/horizon` in your browser.
 ## Managing Workers
 
 ```typescript
-import { HorizonManager } from '@lara-node/horizon'
+import { HorizonManager } from "@lara-node/horizon";
 
-const manager = new HorizonManager()
+const manager = new HorizonManager();
 
 // Start worker
-await manager.startWorker(workerDef)
+await manager.startWorker(workerDef);
 
 // Pause worker
-await manager.pauseWorker(workerId)
+await manager.pauseWorker(workerId);
 
 // Resume worker
-await manager.resumeWorker(workerId)
+await manager.resumeWorker(workerId);
 
 // Stop worker
-await manager.stopWorker(workerId)
+await manager.stopWorker(workerId);
 ```
 
 ## Queue Management
 
 ```typescript
 // Get queue jobs
-const jobs = manager.getQueueJobs('default')
+const jobs = manager.getQueueJobs("default");
 
 // Get queue sizes
-const sizes = manager.getQueueSizes()
+const sizes = manager.getQueueSizes();
 
 // Purge queue
-await manager.purgeQueue('default')
+await manager.purgeQueue("default");
 ```
 
 ## Failed Jobs
 
 ```typescript
 // Get failed jobs
-const failed = manager.getFailedJobs()
+const failed = manager.getFailedJobs();
 
 // Retry failed job
-await manager.retryFailed(jobId)
+await manager.retryFailed(jobId);
 
 // Forget failed job
-await manager.forgetFailed(jobId)
+await manager.forgetFailed(jobId);
 
 // Flush all failed
-await manager.flushFailed()
+await manager.flushFailed();
 ```
 
 ## Next Steps

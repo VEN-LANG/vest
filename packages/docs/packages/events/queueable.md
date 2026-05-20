@@ -5,13 +5,13 @@ Run listeners asynchronously via the queue system.
 ## Making a Listener Queueable
 
 ```typescript
-import { ListensTo, ShouldQueue } from '@lara-node/events'
+import { ListensTo, ShouldQueue } from "@lara-node/events";
 
 @ListensTo(UserRegistered)
 @ShouldQueue()
 class SendWelcomeEmail {
   async handle(event: UserRegistered) {
-    await Mail.to(event.user.email).send(new WelcomeMail(event.user))
+    await Mail.to(event.user.email).send(new WelcomeMail(event.user));
   }
 }
 ```
@@ -20,8 +20,8 @@ class SendWelcomeEmail {
 
 ```typescript
 @ShouldQueue({
-  queue: 'emails',
-  connection: 'redis',
+  queue: "emails",
+  connection: "redis",
   tries: 3,
   timeout: 60,
 })
@@ -35,7 +35,7 @@ class SendWelcomeEmail {
 Run listener after database transaction commits:
 
 ```typescript
-import { ListensTo, ShouldQueue, AfterCommit } from '@lara-node/events'
+import { ListensTo, ShouldQueue, AfterCommit } from "@lara-node/events";
 
 @ListensTo(OrderCreated)
 @ShouldQueue()
@@ -43,7 +43,7 @@ import { ListensTo, ShouldQueue, AfterCommit } from '@lara-node/events'
 class SendOrderConfirmation {
   async handle(event: OrderCreated) {
     // Only runs after transaction commits
-    await Mail.to(event.order.user.email).send(new OrderConfirmationMail(event.order))
+    await Mail.to(event.order.user.email).send(new OrderConfirmationMail(event.order));
   }
 }
 ```
@@ -51,7 +51,7 @@ class SendOrderConfirmation {
 ## QueueableListener Base
 
 ```typescript
-import { QueueableListener } from '@lara-node/events'
+import { QueueableListener } from "@lara-node/events";
 
 class SendWelcomeEmail extends QueueableListener {
   async handle(event: UserRegistered) {

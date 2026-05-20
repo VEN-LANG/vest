@@ -5,21 +5,23 @@ The scheduler allows you to define cron-like tasks that run automatically.
 ## Defining Scheduled Tasks
 
 ```typescript
-import { scheduler } from '@lara-node/queue'
+import { scheduler } from "@lara-node/queue";
 
 // Run a command
-scheduler.command('cache:clear').daily()
+scheduler.command("cache:clear").daily();
 
 // Run a job
-scheduler.job(new SendDailyReport()).dailyAt('08:00')
+scheduler.job(new SendDailyReport()).dailyAt("08:00");
 
 // Run a callback
-scheduler.call(async () => {
-  await cleanupOldFiles()
-}).hourly()
+scheduler
+  .call(async () => {
+    await cleanupOldFiles();
+  })
+  .hourly();
 
 // Run a shell command
-scheduler.exec('php artisan backup:run').daily()
+scheduler.exec("php artisan backup:run").daily();
 ```
 
 ## Schedule Frequencies
@@ -54,10 +56,11 @@ scheduler.exec('php artisan backup:run').daily()
 ## Constraints
 
 ```typescript
-scheduler.command('report:generate')
+scheduler
+  .command("report:generate")
   .daily()
-  .weekdays()           // Mon-Fri
-  .weekends()           // Sat-Sun
+  .weekdays() // Mon-Fri
+  .weekends() // Sat-Sun
   .sundays()
   .mondays()
   .tuesdays()
@@ -65,9 +68,9 @@ scheduler.command('report:generate')
   .thursdays()
   .fridays()
   .saturdays()
-  .between('8:00', '17:00')
-  .unlessBetween('12:00', '13:00')
-  .when(() => isProduction())
+  .between("8:00", "17:00")
+  .unlessBetween("12:00", "13:00")
+  .when(() => isProduction());
 ```
 
 ## Running the Scheduler
@@ -83,17 +86,13 @@ pnpm exec artisan schedule:run
 ## On One Server
 
 ```typescript
-scheduler.command('report:generate')
-  .daily()
-  .onOneServer() // Only run on one server
+scheduler.command("report:generate").daily().onOneServer(); // Only run on one server
 ```
 
 ## Run in Background
 
 ```typescript
-scheduler.command('long:task')
-  .hourly()
-  .runInBackground()
+scheduler.command("long:task").hourly().runInBackground();
 ```
 
 ## Next Steps

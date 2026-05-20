@@ -21,34 +21,34 @@ Core provides:
 ## Quick Start
 
 ```typescript
-import { Application, Container } from '@lara-node/core'
-import 'reflect-metadata'
+import { Application, Container } from "@lara-node/core";
+import "reflect-metadata";
 
-const container = new Container()
-const app = new Application(container)
+const container = new Container();
+const app = new Application(container);
 
-app.register(AppServiceProvider)
+app.register(AppServiceProvider);
 
-await app.boot()
-await app.listen(3000)
+await app.boot();
+await app.listen(3000);
 ```
 
 ## Key Exports
 
-| Export | Description |
-|--------|-------------|
-| `Container` | IoC container class |
-| `container` | Singleton container instance |
-| `Application` | Application bootstrap class |
-| `ServiceProvider` | Base class for service providers |
-| `MiddlewareServiceProvider` | Base for middleware providers |
-| `MiddlewareStack` | Middleware manager |
-| `Injectable()` | DI decorator |
-| `@Provider()` | Auto-discovery decorator |
-| `config()` | Config helper |
-| `setConfig()` | Set config value |
-| `hasConfig()` | Check config exists |
-| `allConfig()` | Get all config |
+| Export                      | Description                      |
+| --------------------------- | -------------------------------- |
+| `Container`                 | IoC container class              |
+| `container`                 | Singleton container instance     |
+| `Application`               | Application bootstrap class      |
+| `ServiceProvider`           | Base class for service providers |
+| `MiddlewareServiceProvider` | Base for middleware providers    |
+| `MiddlewareStack`           | Middleware manager               |
+| `Injectable()`              | DI decorator                     |
+| `@Provider()`               | Auto-discovery decorator         |
+| `config()`                  | Config helper                    |
+| `setConfig()`               | Set config value                 |
+| `hasConfig()`               | Check config exists              |
+| `allConfig()`               | Get all config                   |
 
 ## Architecture
 

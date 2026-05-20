@@ -20,32 +20,32 @@ Features include:
 ## Quick Start
 
 ```typescript
-import { generateToken, verifyToken, hashPassword, comparePassword } from '@lara-node/auth'
+import { generateToken, verifyToken, hashPassword, comparePassword } from "@lara-node/auth";
 
 // Hash password
-const hashed = await hashPassword('secret')
+const hashed = await hashPassword("secret");
 
 // Verify password
-const isValid = await comparePassword('secret', hashed)
+const isValid = await comparePassword("secret", hashed);
 
 // Generate token
-const token = generateToken({ userId: 1 }, 3600) // 1 hour
+const token = generateToken({ userId: 1 }, 3600); // 1 hour
 
 // Verify token
-const payload = verifyToken(token)
+const payload = verifyToken(token);
 ```
 
 ## Key Exports
 
-| Export | Description |
-|--------|-------------|
-| `generateToken()` | Create JWT token |
-| `verifyToken()` | Verify and decode token |
-| `hashPassword()` | Hash password with bcrypt |
-| `comparePassword()` | Compare password with hash |
-| `authMiddleware` | Express auth middleware |
-| `encryptToken()` | Encrypt token with AES-256-GCM |
-| `decryptToken()` | Decrypt token |
+| Export              | Description                    |
+| ------------------- | ------------------------------ |
+| `generateToken()`   | Create JWT token               |
+| `verifyToken()`     | Verify and decode token        |
+| `hashPassword()`    | Hash password with bcrypt      |
+| `comparePassword()` | Compare password with hash     |
+| `authMiddleware`    | Express auth middleware        |
+| `encryptToken()`    | Encrypt token with AES-256-GCM |
+| `decryptToken()`    | Decrypt token                  |
 
 ## Next Steps
 

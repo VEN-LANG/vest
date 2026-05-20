@@ -128,13 +128,13 @@ pnpm exec artisan key:generate
 Create a simple test:
 
 ```typescript
-import { Application, Container } from '@lara-node/core'
+import { Application, Container } from "@lara-node/core";
 
-const container = new Container()
-const app = new Application(container)
+const container = new Container();
+const app = new Application(container);
 
-await app.boot()
-console.log('LaraNode is working!')
+await app.boot();
+console.log("LaraNode is working!");
 ```
 
 ## Next Steps

@@ -9,20 +9,20 @@ Configuration files live in `src/config/` and export configuration objects:
 ```typescript
 // src/config/database.config.ts
 export default {
-  connection: process.env.DB_CONNECTION || 'mysql',
+  connection: process.env.DB_CONNECTION || "mysql",
   mysql: {
-    host: process.env.DB_HOST || '127.0.0.1',
-    port: parseInt(process.env.DB_PORT || '3306'),
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'vest',
-    poolLimit: parseInt(process.env.DB_POOL_LIMIT || '10'),
+    host: process.env.DB_HOST || "127.0.0.1",
+    port: parseInt(process.env.DB_PORT || "3306"),
+    user: process.env.DB_USER || "root",
+    password: process.env.DB_PASSWORD || "",
+    database: process.env.DB_NAME || "vest",
+    poolLimit: parseInt(process.env.DB_POOL_LIMIT || "10"),
   },
   mongodb: {
-    uri: process.env.MONGO_URI || 'mongodb://localhost:27017',
+    uri: process.env.MONGO_URI || "mongodb://localhost:27017",
     replicaSet: process.env.MONGO_REPLICA_SET,
   },
-}
+};
 ```
 
 ## Environment Variables
@@ -73,21 +73,21 @@ BROADCAST_DRIVER=websocket
 Use the `config()` helper to access configuration values:
 
 ```typescript
-import { config, hasConfig, setConfig } from '@lara-node/core'
+import { config, hasConfig, setConfig } from "@lara-node/core";
 
 // Get a value (dot notation)
-const dbHost = config('database.mysql.host')
+const dbHost = config("database.mysql.host");
 
 // Get with default
-const port = config('app.port', 3000)
+const port = config("app.port", 3000);
 
 // Check if exists
-if (hasConfig('cache.redis')) {
+if (hasConfig("cache.redis")) {
   // ...
 }
 
 // Set a value
-setConfig('app.debug', true)
+setConfig("app.debug", true);
 ```
 
 ## Configuration by Package
@@ -97,12 +97,12 @@ setConfig('app.debug', true)
 ```typescript
 // config/app.config.ts
 export default {
-  name: 'LaraNode App',
-  env: process.env.NODE_ENV || 'development',
-  debug: process.env.NODE_ENV === 'development',
+  name: "LaraNode App",
+  env: process.env.NODE_ENV || "development",
+  debug: process.env.NODE_ENV === "development",
   key: process.env.APP_KEY,
-  port: parseInt(process.env.APP_PORT || '3000'),
-}
+  port: parseInt(process.env.APP_PORT || "3000"),
+};
 ```
 
 ### Database
@@ -110,10 +110,10 @@ export default {
 ```typescript
 // config/database.config.ts
 export default {
-  connection: process.env.DB_CONNECTION || 'mysql',
+  connection: process.env.DB_CONNECTION || "mysql",
   mysql: {
     host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT || '3306'),
+    port: parseInt(process.env.DB_PORT || "3306"),
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
@@ -121,7 +121,7 @@ export default {
   mongodb: {
     uri: process.env.MONGO_URI,
   },
-}
+};
 ```
 
 ### Cache
@@ -129,15 +129,15 @@ export default {
 ```typescript
 // config/cache.config.ts
 export default {
-  driver: process.env.CACHE_DRIVER || 'file',
-  prefix: process.env.CACHE_PREFIX || 'vest_',
-  path: process.env.CACHE_PATH || './storage/cache',
+  driver: process.env.CACHE_DRIVER || "file",
+  prefix: process.env.CACHE_PREFIX || "vest_",
+  path: process.env.CACHE_PATH || "./storage/cache",
   redis: {
-    host: process.env.REDIS_HOST || '127.0.0.1',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
+    host: process.env.REDIS_HOST || "127.0.0.1",
+    port: parseInt(process.env.REDIS_PORT || "6379"),
     password: process.env.REDIS_PASSWORD,
   },
-}
+};
 ```
 
 ### Queue
@@ -145,17 +145,17 @@ export default {
 ```typescript
 // config/queue.config.ts
 export default {
-  default: process.env.QUEUE_CONNECTION || 'sync',
+  default: process.env.QUEUE_CONNECTION || "sync",
   connections: {
-    sync: { driver: 'sync' },
-    database: { driver: 'database', table: 'jobs' },
+    sync: { driver: "sync" },
+    database: { driver: "database", table: "jobs" },
     redis: {
-      driver: 'redis',
+      driver: "redis",
       host: process.env.REDIS_HOST,
-      port: parseInt(process.env.REDIS_PORT || '6379'),
+      port: parseInt(process.env.REDIS_PORT || "6379"),
     },
   },
-}
+};
 ```
 
 ### Mail
@@ -163,21 +163,21 @@ export default {
 ```typescript
 // config/mail.config.ts
 export default {
-  driver: process.env.MAIL_DRIVER || 'log',
+  driver: process.env.MAIL_DRIVER || "log",
   from: {
     address: process.env.MAIL_FROM_ADDRESS,
     name: process.env.MAIL_FROM_NAME,
   },
   smtp: {
     host: process.env.MAIL_HOST,
-    port: parseInt(process.env.MAIL_PORT || '587'),
+    port: parseInt(process.env.MAIL_PORT || "587"),
     secure: false,
     auth: {
       user: process.env.MAIL_USERNAME,
       pass: process.env.MAIL_PASSWORD,
     },
   },
-}
+};
 ```
 
 ### Horizon
@@ -185,13 +185,13 @@ export default {
 ```typescript
 // config/horizon.config.ts
 export default {
-  domain: '',
-  path: '/horizon',
+  domain: "",
+  path: "/horizon",
   environments: {
     production: {
       supervisor: {
         maxProcesses: 10,
-        balance: 'auto',
+        balance: "auto",
       },
     },
     local: {
@@ -200,7 +200,7 @@ export default {
       },
     },
   },
-}
+};
 ```
 
 ### Telescope
@@ -208,11 +208,11 @@ export default {
 ```typescript
 // config/telescope.config.ts
 export default {
-  path: '/telescope',
-  enabled: process.env.NODE_ENV !== 'production',
+  path: "/telescope",
+  enabled: process.env.NODE_ENV !== "production",
   maxEntries: 1000,
   pruneHours: 48,
-}
+};
 ```
 
 ## Next Steps

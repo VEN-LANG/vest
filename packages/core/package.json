@@ -2,6 +2,10 @@
   "name": "@lara-node/core",
   "version": "0.1.7",
   "description": "Lara-Node IoC container, Application, and ServiceProvider",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -13,10 +17,6 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
   "publishConfig": {
     "access": "public"
   },

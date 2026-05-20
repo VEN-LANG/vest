@@ -56,10 +56,10 @@ export interface QueryMinuteBucket {
 }
 
 const K = {
-  entries:    "telescope:entries",
-  entry:      (id: string) => `telescope:e:${id}`,
-  reqBucket:  (ts: number) => `telescope:mb:req:${ts}`,
-  qryBucket:  (ts: number) => `telescope:mb:qry:${ts}`,
+  entries: "telescope:entries",
+  entry: (id: string) => `telescope:e:${id}`,
+  reqBucket: (ts: number) => `telescope:mb:req:${ts}`,
+  qryBucket: (ts: number) => `telescope:mb:qry:${ts}`,
 };
 
 class TelescopeStoreClass {
@@ -72,7 +72,11 @@ class TelescopeStoreClass {
     this.ttlSeconds = pruneAfterHours * 3600;
   }
 
-  async record(type: EntryType, content: Record<string, any>, tags: string[] = []): Promise<TelescopeEntry> {
+  async record(
+    type: EntryType,
+    content: Record<string, any>,
+    tags: string[] = [],
+  ): Promise<TelescopeEntry> {
     const entry: TelescopeEntry = {
       id: randomUUID(),
       type,
@@ -101,15 +105,21 @@ class TelescopeStoreClass {
 
       // Per-minute metric buckets
       if (entry.type === "request") await this.updateRequestBucket(entry);
-      if (entry.type === "query")   await this.updateQueryBucket(entry);
-    } catch { /* best-effort */ }
+      if (entry.type === "query") await this.updateQueryBucket(entry);
+    } catch {
+      /* best-effort */
+    }
   }
 
   private async updateRequestBucket(entry: TelescopeEntry): Promise<void> {
     const ts = Math.floor(new Date(entry.createdAt).getTime() / 60_000) * 60_000;
     const key = K.reqBucket(ts);
     const b: RequestMinuteBucket = (await Cache.get(key)) ?? {
-      ts, count: 0, totalDuration: 0, errors: 0, durations: [],
+      ts,
+      count: 0,
+      totalDuration: 0,
+      errors: 0,
+      durations: [],
     };
     const dur = entry.content.duration ?? 0;
     b.count++;
@@ -123,7 +133,10 @@ class TelescopeStoreClass {
     const ts = Math.floor(new Date(entry.createdAt).getTime() / 60_000) * 60_000;
     const key = K.qryBucket(ts);
     const b: QueryMinuteBucket = (await Cache.get(key)) ?? {
-      ts, count: 0, totalDuration: 0, slowCount: 0,
+      ts,
+      count: 0,
+      totalDuration: 0,
+      slowCount: 0,
     };
     const dur = entry.content.duration ?? 0;
     b.count++;
@@ -136,8 +149,8 @@ class TelescopeStoreClass {
     try {
       let result: TelescopeEntry[] = (await Cache.get(K.entries)) ?? [];
 
-      if (options.type)   result = result.filter((e) => e.type === options.type);
-      if (options.tag)    result = result.filter((e) => e.tags.includes(options.tag!));
+      if (options.type) result = result.filter((e) => e.type === options.type);
+      if (options.tag) result = result.filter((e) => e.tags.includes(options.tag!));
       if (options.search) {
         const q = options.search.toLowerCase();
         result = result.filter(
@@ -169,11 +182,17 @@ class TelescopeStoreClass {
     try {
       if (type) {
         const entries: TelescopeEntry[] = (await Cache.get(K.entries)) ?? [];
-        await Cache.set(K.entries, entries.filter((e) => e.type !== type), this.ttlSeconds);
+        await Cache.set(
+          K.entries,
+          entries.filter((e) => e.type !== type),
+          this.ttlSeconds,
+        );
       } else {
         await Cache.del(K.entries);
       }
-    } catch { /* best-effort */ }
+    } catch {
+      /* best-effort */
+    }
   }
 
   async stats(): Promise<Partial<Record<EntryType, number>>> {

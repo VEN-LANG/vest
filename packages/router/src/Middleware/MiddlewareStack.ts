@@ -1,7 +1,4 @@
-export {
-  MiddlewareStack,
-  middlewareStack,
-} from "@lara-node/core";
+export { MiddlewareStack, middlewareStack } from "@lara-node/core";
 export type {
   MiddlewareEntry,
   Middleware,

@@ -27,16 +27,16 @@ LaraNode follows Laravel's core principles:
 Service providers are the central place for configuring your application. They register bindings in the IoC container and boot services:
 
 ```typescript
-import { ServiceProvider } from '@lara-node/core'
+import { ServiceProvider } from "@lara-node/core";
 
 export class AppServiceProvider extends ServiceProvider {
   register() {
-    this.app.bind('myService', () => new MyService())
+    this.app.bind("myService", () => new MyService());
   }
 
   boot() {
-    const service = this.app.make('myService')
-    service.initialize()
+    const service = this.app.make("myService");
+    service.initialize();
   }
 }
 ```
@@ -46,14 +46,14 @@ export class AppServiceProvider extends ServiceProvider {
 The container manages class dependencies and performs dependency injection:
 
 ```typescript
-import { container, Injectable } from '@lara-node/core'
+import { container, Injectable } from "@lara-node/core";
 
 @Injectable()
 class UserService {
   constructor(private db: DatabaseService) {}
 }
 
-const service = container.make(UserService)
+const service = container.make(UserService);
 ```
 
 ### Eloquent Models
@@ -61,17 +61,17 @@ const service = container.make(UserService)
 Models provide an expressive way to interact with your database:
 
 ```typescript
-import { Model, use } from '@lara-node/db'
-import { SoftDeletes, Timestamps } from '@lara-node/db'
+import { Model, use } from "@lara-node/db";
+import { SoftDeletes, Timestamps } from "@lara-node/db";
 
 @use(SoftDeletes, Timestamps)
 class User extends Model {
-  static table = 'users'
-  static fillable = ['name', 'email', 'password']
-  static hidden = ['password']
+  static table = "users";
+  static fillable = ["name", "email", "password"];
+  static hidden = ["password"];
 }
 
-const users = await User.where('active', true).get()
+const users = await User.where("active", true).get();
 ```
 
 ### Routing
@@ -79,18 +79,18 @@ const users = await User.where('active', true).get()
 Define routes with a fluent builder or controller decorators:
 
 ```typescript
-import { Route } from '@lara-node/router'
+import { Route } from "@lara-node/router";
 
-@Route('/api/users')
+@Route("/api/users")
 class UserController {
-  @Route.get('/')
+  @Route.get("/")
   async index() {
-    return User.all()
+    return User.all();
   }
 
-  @Route.post('/')
+  @Route.post("/")
   async store(req: Request) {
-    return User.create(req.body)
+    return User.create(req.body);
   }
 }
 ```
@@ -99,22 +99,22 @@ class UserController {
 
 LaraNode is organized into focused packages:
 
-| Package | Description |
-|---------|-------------|
-| `@lara-node/core` | IoC container, Application, Service Providers |
-| `@lara-node/db` | Eloquent ORM with MySQL & MongoDB |
-| `@lara-node/router` | Expressive routing with decorators |
-| `@lara-node/auth` | JWT authentication & password hashing |
-| `@lara-node/validator` | 50+ validation rules |
-| `@lara-node/cache` | Multi-driver caching & rate limiting |
-| `@lara-node/queue` | Job queues with workers |
-| `@lara-node/events` | Event dispatcher & broadcasting |
-| `@lara-node/mail` | Multi-driver email system |
-| `@lara-node/middlewares` | Pre-built middleware |
-| `@lara-node/carbon` | Laravel Carbon-inspired dates |
-| `@lara-node/console` | Artisan-style CLI |
-| `@lara-node/horizon` | Queue monitoring dashboard |
-| `@lara-node/telescope` | Debug dashboard |
+| Package                  | Description                                   |
+| ------------------------ | --------------------------------------------- |
+| `@lara-node/core`        | IoC container, Application, Service Providers |
+| `@lara-node/db`          | Eloquent ORM with MySQL & MongoDB             |
+| `@lara-node/router`      | Expressive routing with decorators            |
+| `@lara-node/auth`        | JWT authentication & password hashing         |
+| `@lara-node/validator`   | 50+ validation rules                          |
+| `@lara-node/cache`       | Multi-driver caching & rate limiting          |
+| `@lara-node/queue`       | Job queues with workers                       |
+| `@lara-node/events`      | Event dispatcher & broadcasting               |
+| `@lara-node/mail`        | Multi-driver email system                     |
+| `@lara-node/middlewares` | Pre-built middleware                          |
+| `@lara-node/carbon`      | Laravel Carbon-inspired dates                 |
+| `@lara-node/console`     | Artisan-style CLI                             |
+| `@lara-node/horizon`     | Queue monitoring dashboard                    |
+| `@lara-node/telescope`   | Debug dashboard                               |
 
 ## Next Steps
 

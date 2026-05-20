@@ -11,7 +11,7 @@ Every LaraNode application has service providers that register services in the c
 Extend the `ServiceProvider` abstract class:
 
 ```typescript
-import { ServiceProvider } from '@lara-node/core'
+import { ServiceProvider } from "@lara-node/core";
 
 export class AppServiceProvider extends ServiceProvider {
   register() {
@@ -80,21 +80,21 @@ Register providers in your application bootstrap:
 
 ```typescript
 // src/bootstrap/app.ts
-import { Application, Container } from '@lara-node/core'
-import { AppServiceProvider } from '../app/Providers/AppServiceProvider'
-import { RouteServiceProvider } from '../app/Providers/RouteServiceProvider'
-import { CacheServiceProvider } from '@lara-node/cache'
-import { QueueServiceProvider } from '@lara-node/queue'
+import { Application, Container } from "@lara-node/core";
+import { AppServiceProvider } from "../app/Providers/AppServiceProvider";
+import { RouteServiceProvider } from "../app/Providers/RouteServiceProvider";
+import { CacheServiceProvider } from "@lara-node/cache";
+import { QueueServiceProvider } from "@lara-node/queue";
 
-const container = new Container()
-const app = new Application(container)
+const container = new Container();
+const app = new Application(container);
 
-app.register(AppServiceProvider)
-app.register(RouteServiceProvider)
-app.register(CacheServiceProvider)
-app.register(QueueServiceProvider)
+app.register(AppServiceProvider);
+app.register(RouteServiceProvider);
+app.register(CacheServiceProvider);
+app.register(QueueServiceProvider);
 
-export { app }
+export { app };
 ```
 
 ## Provider with Middleware
@@ -102,7 +102,7 @@ export { app }
 Providers can register middleware aliases:
 
 ```typescript
-import { MiddlewareServiceProvider } from '@lara-node/core'
+import { MiddlewareServiceProvider } from "@lara-node/core";
 
 export class HttpMiddlewareProvider extends MiddlewareServiceProvider {
   registerMiddleware() {
@@ -113,11 +113,11 @@ export class HttpMiddlewareProvider extends MiddlewareServiceProvider {
         admin: AdminMiddleware,
       },
       groups: {
-        api: ['throttle', 'auth'],
-        web: ['session'],
+        api: ["throttle", "auth"],
+        web: ["session"],
       },
-      priority: ['auth', 'throttle'],
-    }
+      priority: ["auth", "throttle"],
+    };
   }
 }
 ```
@@ -127,7 +127,7 @@ export class HttpMiddlewareProvider extends MiddlewareServiceProvider {
 Use the `@Provider()` decorator for auto-discovery:
 
 ```typescript
-import { Provider } from '@lara-node/core'
+import { Provider } from "@lara-node/core";
 
 @Provider()
 export class EventServiceProvider extends ServiceProvider {
@@ -142,24 +142,24 @@ export class EventServiceProvider extends ServiceProvider {
 For registering middleware, extend `MiddlewareServiceProvider`:
 
 ```typescript
-import { MiddlewareServiceProvider } from '@lara-node/core'
+import { MiddlewareServiceProvider } from "@lara-node/core";
 
 export class MyMiddlewareProvider extends MiddlewareServiceProvider {
   registerMiddleware() {
     return {
       // Middleware aliases (used in routes)
       aliases: {
-        'auth': AuthMiddleware,
-        'cors': CorsMiddleware,
+        auth: AuthMiddleware,
+        cors: CorsMiddleware,
       },
       // Middleware groups
       groups: {
-        'api': ['cors', 'auth'],
-        'web': ['session', 'csrf'],
+        api: ["cors", "auth"],
+        web: ["session", "csrf"],
       },
       // Priority middleware (runs first)
-      priority: ['cors'],
-    }
+      priority: ["cors"],
+    };
   }
 }
 ```

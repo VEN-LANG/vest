@@ -11,9 +11,9 @@ pnpm add @lara-node/queue
 ## Quick Start
 
 ```ts
-import { Job, Queueable, Queue } from '@lara-node/queue';
+import { Job, Queueable, Queue } from "@lara-node/queue";
 
-@Queueable({ queue: 'emails', tries: 3 })
+@Queueable({ queue: "emails", tries: 3 })
 export class SendMailJob extends Job {
   constructor(private readonly to: string) {
     super();
@@ -40,27 +40,33 @@ node artisan queue:work --connection=redis --queue=emails,default
 
 ```ts
 export abstract class Job {
-  queue: string;               // target queue name
-  connection: string;          // queue connection name
-  tries: number;               // max attempt count
-  timeout: number;             // execution timeout in seconds
-  backoff: number | number[];  // seconds between retries (can be stepped: [5, 10, 30])
-  delay: number;               // initial delay in seconds
-  shouldBeEncrypted: boolean;  // encrypt payload at rest using APP_KEY
+  queue: string; // target queue name
+  connection: string; // queue connection name
+  tries: number; // max attempt count
+  timeout: number; // execution timeout in seconds
+  backoff: number | number[]; // seconds between retries (can be stepped: [5, 10, 30])
+  delay: number; // initial delay in seconds
+  shouldBeEncrypted: boolean; // encrypt payload at rest using APP_KEY
 
   abstract handle(): Promise<void>;
 
   // Override to conditionally skip dispatch
-  shouldQueue(): boolean { return true; }
+  shouldQueue(): boolean {
+    return true;
+  }
 
   // Override to handle final failure
   failed(error: Error): void {}
 
   // Override to set a retry deadline
-  retryUntil(): Date | null { return null; }
+  retryUntil(): Date | null {
+    return null;
+  }
 
   // Override to add Horizon grouping tags
-  tags(): string[] { return []; }
+  tags(): string[] {
+    return [];
+  }
 }
 ```
 
@@ -69,41 +75,49 @@ export abstract class Job {
 Registers a job in the global registry (required for workers to deserialize it) and sets class-level defaults.
 
 ```ts
-import { Job, Queueable } from '@lara-node/queue';
+import { Job, Queueable } from "@lara-node/queue";
 
 @Queueable()
 export class BasicJob extends Job {
-  async handle(): Promise<void> { /* ... */ }
+  async handle(): Promise<void> {
+    /* ... */
+  }
 }
 
-@Queueable({ queue: 'reports', tries: 2, timeout: 300 })
+@Queueable({ queue: "reports", tries: 2, timeout: 300 })
 export class GenerateReportJob extends Job {
-  async handle(): Promise<void> { /* ... */ }
+  async handle(): Promise<void> {
+    /* ... */
+  }
 }
 
 // Custom serialization name
-@Queueable({ name: 'send-mail', queue: 'emails' })
+@Queueable({ name: "send-mail", queue: "emails" })
 export class SendMailJob extends Job {
-  async handle(): Promise<void> { /* ... */ }
+  async handle(): Promise<void> {
+    /* ... */
+  }
 }
 ```
 
-| Option       | Type     | Description                                           |
-|--------------|----------|-------------------------------------------------------|
-| `name`       | `string` | Registry key for serialization (default: class name)  |
-| `queue`      | `string` | Target queue name                                     |
-| `tries`      | `number` | Max attempt count                                     |
-| `timeout`    | `number` | Execution timeout in seconds                          |
-| `connection` | `string` | Queue connection name (e.g. `redis`, `database`)      |
+| Option       | Type     | Description                                          |
+| ------------ | -------- | ---------------------------------------------------- |
+| `name`       | `string` | Registry key for serialization (default: class name) |
+| `queue`      | `string` | Target queue name                                    |
+| `tries`      | `number` | Max attempt count                                    |
+| `timeout`    | `number` | Execution timeout in seconds                         |
+| `connection` | `string` | Queue connection name (e.g. `redis`, `database`)     |
 
 ### `shouldQueue()` — conditional dispatch
 
 Override to skip dispatch without wrapping call sites in `if` statements:
 
 ```ts
-@Queueable({ queue: 'notifications' })
+@Queueable({ queue: "notifications" })
 export class NotifyUserJob extends Job {
-  constructor(private readonly user: User) { super(); }
+  constructor(private readonly user: User) {
+    super();
+  }
 
   shouldQueue(): boolean {
     return this.user.notificationsEnabled;
@@ -121,26 +135,20 @@ await NotifyUserJob.dispatch().dispatch();
 ## Dispatching
 
 ```ts
-import { Queue } from '@lara-node/queue';
+import { Queue } from "@lara-node/queue";
 
 // Via static dispatch — uses @Queueable defaults
 await SendMailJob.dispatch().dispatch();
 
 // Fluent overrides
-await GenerateReportJob
-  .dispatch()
-  .onQueue('priority')
-  .tries(5)
-  .timeout(600)
-  .delay(30)
-  .dispatch();
+await GenerateReportJob.dispatch().onQueue("priority").tries(5).timeout(600).delay(30).dispatch();
 
 // Push an instance directly
-const job = new SendMailJob('alice@example.com');
+const job = new SendMailJob("alice@example.com");
 await Queue.push(job);
 
 // Push to a specific queue
-await Queue.pushOn('high', job);
+await Queue.pushOn("high", job);
 
 // Delayed dispatch (seconds)
 await Queue.later(60, job);
@@ -155,13 +163,13 @@ await SendMailJob.dispatch().afterResponse().dispatch();
 ### `Queue` facade
 
 ```ts
-import { Queue } from '@lara-node/queue';
+import { Queue } from "@lara-node/queue";
 
-await Queue.push(job)             // push to job's queue property
-await Queue.pushOn('high', job)   // push to named queue
-await Queue.later(60, job)        // delay in seconds
-await Queue.size('default')       // pending job count
-await Queue.clear('default')      // clear all jobs in a queue
+await Queue.push(job); // push to job's queue property
+await Queue.pushOn("high", job); // push to named queue
+await Queue.later(60, job); // delay in seconds
+await Queue.size("default"); // pending job count
+await Queue.clear("default"); // clear all jobs in a queue
 ```
 
 ## Worker
@@ -169,21 +177,21 @@ await Queue.clear('default')      // clear all jobs in a queue
 Processes jobs from the queue. Used internally by `node artisan queue:work`.
 
 ```ts
-import { Worker } from '@lara-node/queue';
+import { Worker } from "@lara-node/queue";
 
-const worker = new Worker('redis', ['high', 'default'], {
+const worker = new Worker("redis", ["high", "default"], {
   tries: 3,
   timeout: 60,
   sleep: 1,
-  maxJobs: 0,       // 0 = unlimited
-  maxTime: 0,       // 0 = unlimited
+  maxJobs: 0, // 0 = unlimited
+  maxTime: 0, // 0 = unlimited
   stopOnEmpty: false,
 });
 
-worker.on('job:processed', (job) => console.log('Done:', job.constructor.name));
-worker.on('job:failed', (job, err) => console.error('Failed:', err.message));
-worker.on('worker:start', () => console.log('Worker started'));
-worker.on('worker:stop', () => console.log('Worker stopped'));
+worker.on("job:processed", (job) => console.log("Done:", job.constructor.name));
+worker.on("job:failed", (job, err) => console.error("Failed:", err.message));
+worker.on("worker:start", () => console.log("Worker started"));
+worker.on("worker:stop", () => console.log("Worker stopped"));
 
 await worker.start();
 ```
@@ -193,19 +201,19 @@ await worker.start();
 Used inside `Kernel.schedule()`. See `@lara-node/console` for the `Kernel` API.
 
 ```ts
-import { scheduler } from '@lara-node/queue';
+import { scheduler } from "@lara-node/queue";
 
 // Class-based job
 scheduler.job(CleanupJob).daily();
-scheduler.job(GenerateReportJob, { type: 'weekly' }).weekly();
+scheduler.job(GenerateReportJob, { type: "weekly" }).weekly();
 
 // Artisan command
-scheduler.command('db:prune').hourly();
-scheduler.command('cache:clear').dailyAt('00:00');
+scheduler.command("db:prune").hourly();
+scheduler.command("cache:clear").dailyAt("00:00");
 
 // Closure
-scheduler.call(() => console.log('tick')).everyMinute();
-scheduler.call(async () => await sendWeeklyReport()).cron('0 8 * * 1');
+scheduler.call(() => console.log("tick")).everyMinute();
+scheduler.call(async () => await sendWeeklyReport()).cron("0 8 * * 1");
 ```
 
 ### Frequency helpers
@@ -244,22 +252,22 @@ scheduler.call(async () => await sendWeeklyReport()).cron('0 8 * * 1');
 
 ```ts
 // config/queue.config.ts
-import { setConfig } from '@lara-node/core';
+import { setConfig } from "@lara-node/core";
 
-setConfig('queue', {
-  default: 'redis',
+setConfig("queue", {
+  default: "redis",
   connections: {
     sync: {
-      driver: 'sync',
+      driver: "sync",
     },
     database: {
-      driver: 'database',
-      table: 'jobs',
+      driver: "database",
+      table: "jobs",
     },
     redis: {
-      driver: 'redis',
-      connection: 'default',
-      queue: 'default',
+      driver: "redis",
+      connection: "default",
+      queue: "default",
       retry_after: 90,
       block_for: null,
     },
@@ -276,23 +284,23 @@ setConfig('queue', {
 ## `QueueServiceProvider`
 
 ```ts
-import { QueueServiceProvider } from '@lara-node/queue';
+import { QueueServiceProvider } from "@lara-node/queue";
 
 app.register(QueueServiceProvider);
 ```
 
 ## Environment Variables
 
-| Variable                | Default   | Description                                               |
-|-------------------------|-----------|-----------------------------------------------------------|
-| `QUEUE_CONNECTION`      | `sync`    | Default driver: `sync`, `database`, or `redis`            |
-| `REDIS_QUEUE_CONNECTION`| `default` | Redis connection name                                     |
-| `REDIS_QUEUE`           | `default` | Redis queue name                                          |
-| `REDIS_HOST`            | `127.0.0.1` | Redis host                                              |
-| `REDIS_PORT`            | `6379`    | Redis port                                                |
-| `REDIS_PASSWORD`        | —         | Redis password                                            |
-| `REDIS_URL`             | —         | Full Redis URL (overrides host/port/password)             |
-| `APP_KEY`               | —         | AES-256-GCM encryption key for `shouldBeEncrypted` jobs   |
+| Variable                 | Default     | Description                                             |
+| ------------------------ | ----------- | ------------------------------------------------------- |
+| `QUEUE_CONNECTION`       | `sync`      | Default driver: `sync`, `database`, or `redis`          |
+| `REDIS_QUEUE_CONNECTION` | `default`   | Redis connection name                                   |
+| `REDIS_QUEUE`            | `default`   | Redis queue name                                        |
+| `REDIS_HOST`             | `127.0.0.1` | Redis host                                              |
+| `REDIS_PORT`             | `6379`      | Redis port                                              |
+| `REDIS_PASSWORD`         | —           | Redis password                                          |
+| `REDIS_URL`              | —           | Full Redis URL (overrides host/port/password)           |
+| `APP_KEY`                | —           | AES-256-GCM encryption key for `shouldBeEncrypted` jobs |
 
 ## Notes
 

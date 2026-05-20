@@ -19,8 +19,8 @@ export class CarbonPeriod implements Iterable<Carbon> {
 
   constructor(start: Carbon | Date, end: Carbon | Date, step?: PeriodStep) {
     this._start = Carbon.from(start);
-    this._end   = Carbon.from(end);
-    this._step  = step ?? { value: 1, unit: "day" };
+    this._end = Carbon.from(end);
+    this._step = step ?? { value: 1, unit: "day" };
     this._inclusive = true;
   }
 
@@ -28,21 +28,48 @@ export class CarbonPeriod implements Iterable<Carbon> {
     return new CarbonPeriod(start, end);
   }
 
-  everySecond()  : CarbonPeriod { this._step = { value: 1, unit: "second" }; return this; }
-  everyMinute()  : CarbonPeriod { this._step = { value: 1, unit: "minute" }; return this; }
-  everyHour()    : CarbonPeriod { this._step = { value: 1, unit: "hour" };   return this; }
-  everyDay()     : CarbonPeriod { this._step = { value: 1, unit: "day" };    return this; }
-  everyWeek()    : CarbonPeriod { this._step = { value: 1, unit: "week" };   return this; }
-  everyMonth()   : CarbonPeriod { this._step = { value: 1, unit: "month" };  return this; }
-  everyYear()    : CarbonPeriod { this._step = { value: 1, unit: "year" };   return this; }
+  everySecond(): CarbonPeriod {
+    this._step = { value: 1, unit: "second" };
+    return this;
+  }
+  everyMinute(): CarbonPeriod {
+    this._step = { value: 1, unit: "minute" };
+    return this;
+  }
+  everyHour(): CarbonPeriod {
+    this._step = { value: 1, unit: "hour" };
+    return this;
+  }
+  everyDay(): CarbonPeriod {
+    this._step = { value: 1, unit: "day" };
+    return this;
+  }
+  everyWeek(): CarbonPeriod {
+    this._step = { value: 1, unit: "week" };
+    return this;
+  }
+  everyMonth(): CarbonPeriod {
+    this._step = { value: 1, unit: "month" };
+    return this;
+  }
+  everyYear(): CarbonPeriod {
+    this._step = { value: 1, unit: "year" };
+    return this;
+  }
 
   every(value: number, unit: TimeUnit): CarbonPeriod {
     this._step = { value, unit };
     return this;
   }
 
-  exclusive(): CarbonPeriod { this._inclusive = false; return this; }
-  inclusive(): CarbonPeriod { this._inclusive = true;  return this; }
+  exclusive(): CarbonPeriod {
+    this._inclusive = false;
+    return this;
+  }
+  inclusive(): CarbonPeriod {
+    this._inclusive = true;
+    return this;
+  }
 
   toArray(): Carbon[] {
     return [...this];
@@ -66,8 +93,12 @@ export class CarbonPeriod implements Iterable<Carbon> {
     return {
       next(): IteratorResult<Carbon> {
         const isWithin = inclusive
-          ? (forward ? current.isSameOrBefore(end) : current.isSameOrAfter(end))
-          : (forward ? current.isBefore(end)       : current.isAfter(end));
+          ? forward
+            ? current.isSameOrBefore(end)
+            : current.isSameOrAfter(end)
+          : forward
+            ? current.isBefore(end)
+            : current.isAfter(end);
 
         if (!isWithin) return { value: current, done: true };
 

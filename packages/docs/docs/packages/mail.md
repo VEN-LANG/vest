@@ -23,18 +23,17 @@ Features include:
 ### Create a Mailable
 
 ```typescript
-import { Mailable } from '@lara-node/mail'
+import { Mailable } from "@lara-node/mail";
 
 class WelcomeMail extends Mailable {
   constructor(private user: User) {
-    super()
+    super();
   }
 
   build() {
-    return this
-      .to(this.user.email)
-      .subject('Welcome to LaraNode!')
-      .view('emails.welcome', { user: this.user })
+    return this.to(this.user.email)
+      .subject("Welcome to LaraNode!")
+      .view("emails.welcome", { user: this.user });
   }
 }
 ```
@@ -42,46 +41,46 @@ class WelcomeMail extends Mailable {
 ### Send Email
 
 ```typescript
-import { Mail, sendMail } from '@lara-node/mail'
+import { Mail, sendMail } from "@lara-node/mail";
 
 // Using facade
-await Mail.to('user@example.com').send(new WelcomeMail(user))
+await Mail.to("user@example.com").send(new WelcomeMail(user));
 
 // Using helper
-await sendMail(new WelcomeMail(user))
+await sendMail(new WelcomeMail(user));
 ```
 
 ## Key Exports
 
-| Export | Description |
-|--------|-------------|
-| `Mail` | Mail facade |
-| `MailManager` | Mail manager |
-| `Mailer` | Fluent mailer |
-| `Mailable` | Base mailable class |
-| `sendMail()` | Send helper |
-| `queueMail()` | Queue helper |
+| Export        | Description         |
+| ------------- | ------------------- |
+| `Mail`        | Mail facade         |
+| `MailManager` | Mail manager        |
+| `Mailer`      | Fluent mailer       |
+| `Mailable`    | Base mailable class |
+| `sendMail()`  | Send helper         |
+| `queueMail()` | Queue helper        |
 
 ## Configuration
 
 ```typescript
 // config/mail.config.ts
 export default {
-  driver: process.env.MAIL_DRIVER || 'log',
+  driver: process.env.MAIL_DRIVER || "log",
   from: {
     address: process.env.MAIL_FROM_ADDRESS,
     name: process.env.MAIL_FROM_NAME,
   },
   smtp: {
     host: process.env.MAIL_HOST,
-    port: parseInt(process.env.MAIL_PORT || '587'),
+    port: parseInt(process.env.MAIL_PORT || "587"),
     secure: false,
     auth: {
       user: process.env.MAIL_USERNAME,
       pass: process.env.MAIL_PASSWORD,
     },
   },
-}
+};
 ```
 
 ## Next Steps

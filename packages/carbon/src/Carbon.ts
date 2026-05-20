@@ -10,10 +10,28 @@ export const SUNDAY = 0;
 export type WeekDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type TimeUnit = "year" | "month" | "week" | "day" | "hour" | "minute" | "second";
 
-const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
+const WEEKDAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+] as const;
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ] as const;
 
 /**
@@ -39,15 +57,32 @@ export class Carbon extends Date {
 
   static fromFormat(dateStr: string, format: string): Carbon {
     // Parses a date string based on a format token map
-    let year = 0, month = 0, day = 1, hours = 0, minutes = 0, seconds = 0;
+    let year = 0,
+      month = 0,
+      day = 1,
+      hours = 0,
+      minutes = 0,
+      seconds = 0;
 
     const tokenMap: Record<string, (v: string) => void> = {
-      YYYY: (v) => { year = parseInt(v, 10); },
-      MM:   (v) => { month = parseInt(v, 10) - 1; },
-      DD:   (v) => { day = parseInt(v, 10); },
-      HH:   (v) => { hours = parseInt(v, 10); },
-      mm:   (v) => { minutes = parseInt(v, 10); },
-      ss:   (v) => { seconds = parseInt(v, 10); },
+      YYYY: (v) => {
+        year = parseInt(v, 10);
+      },
+      MM: (v) => {
+        month = parseInt(v, 10) - 1;
+      },
+      DD: (v) => {
+        day = parseInt(v, 10);
+      },
+      HH: (v) => {
+        hours = parseInt(v, 10);
+      },
+      mm: (v) => {
+        minutes = parseInt(v, 10);
+      },
+      ss: (v) => {
+        seconds = parseInt(v, 10);
+      },
     };
 
     const tokens = Object.keys(tokenMap);
@@ -104,15 +139,33 @@ export class Carbon extends Date {
   // Accessors / Getters
   // -------------------------------------------------------------------------
 
-  get year(): number { return this.getFullYear(); }
-  get month(): number { return this.getMonth() + 1; }
-  get day(): number { return this.getDate(); }
-  get hour(): number { return this.getHours(); }
-  get minute(): number { return this.getMinutes(); }
-  get second(): number { return this.getSeconds(); }
-  get millisecond(): number { return this.getMilliseconds(); }
-  get dayOfWeek(): WeekDay { return this.getDay() as WeekDay; }
-  get timestamp(): number { return Math.floor(this.getTime() / 1000); }
+  get year(): number {
+    return this.getFullYear();
+  }
+  get month(): number {
+    return this.getMonth() + 1;
+  }
+  get day(): number {
+    return this.getDate();
+  }
+  get hour(): number {
+    return this.getHours();
+  }
+  get minute(): number {
+    return this.getMinutes();
+  }
+  get second(): number {
+    return this.getSeconds();
+  }
+  get millisecond(): number {
+    return this.getMilliseconds();
+  }
+  get dayOfWeek(): WeekDay {
+    return this.getDay() as WeekDay;
+  }
+  get timestamp(): number {
+    return Math.floor(this.getTime() / 1000);
+  }
 
   get quarter(): number {
     return Math.ceil(this.month / 3);
@@ -283,13 +336,20 @@ export class Carbon extends Date {
 
   add(value: number, unit: TimeUnit): Carbon {
     switch (unit) {
-      case "year":   return this.addYears(value);
-      case "month":  return this.addMonths(value);
-      case "week":   return this.addWeeks(value);
-      case "day":    return this.addDays(value);
-      case "hour":   return this.addHours(value);
-      case "minute": return this.addMinutes(value);
-      case "second": return this.addSeconds(value);
+      case "year":
+        return this.addYears(value);
+      case "month":
+        return this.addMonths(value);
+      case "week":
+        return this.addWeeks(value);
+      case "day":
+        return this.addDays(value);
+      case "hour":
+        return this.addHours(value);
+      case "minute":
+        return this.addMinutes(value);
+      case "second":
+        return this.addSeconds(value);
     }
   }
 
@@ -297,50 +357,134 @@ export class Carbon extends Date {
     return this.add(-value, unit);
   }
 
-  addYear()                   : Carbon { return this.addYears(1); }
-  addYears(n: number)         : Carbon { const d = this.clone(); d.setFullYear(d.getFullYear() + n); return d; }
-  subYear()                   : Carbon { return this.addYears(-1); }
-  subYears(n: number)         : Carbon { return this.addYears(-n); }
+  addYear(): Carbon {
+    return this.addYears(1);
+  }
+  addYears(n: number): Carbon {
+    const d = this.clone();
+    d.setFullYear(d.getFullYear() + n);
+    return d;
+  }
+  subYear(): Carbon {
+    return this.addYears(-1);
+  }
+  subYears(n: number): Carbon {
+    return this.addYears(-n);
+  }
 
-  addQuarter()                : Carbon { return this.addQuarters(1); }
-  addQuarters(n: number)      : Carbon { return this.addMonths(n * 3); }
-  subQuarter()                : Carbon { return this.addQuarters(-1); }
-  subQuarters(n: number)      : Carbon { return this.addMonths(-n * 3); }
+  addQuarter(): Carbon {
+    return this.addQuarters(1);
+  }
+  addQuarters(n: number): Carbon {
+    return this.addMonths(n * 3);
+  }
+  subQuarter(): Carbon {
+    return this.addQuarters(-1);
+  }
+  subQuarters(n: number): Carbon {
+    return this.addMonths(-n * 3);
+  }
 
-  addMonth()                  : Carbon { return this.addMonths(1); }
-  addMonths(n: number)        : Carbon { const d = this.clone(); d.setMonth(d.getMonth() + n); return d; }
-  subMonth()                  : Carbon { return this.addMonths(-1); }
-  subMonths(n: number)        : Carbon { return this.addMonths(-n); }
+  addMonth(): Carbon {
+    return this.addMonths(1);
+  }
+  addMonths(n: number): Carbon {
+    const d = this.clone();
+    d.setMonth(d.getMonth() + n);
+    return d;
+  }
+  subMonth(): Carbon {
+    return this.addMonths(-1);
+  }
+  subMonths(n: number): Carbon {
+    return this.addMonths(-n);
+  }
 
-  addWeek()                   : Carbon { return this.addWeeks(1); }
-  addWeeks(n: number)         : Carbon { return this.addDays(n * 7); }
-  subWeek()                   : Carbon { return this.addWeeks(-1); }
-  subWeeks(n: number)         : Carbon { return this.addDays(-n * 7); }
+  addWeek(): Carbon {
+    return this.addWeeks(1);
+  }
+  addWeeks(n: number): Carbon {
+    return this.addDays(n * 7);
+  }
+  subWeek(): Carbon {
+    return this.addWeeks(-1);
+  }
+  subWeeks(n: number): Carbon {
+    return this.addDays(-n * 7);
+  }
 
-  addDay()                    : Carbon { return this.addDays(1); }
-  addDays(n: number)          : Carbon { const d = this.clone(); d.setDate(d.getDate() + n); return d; }
-  subDay()                    : Carbon { return this.addDays(-1); }
-  subDays(n: number)          : Carbon { return this.addDays(-n); }
+  addDay(): Carbon {
+    return this.addDays(1);
+  }
+  addDays(n: number): Carbon {
+    const d = this.clone();
+    d.setDate(d.getDate() + n);
+    return d;
+  }
+  subDay(): Carbon {
+    return this.addDays(-1);
+  }
+  subDays(n: number): Carbon {
+    return this.addDays(-n);
+  }
 
-  addHour()                   : Carbon { return this.addHours(1); }
-  addHours(n: number)         : Carbon { const d = this.clone(); d.setHours(d.getHours() + n); return d; }
-  subHour()                   : Carbon { return this.addHours(-1); }
-  subHours(n: number)         : Carbon { return this.addHours(-n); }
+  addHour(): Carbon {
+    return this.addHours(1);
+  }
+  addHours(n: number): Carbon {
+    const d = this.clone();
+    d.setHours(d.getHours() + n);
+    return d;
+  }
+  subHour(): Carbon {
+    return this.addHours(-1);
+  }
+  subHours(n: number): Carbon {
+    return this.addHours(-n);
+  }
 
-  addMinute()                 : Carbon { return this.addMinutes(1); }
-  addMinutes(n: number)       : Carbon { const d = this.clone(); d.setMinutes(d.getMinutes() + n); return d; }
-  subMinute()                 : Carbon { return this.addMinutes(-1); }
-  subMinutes(n: number)       : Carbon { return this.addMinutes(-n); }
+  addMinute(): Carbon {
+    return this.addMinutes(1);
+  }
+  addMinutes(n: number): Carbon {
+    const d = this.clone();
+    d.setMinutes(d.getMinutes() + n);
+    return d;
+  }
+  subMinute(): Carbon {
+    return this.addMinutes(-1);
+  }
+  subMinutes(n: number): Carbon {
+    return this.addMinutes(-n);
+  }
 
-  addSecond()                 : Carbon { return this.addSeconds(1); }
-  addSeconds(n: number)       : Carbon { const d = this.clone(); d.setSeconds(d.getSeconds() + n); return d; }
-  subSecond()                 : Carbon { return this.addSeconds(-1); }
-  subSeconds(n: number)       : Carbon { return this.addSeconds(-n); }
+  addSecond(): Carbon {
+    return this.addSeconds(1);
+  }
+  addSeconds(n: number): Carbon {
+    const d = this.clone();
+    d.setSeconds(d.getSeconds() + n);
+    return d;
+  }
+  subSecond(): Carbon {
+    return this.addSeconds(-1);
+  }
+  subSeconds(n: number): Carbon {
+    return this.addSeconds(-n);
+  }
 
-  addMillisecond()            : Carbon { return this.addMilliseconds(1); }
-  addMilliseconds(n: number)  : Carbon { return Carbon.from(this.getTime() + n); }
-  subMillisecond()            : Carbon { return this.addMilliseconds(-1); }
-  subMilliseconds(n: number)  : Carbon { return Carbon.from(this.getTime() - n); }
+  addMillisecond(): Carbon {
+    return this.addMilliseconds(1);
+  }
+  addMilliseconds(n: number): Carbon {
+    return Carbon.from(this.getTime() + n);
+  }
+  subMillisecond(): Carbon {
+    return this.addMilliseconds(-1);
+  }
+  subMilliseconds(n: number): Carbon {
+    return Carbon.from(this.getTime() - n);
+  }
 
   // -------------------------------------------------------------------------
   // Diffs
@@ -400,12 +544,25 @@ export class Carbon extends Date {
     const future = diffSeconds > 0;
 
     let unit: string, value: number;
-    if (abs < 60)       { value = Math.round(abs);           unit = "second"; }
-    else if (abs < 3600)     { value = Math.round(abs / 60);      unit = "minute"; }
-    else if (abs < 86400)    { value = Math.round(abs / 3600);    unit = "hour";   }
-    else if (abs < 2592000)  { value = Math.round(abs / 86400);   unit = "day";    }
-    else if (abs < 31536000) { value = Math.round(abs / 2592000); unit = "month";  }
-    else                     { value = Math.round(abs / 31536000); unit = "year";  }
+    if (abs < 60) {
+      value = Math.round(abs);
+      unit = "second";
+    } else if (abs < 3600) {
+      value = Math.round(abs / 60);
+      unit = "minute";
+    } else if (abs < 86400) {
+      value = Math.round(abs / 3600);
+      unit = "hour";
+    } else if (abs < 2592000) {
+      value = Math.round(abs / 86400);
+      unit = "day";
+    } else if (abs < 31536000) {
+      value = Math.round(abs / 2592000);
+      unit = "month";
+    } else {
+      value = Math.round(abs / 31536000);
+      unit = "year";
+    }
 
     return `${value} ${unit}${value !== 1 ? "s" : ""} ${future ? "from now" : "ago"}`;
   }
@@ -414,21 +571,50 @@ export class Carbon extends Date {
   // Comparisons
   // -------------------------------------------------------------------------
 
-  isPast(): boolean    { return this.getTime() < Date.now(); }
-  isFuture(): boolean  { return this.getTime() > Date.now(); }
-  isToday(): boolean   { return this.isSameDay(Carbon.current()); }
-  isTomorrow(): boolean { return this.isSameDay(Carbon.tomorrow()); }
-  isYesterday(): boolean { return this.isSameDay(Carbon.yesterday()); }
+  isPast(): boolean {
+    return this.getTime() < Date.now();
+  }
+  isFuture(): boolean {
+    return this.getTime() > Date.now();
+  }
+  isToday(): boolean {
+    return this.isSameDay(Carbon.current());
+  }
+  isTomorrow(): boolean {
+    return this.isSameDay(Carbon.tomorrow());
+  }
+  isYesterday(): boolean {
+    return this.isSameDay(Carbon.yesterday());
+  }
 
-  isWeekend(): boolean { const d = this.getDay(); return d === 0 || d === 6; }
-  isWeekday(): boolean { return !this.isWeekend(); }
-  isMonday(): boolean    { return this.getDay() === MONDAY; }
-  isTuesday(): boolean   { return this.getDay() === TUESDAY; }
-  isWednesday(): boolean { return this.getDay() === WEDNESDAY; }
-  isThursday(): boolean  { return this.getDay() === THURSDAY; }
-  isFriday(): boolean    { return this.getDay() === FRIDAY; }
-  isSaturday(): boolean  { return this.getDay() === SATURDAY; }
-  isSunday(): boolean    { return this.getDay() === SUNDAY; }
+  isWeekend(): boolean {
+    const d = this.getDay();
+    return d === 0 || d === 6;
+  }
+  isWeekday(): boolean {
+    return !this.isWeekend();
+  }
+  isMonday(): boolean {
+    return this.getDay() === MONDAY;
+  }
+  isTuesday(): boolean {
+    return this.getDay() === TUESDAY;
+  }
+  isWednesday(): boolean {
+    return this.getDay() === WEDNESDAY;
+  }
+  isThursday(): boolean {
+    return this.getDay() === THURSDAY;
+  }
+  isFriday(): boolean {
+    return this.getDay() === FRIDAY;
+  }
+  isSaturday(): boolean {
+    return this.getDay() === SATURDAY;
+  }
+  isSunday(): boolean {
+    return this.getDay() === SUNDAY;
+  }
 
   isSameDay(other: Carbon | Date): boolean {
     return (
@@ -456,20 +642,35 @@ export class Carbon extends Date {
 
   isSame(other: Carbon | Date, unit: TimeUnit): boolean {
     switch (unit) {
-      case "year":   return this.isSameYear(other);
-      case "month":  return this.isSameMonth(other);
-      case "week":   return this.isSameDay(Carbon.from(other).startOfWeek());
-      case "day":    return this.isSameDay(other);
-      case "hour":   return this.isSameHour(other);
-      case "minute": return this.isSameHour(other) && this.getMinutes() === other.getMinutes();
-      case "second": return this.diffInSeconds(other) === 0;
+      case "year":
+        return this.isSameYear(other);
+      case "month":
+        return this.isSameMonth(other);
+      case "week":
+        return this.isSameDay(Carbon.from(other).startOfWeek());
+      case "day":
+        return this.isSameDay(other);
+      case "hour":
+        return this.isSameHour(other);
+      case "minute":
+        return this.isSameHour(other) && this.getMinutes() === other.getMinutes();
+      case "second":
+        return this.diffInSeconds(other) === 0;
     }
   }
 
-  isAfter(other: Carbon | Date): boolean   { return this.getTime() > other.getTime(); }
-  isBefore(other: Carbon | Date): boolean  { return this.getTime() < other.getTime(); }
-  isSameOrAfter(other: Carbon | Date): boolean  { return this.getTime() >= other.getTime(); }
-  isSameOrBefore(other: Carbon | Date): boolean { return this.getTime() <= other.getTime(); }
+  isAfter(other: Carbon | Date): boolean {
+    return this.getTime() > other.getTime();
+  }
+  isBefore(other: Carbon | Date): boolean {
+    return this.getTime() < other.getTime();
+  }
+  isSameOrAfter(other: Carbon | Date): boolean {
+    return this.getTime() >= other.getTime();
+  }
+  isSameOrBefore(other: Carbon | Date): boolean {
+    return this.getTime() <= other.getTime();
+  }
 
   isBetween(start: Carbon | Date, end: Carbon | Date, inclusive = false): boolean {
     return inclusive
@@ -555,19 +756,27 @@ export class Carbon extends Date {
   // -------------------------------------------------------------------------
 
   setYear(year: number): Carbon {
-    const d = this.clone(); d.setFullYear(year); return d;
+    const d = this.clone();
+    d.setFullYear(year);
+    return d;
   }
 
   setMonthOfYear(month: number): Carbon {
-    const d = this.clone(); d.setMonth(month - 1); return d;
+    const d = this.clone();
+    d.setMonth(month - 1);
+    return d;
   }
 
   setDateOfMonth(day: number): Carbon {
-    const d = this.clone(); d.setDate(day); return d;
+    const d = this.clone();
+    d.setDate(day);
+    return d;
   }
 
   setTimeOfDay(h: number, m = 0, s = 0, ms = 0): Carbon {
-    const d = this.clone(); d.setHours(h, m, s, ms); return d;
+    const d = this.clone();
+    d.setHours(h, m, s, ms);
+    return d;
   }
 
   setTimestamp(ts: number): Carbon {
@@ -593,17 +802,32 @@ export class Carbon extends Date {
   }
 
   toObject(): {
-    year: number; month: number; day: number;
-    hour: number; minute: number; second: number;
-    millisecond: number; timestamp: number; dayOfWeek: WeekDay;
-    quarter: number; weekOfYear: number; dayOfYear: number;
+    year: number;
+    month: number;
+    day: number;
+    hour: number;
+    minute: number;
+    second: number;
+    millisecond: number;
+    timestamp: number;
+    dayOfWeek: WeekDay;
+    quarter: number;
+    weekOfYear: number;
+    dayOfYear: number;
   } {
     return {
-      year: this.year, month: this.month, day: this.day,
-      hour: this.hour, minute: this.minute, second: this.second,
-      millisecond: this.millisecond, timestamp: this.timestamp,
-      dayOfWeek: this.dayOfWeek, quarter: this.quarter,
-      weekOfYear: this.weekOfYear, dayOfYear: this.dayOfYear,
+      year: this.year,
+      month: this.month,
+      day: this.day,
+      hour: this.hour,
+      minute: this.minute,
+      second: this.second,
+      millisecond: this.millisecond,
+      timestamp: this.timestamp,
+      dayOfWeek: this.dayOfWeek,
+      quarter: this.quarter,
+      weekOfYear: this.weekOfYear,
+      dayOfYear: this.dayOfYear,
     };
   }
 
@@ -618,45 +842,58 @@ export class Carbon extends Date {
   format(formatStr = "YYYY-MM-DD HH:mm:ss"): string {
     const pad = (n: number, len = 2) => n.toString().padStart(len, "0");
     const map: Record<string, string> = {
-      YYYY:  this.getFullYear().toString(),
-      YY:    this.getFullYear().toString().slice(-2),
-      MM:    pad(this.getMonth() + 1),
-      M:     (this.getMonth() + 1).toString(),
-      DD:    pad(this.getDate()),
-      D:     this.getDate().toString(),
-      HH:    pad(this.getHours()),
-      H:     this.getHours().toString(),
-      hh:    pad(this.getHours() % 12 || 12),
-      h:     (this.getHours() % 12 || 12).toString(),
-      mm:    pad(this.getMinutes()),
-      m:     this.getMinutes().toString(),
-      ss:    pad(this.getSeconds()),
-      s:     this.getSeconds().toString(),
-      SSS:   pad(this.getMilliseconds(), 3),
-      A:     this.getHours() < 12 ? "AM" : "PM",
-      a:     this.getHours() < 12 ? "am" : "pm",
-      dddd:  this.dayName,
-      ddd:   this.shortDayName,
-      MMMM:  this.monthName,
-      MMM:   this.shortMonthName,
-      Q:     this.quarter.toString(),
-      X:     this.timestamp.toString(),
-      x:     this.getTime().toString(),
-      W:     this.weekOfYear.toString(),
-      WW:    pad(this.weekOfYear),
-      DDD:   this.dayOfYear.toString(),
+      YYYY: this.getFullYear().toString(),
+      YY: this.getFullYear().toString().slice(-2),
+      MM: pad(this.getMonth() + 1),
+      M: (this.getMonth() + 1).toString(),
+      DD: pad(this.getDate()),
+      D: this.getDate().toString(),
+      HH: pad(this.getHours()),
+      H: this.getHours().toString(),
+      hh: pad(this.getHours() % 12 || 12),
+      h: (this.getHours() % 12 || 12).toString(),
+      mm: pad(this.getMinutes()),
+      m: this.getMinutes().toString(),
+      ss: pad(this.getSeconds()),
+      s: this.getSeconds().toString(),
+      SSS: pad(this.getMilliseconds(), 3),
+      A: this.getHours() < 12 ? "AM" : "PM",
+      a: this.getHours() < 12 ? "am" : "pm",
+      dddd: this.dayName,
+      ddd: this.shortDayName,
+      MMMM: this.monthName,
+      MMM: this.shortMonthName,
+      Q: this.quarter.toString(),
+      X: this.timestamp.toString(),
+      x: this.getTime().toString(),
+      W: this.weekOfYear.toString(),
+      WW: pad(this.weekOfYear),
+      DDD: this.dayOfYear.toString(),
     };
 
-    const pattern = /YYYY|YY|MMMM|MMM|MM|M|DD|D|HH|hh|H|h|mm|m|ss|s|SSS|A|a|dddd|ddd|Q|X|x|WW|W|DDD/g;
+    const pattern =
+      /YYYY|YY|MMMM|MMM|MM|M|DD|D|HH|hh|H|h|mm|m|ss|s|SSS|A|a|dddd|ddd|Q|X|x|WW|W|DDD/g;
     return formatStr.replace(pattern, (token) => map[token] ?? token);
   }
 
   // Override to avoid Date's native toDateString collision
-  toDateOnlyString(): string  { return this.format("YYYY-MM-DD"); }
-  toDateTimeString(): string  { return this.format("YYYY-MM-DD HH:mm:ss"); }
-  toTimeOnlyString(): string  { return this.format("HH:mm:ss"); }
-  toAtomString(): string      { return this.toISOString(); }
-  toRfc2822String(): string   { return this.toUTCString(); }
+  toDateOnlyString(): string {
+    return this.format("YYYY-MM-DD");
+  }
+  toDateTimeString(): string {
+    return this.format("YYYY-MM-DD HH:mm:ss");
+  }
+  toTimeOnlyString(): string {
+    return this.format("HH:mm:ss");
+  }
+  toAtomString(): string {
+    return this.toISOString();
+  }
+  toRfc2822String(): string {
+    return this.toUTCString();
+  }
 
-  humanize(): string { return this.diffForHumans(); }
+  humanize(): string {
+    return this.diffForHumans();
+  }
 }

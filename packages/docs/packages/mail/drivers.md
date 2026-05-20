@@ -39,23 +39,23 @@ Try multiple mailers in order:
 ```typescript
 // config/mail.config.ts
 export default {
-  driver: 'failover',
+  driver: "failover",
   failover: {
-    mailers: ['smtp', 'log'],
+    mailers: ["smtp", "log"],
   },
-}
+};
 ```
 
 ## Switching Drivers
 
 ```typescript
-import { MailManager } from '@lara-node/mail'
+import { MailManager } from "@lara-node/mail";
 
-const manager = new MailManager()
+const manager = new MailManager();
 
 // Use specific mailer
-manager.mailer('smtp').send(mailable)
-manager.mailer('log').send(mailable)
+manager.mailer("smtp").send(mailable);
+manager.mailer("log").send(mailable);
 ```
 
 ## Next Steps

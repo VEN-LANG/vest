@@ -8,25 +8,25 @@ Define relationships in the static `relationships` property:
 
 ```typescript
 class User extends Model {
-  static table = 'users'
+  static table = "users";
 
   static relationships = {
     posts: {
-      type: 'hasMany',
+      type: "hasMany",
       model: () => Post,
-      foreignKey: 'user_id',
+      foreignKey: "user_id",
     },
     profile: {
-      type: 'hasOne',
+      type: "hasOne",
       model: () => Profile,
-      foreignKey: 'user_id',
+      foreignKey: "user_id",
     },
     role: {
-      type: 'belongsTo',
+      type: "belongsTo",
       model: () => Role,
-      foreignKey: 'role_id',
+      foreignKey: "role_id",
     },
-  }
+  };
 }
 ```
 
@@ -38,16 +38,16 @@ One-to-one relationship:
 class User extends Model {
   static relationships = {
     profile: {
-      type: 'hasOne',
+      type: "hasOne",
       model: () => Profile,
-      foreignKey: 'user_id',
+      foreignKey: "user_id",
     },
-  }
+  };
 }
 
 // Access
-const user = await User.find(1)
-const profile = await user.profile
+const user = await User.find(1);
+const profile = await user.profile;
 ```
 
 ## Has Many
@@ -58,15 +58,15 @@ One-to-many relationship:
 class User extends Model {
   static relationships = {
     posts: {
-      type: 'hasMany',
+      type: "hasMany",
       model: () => Post,
-      foreignKey: 'user_id',
+      foreignKey: "user_id",
     },
-  }
+  };
 }
 
 // Access
-const posts = await user.posts
+const posts = await user.posts;
 ```
 
 ## Belongs To
@@ -77,15 +77,15 @@ Inverse of hasOne/hasMany:
 class Post extends Model {
   static relationships = {
     author: {
-      type: 'belongsTo',
+      type: "belongsTo",
       model: () => User,
-      foreignKey: 'user_id',
+      foreignKey: "user_id",
     },
-  }
+  };
 }
 
 // Access
-const author = await post.author
+const author = await post.author;
 ```
 
 ## Belongs To Many
@@ -96,21 +96,21 @@ Many-to-many relationship with pivot table:
 class User extends Model {
   static relationships = {
     roles: {
-      type: 'belongsToMany',
+      type: "belongsToMany",
       model: () => Role,
-      pivotTable: 'role_user',
-      foreignKey: 'user_id',
-      relatedKey: 'role_id',
+      pivotTable: "role_user",
+      foreignKey: "user_id",
+      relatedKey: "role_id",
     },
-  }
+  };
 }
 
 // Access
-const roles = await user.roles
+const roles = await user.roles;
 
 // With pivot data
 for (const role of roles) {
-  console.log(role.pivot.created_at)
+  console.log(role.pivot.created_at);
 }
 ```
 
@@ -120,13 +120,13 @@ for (const role of roles) {
 class User extends Model {
   static relationships = {
     phone: {
-      type: 'hasOneThrough',
+      type: "hasOneThrough",
       model: () => Phone,
       through: () => Profile,
-      firstKey: 'user_id',
-      secondKey: 'profile_id',
+      firstKey: "user_id",
+      secondKey: "profile_id",
     },
-  }
+  };
 }
 ```
 
@@ -136,13 +136,13 @@ class User extends Model {
 class Country extends Model {
   static relationships = {
     posts: {
-      type: 'hasManyThrough',
+      type: "hasManyThrough",
       model: () => Post,
       through: () => User,
-      firstKey: 'country_id',
-      secondKey: 'user_id',
+      firstKey: "country_id",
+      secondKey: "user_id",
     },
-  }
+  };
 }
 ```
 
@@ -152,75 +152,75 @@ Load relationships to avoid N+1 queries:
 
 ```typescript
 // Load single relationship
-const users = await User.with('posts').get()
+const users = await User.with("posts").get();
 
 // Load multiple
-const users = await User.with('posts', 'profile', 'roles').get()
+const users = await User.with("posts", "profile", "roles").get();
 
 // Constrained loading
 const users = await User.with({
-  posts: (query) => query.where('published', true).limit(5),
-}).get()
+  posts: (query) => query.where("published", true).limit(5),
+}).get();
 ```
 
 ## Querying Relationships
 
 ```typescript
 // Where has relationship
-const users = await User.whereHas('posts', (query) => {
-  query.where('published', true)
-}).get()
+const users = await User.whereHas("posts", (query) => {
+  query.where("published", true);
+}).get();
 
 // Where doesnt have
-const users = await User.whereDoesntHave('posts').get()
+const users = await User.whereDoesntHave("posts").get();
 ```
 
 ## Complete Example
 
 ```typescript
 class User extends Model {
-  static table = 'users'
-  static fillable = ['name', 'email']
+  static table = "users";
+  static fillable = ["name", "email"];
 
   static relationships = {
     posts: {
-      type: 'hasMany',
+      type: "hasMany",
       model: () => Post,
-      foreignKey: 'user_id',
+      foreignKey: "user_id",
     },
     profile: {
-      type: 'hasOne',
+      type: "hasOne",
       model: () => Profile,
-      foreignKey: 'user_id',
+      foreignKey: "user_id",
     },
     roles: {
-      type: 'belongsToMany',
+      type: "belongsToMany",
       model: () => Role,
-      pivotTable: 'role_user',
-      foreignKey: 'user_id',
-      relatedKey: 'role_id',
+      pivotTable: "role_user",
+      foreignKey: "user_id",
+      relatedKey: "role_id",
     },
-  }
+  };
 }
 
 class Post extends Model {
-  static table = 'posts'
-  static fillable = ['title', 'content', 'user_id']
+  static table = "posts";
+  static fillable = ["title", "content", "user_id"];
 
   static relationships = {
     author: {
-      type: 'belongsTo',
+      type: "belongsTo",
       model: () => User,
-      foreignKey: 'user_id',
+      foreignKey: "user_id",
     },
-  }
+  };
 }
 
 // Usage
-const user = await User.with('posts', 'profile', 'roles').find(1)
-console.log(user.posts.length)
-console.log(user.profile.bio)
-console.log(user.roles.map(r => r.name))
+const user = await User.with("posts", "profile", "roles").find(1);
+console.log(user.posts.length);
+console.log(user.profile.bio);
+console.log(user.roles.map((r) => r.name));
 ```
 
 ## Next Steps

@@ -76,17 +76,17 @@ Create `tsconfig.json`:
 Create `src/bootstrap/app.ts`:
 
 ```typescript
-import { Application, Container } from '@lara-node/core'
-import { AppServiceProvider } from '../app/Providers/AppServiceProvider'
-import { RouteServiceProvider } from '../app/Providers/RouteServiceProvider'
+import { Application, Container } from "@lara-node/core";
+import { AppServiceProvider } from "../app/Providers/AppServiceProvider";
+import { RouteServiceProvider } from "../app/Providers/RouteServiceProvider";
 
-const container = new Container()
-const app = new Application(container)
+const container = new Container();
+const app = new Application(container);
 
-app.register(AppServiceProvider)
-app.register(RouteServiceProvider)
+app.register(AppServiceProvider);
+app.register(RouteServiceProvider);
 
-export { app }
+export { app };
 ```
 
 ### 5. Create Service Provider
@@ -94,7 +94,7 @@ export { app }
 Create `src/app/Providers/AppServiceProvider.ts`:
 
 ```typescript
-import { ServiceProvider } from '@lara-node/core'
+import { ServiceProvider } from "@lara-node/core";
 
 export class AppServiceProvider extends ServiceProvider {
   register() {
@@ -112,16 +112,16 @@ export class AppServiceProvider extends ServiceProvider {
 Create `src/server.ts`:
 
 ```typescript
-import { app } from './bootstrap/app'
-import 'reflect-metadata'
+import { app } from "./bootstrap/app";
+import "reflect-metadata";
 
 async function bootstrap() {
-  await app.boot()
-  await app.listen(3000)
-  console.log('Server running on http://localhost:3000')
+  await app.boot();
+  await app.listen(3000);
+  console.log("Server running on http://localhost:3000");
 }
 
-bootstrap()
+bootstrap();
 ```
 
 ### 7. Start Development

@@ -29,7 +29,7 @@ import {
   ErrorHandlerMiddleware,
   ValidatorMiddleware,
   ResponseExtenderMiddleware,
-} from '@lara-node/middlewares'
+} from "@lara-node/middlewares";
 
 export class MiddlewareProvider extends MiddlewareServiceProvider {
   registerMiddleware() {
@@ -41,27 +41,27 @@ export class MiddlewareProvider extends MiddlewareServiceProvider {
         errorHandler: ErrorHandlerMiddleware,
       },
       groups: {
-        api: ['errorHandler', 'logger', 'validator', 'auth'],
+        api: ["errorHandler", "logger", "validator", "auth"],
       },
-      priority: ['errorHandler'],
-    }
+      priority: ["errorHandler"],
+    };
   }
 }
 ```
 
 ## Key Exports
 
-| Export | Description |
-|--------|-------------|
-| `AuthMiddleware` | JWT authentication |
-| `RequestLoggerMiddleware` | Request logging |
-| `ValidatorMiddleware` | Request validation |
-| `ResponseExtenderMiddleware` | Auto-serialize models |
-| `ErrorHandlerMiddleware` | Error handling |
-| `AuthorizeByStatusMiddleware` | Status check |
-| `authorizeRoles()` | Role authorization |
-| `authorizePermissions()` | Permission authorization |
-| `AsyncContextMiddleware` | AsyncLocalStorage |
+| Export                        | Description              |
+| ----------------------------- | ------------------------ |
+| `AuthMiddleware`              | JWT authentication       |
+| `RequestLoggerMiddleware`     | Request logging          |
+| `ValidatorMiddleware`         | Request validation       |
+| `ResponseExtenderMiddleware`  | Auto-serialize models    |
+| `ErrorHandlerMiddleware`      | Error handling           |
+| `AuthorizeByStatusMiddleware` | Status check             |
+| `authorizeRoles()`            | Role authorization       |
+| `authorizePermissions()`      | Permission authorization |
+| `AsyncContextMiddleware`      | AsyncLocalStorage        |
 
 ## Next Steps
 

@@ -5,41 +5,40 @@ Apply middleware to individual routes or groups.
 ## Route-Level Middleware
 
 ```typescript
-Route.get('/profile', UserController.profile)
-  .middleware('auth')
+Route.get("/profile", UserController.profile).middleware("auth");
 
-Route.get('/admin', AdminController.index)
-  .middleware(['auth', 'admin'])
+Route.get("/admin", AdminController.index).middleware(["auth", "admin"]);
 ```
 
 ## Middleware with Parameters
 
 ```typescript
-Route.get('/api/data', DataController.index)
-  .middleware('throttle:60,1') // 60 requests per minute
+Route.get("/api/data", DataController.index).middleware("throttle:60,1"); // 60 requests per minute
 ```
 
 ## Group Middleware
 
 ```typescript
 Route.group(() => {
-  Route.get('/users', UserController.index)
-  Route.post('/users', UserController.store)
-}).middleware('api')
+  Route.get("/users", UserController.index);
+  Route.post("/users", UserController.store);
+}).middleware("api");
 ```
 
 ## Without Middleware
 
 ```typescript
 Route.group(() => {
-  Route.get('/public', PublicController.index)
-}).middleware('api').withoutMiddleware('auth')
+  Route.get("/public", PublicController.index);
+})
+  .middleware("api")
+  .withoutMiddleware("auth");
 ```
 
 ## Registering Middleware Aliases
 
 ```typescript
-import { MiddlewareServiceProvider } from '@lara-node/core'
+import { MiddlewareServiceProvider } from "@lara-node/core";
 
 export class MiddlewareProvider extends MiddlewareServiceProvider {
   registerMiddleware() {
@@ -50,10 +49,10 @@ export class MiddlewareProvider extends MiddlewareServiceProvider {
         throttle: ThrottleMiddleware,
       },
       groups: {
-        api: ['throttle:60,1', 'auth'],
-        web: ['session'],
+        api: ["throttle:60,1", "auth"],
+        web: ["session"],
       },
-    }
+    };
   }
 }
 ```

@@ -168,7 +168,10 @@ export class HorizonServiceProvider extends ServiceProvider {
     router.post("/api/scheduler/:name/run", async (req, res) => {
       try {
         const ok = await HorizonManager.runSchedulerTask(decodeURIComponent(req.params.name));
-        if (!ok) { res.status(404).json({ error: "Task not found or running in another process" }); return; }
+        if (!ok) {
+          res.status(404).json({ error: "Task not found or running in another process" });
+          return;
+        }
         res.json({ success: true });
       } catch (e: any) {
         res.status(500).json({ error: e.message });
@@ -182,7 +185,10 @@ export class HorizonServiceProvider extends ServiceProvider {
     */
     router.post("/api/workers", (req, res) => {
       const def = req.body as import("./HorizonManager.js").WorkerDefinition;
-      if (!def?.id) { res.status(400).json({ error: "id required" }); return; }
+      if (!def?.id) {
+        res.status(400).json({ error: "id required" });
+        return;
+      }
       HorizonManager.startWorker(def);
       res.json({ success: true, id: def.id });
     });

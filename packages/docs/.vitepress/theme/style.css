@@ -1,7 +1,7 @@
 :root {
-  --vp-c-brand-1: #FF2D20;
-  --vp-c-brand-2: #FF4136;
-  --vp-c-brand-3: #E0251B;
+  --vp-c-brand-1: #ff2d20;
+  --vp-c-brand-2: #ff4136;
+  --vp-c-brand-3: #e0251b;
   --vp-c-brand-soft: rgba(255, 45, 32, 0.14);
 
   --vp-c-bg: #ffffff;
@@ -14,9 +14,9 @@
 }
 
 .dark {
-  --vp-c-brand-1: #FF6B62;
-  --vp-c-brand-2: #FF4136;
-  --vp-c-brand-3: #FF2D20;
+  --vp-c-brand-1: #ff6b62;
+  --vp-c-brand-2: #ff4136;
+  --vp-c-brand-3: #ff2d20;
   --vp-c-brand-soft: rgba(255, 107, 98, 0.16);
 
   --vp-c-bg: #0f172a;
@@ -58,7 +58,9 @@
 
 .VPFeature {
   border-radius: 12px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .VPFeature:hover {

@@ -50,19 +50,19 @@ my-app/
 
 Contains your application's business logic:
 
-| Directory | Purpose |
-|-----------|---------|
-| `Events/` | Event classes that can be dispatched |
-| `Http/Controllers/` | HTTP controllers handling requests |
-| `Http/Kernel.ts` | HTTP kernel with middleware configuration |
-| `Jobs/` | Queueable job classes |
-| `Listeners/` | Event listener classes |
-| `Mail/` | Mailable email classes |
-| `Middleware/` | Custom HTTP middleware |
-| `Models/` | Database model classes |
-| `Observers/` | Model observer classes |
-| `Providers/` | Service provider classes |
-| `Services/` | Business logic service classes |
+| Directory           | Purpose                                   |
+| ------------------- | ----------------------------------------- |
+| `Events/`           | Event classes that can be dispatched      |
+| `Http/Controllers/` | HTTP controllers handling requests        |
+| `Http/Kernel.ts`    | HTTP kernel with middleware configuration |
+| `Jobs/`             | Queueable job classes                     |
+| `Listeners/`        | Event listener classes                    |
+| `Mail/`             | Mailable email classes                    |
+| `Middleware/`       | Custom HTTP middleware                    |
+| `Models/`           | Database model classes                    |
+| `Observers/`        | Model observer classes                    |
+| `Providers/`        | Service provider classes                  |
+| `Services/`         | Business logic service classes            |
 
 ### `src/bootstrap/`
 
@@ -105,26 +105,26 @@ Route definitions:
 ### server.ts
 
 ```typescript
-import { app } from './bootstrap/app'
-import 'reflect-metadata'
+import { app } from "./bootstrap/app";
+import "reflect-metadata";
 
 async function bootstrap() {
-  await app.boot()
-  await app.listen(3000)
-  console.log('Server running on http://localhost:3000')
+  await app.boot();
+  await app.listen(3000);
+  console.log("Server running on http://localhost:3000");
 }
 
-bootstrap()
+bootstrap();
 ```
 
 ### artisan.ts
 
 ```typescript
-import { Kernel } from '@lara-node/console'
-import 'reflect-metadata'
+import { Kernel } from "@lara-node/console";
+import "reflect-metadata";
 
-const kernel = new Kernel()
-kernel.handle(process.argv)
+const kernel = new Kernel();
+kernel.handle(process.argv);
 ```
 
 ## Customizing Structure

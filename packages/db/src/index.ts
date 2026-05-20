@@ -1,4 +1,14 @@
-export { getDbType, query, initDatabase, closeDatabase, getPool, getMongoDb, collection, __setMongoDbForTest, __setPoolForTest } from "./connection.js";
+export {
+  getDbType,
+  query,
+  initDatabase,
+  closeDatabase,
+  getPool,
+  getMongoDb,
+  collection,
+  __setMongoDbForTest,
+  __setPoolForTest,
+} from "./connection.js";
 export type { ITransaction, IMysqlTransaction } from "./DB.js";
 export { default as DB } from "./DB.js";
 export { Model, use } from "./Model.js";

@@ -13,8 +13,8 @@ pnpm add @lara-node/horizon
 1. Register the service provider:
 
 ```ts
-import { Application } from '@lara-node/core';
-import { HorizonServiceProvider } from '@lara-node/horizon';
+import { Application } from "@lara-node/core";
+import { HorizonServiceProvider } from "@lara-node/horizon";
 
 const app = new Application(container);
 app.register(HorizonServiceProvider);
@@ -37,16 +37,16 @@ node artisan horizon:start
 Manages worker processes for the supervisor.
 
 ```ts
-import { HorizonManager } from '@lara-node/horizon';
+import { HorizonManager } from "@lara-node/horizon";
 
 const manager = new HorizonManager();
 
 // Start a worker
 await manager.startWorker({
-  name: 'main',
-  connection: 'redis',
-  queue: ['default', 'high'],
-  balance: 'auto',
+  name: "main",
+  connection: "redis",
+  queue: ["default", "high"],
+  balance: "auto",
   processes: 10,
   tries: 3,
   memory: 128,
@@ -54,9 +54,9 @@ await manager.startWorker({
 });
 
 // Control workers
-await manager.stopWorker('main');
-await manager.pauseWorker('main');
-await manager.resumeWorker('main');
+await manager.stopWorker("main");
+await manager.pauseWorker("main");
+await manager.resumeWorker("main");
 
 // Inspect
 const workers = manager.getWorkers();
@@ -102,31 +102,31 @@ Authorization: Bearer my-secret-token
 Create `config/horizon.config.ts` (or wherever your config loader points):
 
 ```ts
-import { HorizonConfig } from '@lara-node/horizon';
+import { HorizonConfig } from "@lara-node/horizon";
 
 export default {
   enabled: true,
-  path: '/horizon',
+  path: "/horizon",
   token: process.env.HORIZON_TOKEN,
 
   environments: {
     production: {
       supervisor: [
         {
-          name: 'main',
-          connection: 'redis',
-          queue: ['high', 'default', 'low'],
-          balance: 'auto',     // 'auto' | 'simple' | 'false'
+          name: "main",
+          connection: "redis",
+          queue: ["high", "default", "low"],
+          balance: "auto", // 'auto' | 'simple' | 'false'
           processes: 10,
           tries: 3,
-          memory: 128,         // MB — worker restarts if it exceeds this
-          timeout: 60,         // seconds
+          memory: 128, // MB — worker restarts if it exceeds this
+          timeout: 60, // seconds
         },
         {
-          name: 'notifications',
-          connection: 'redis',
-          queue: ['notifications'],
-          balance: 'simple',
+          name: "notifications",
+          connection: "redis",
+          queue: ["notifications"],
+          balance: "simple",
           processes: 3,
           tries: 5,
           memory: 64,
@@ -138,10 +138,10 @@ export default {
     local: {
       supervisor: [
         {
-          name: 'main',
-          connection: 'redis',
-          queue: ['default'],
-          balance: 'false',
+          name: "main",
+          connection: "redis",
+          queue: ["default"],
+          balance: "false",
           processes: 3,
           tries: 1,
           memory: 128,
@@ -156,22 +156,22 @@ export default {
 Load it in a service provider:
 
 ```ts
-import { setConfig } from '@lara-node/core';
-import horizonConfig from '../config/horizon.config';
+import { setConfig } from "@lara-node/core";
+import horizonConfig from "../config/horizon.config";
 
-setConfig('horizon', horizonConfig);
+setConfig("horizon", horizonConfig);
 ```
 
 ## Environment Variables
 
-| Variable           | Default    | Description                                                     |
-|--------------------|------------|-----------------------------------------------------------------|
-| `HORIZON_ENABLED`  | `true`     | Set to `false` to disable Horizon entirely                      |
-| `HORIZON_PATH`     | `/horizon` | URL path where the dashboard is mounted                         |
-| `HORIZON_TOKEN`    | —          | Optional access token for dashboard protection                  |
-| `HORIZON_QUEUES`   | `default`  | Comma-separated queue names for the default supervisor          |
-| `HORIZON_PROCESSES`| `10`       | Number of worker processes (`3` in local environment)           |
-| `QUEUE_CONNECTION` | —          | Underlying queue driver used by workers                         |
+| Variable            | Default    | Description                                            |
+| ------------------- | ---------- | ------------------------------------------------------ |
+| `HORIZON_ENABLED`   | `true`     | Set to `false` to disable Horizon entirely             |
+| `HORIZON_PATH`      | `/horizon` | URL path where the dashboard is mounted                |
+| `HORIZON_TOKEN`     | —          | Optional access token for dashboard protection         |
+| `HORIZON_QUEUES`    | `default`  | Comma-separated queue names for the default supervisor |
+| `HORIZON_PROCESSES` | `10`       | Number of worker processes (`3` in local environment)  |
+| `QUEUE_CONNECTION`  | —          | Underlying queue driver used by workers                |
 
 ## Notes
 

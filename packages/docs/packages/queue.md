@@ -25,17 +25,17 @@ Features include:
 ### Create a Job
 
 ```typescript
-import { Job, Queueable } from '@lara-node/queue'
+import { Job, Queueable } from "@lara-node/queue";
 
 @Queueable()
 class SendWelcomeEmail extends Job {
   constructor(private userId: number) {
-    super()
+    super();
   }
 
   async handle() {
-    const user = await User.find(this.userId)
-    await Mail.to(user.email).send(new WelcomeMail(user))
+    const user = await User.find(this.userId);
+    await Mail.to(user.email).send(new WelcomeMail(user));
   }
 }
 ```
@@ -44,43 +44,40 @@ class SendWelcomeEmail extends Job {
 
 ```typescript
 // Dispatch to queue
-await SendWelcomeEmail.dispatch(userId)
+await SendWelcomeEmail.dispatch(userId);
 
 // Dispatch with options
-await SendWelcomeEmail.dispatch(userId)
-  .onQueue('emails')
-  .withDelay(60)
-  .withTries(3)
+await SendWelcomeEmail.dispatch(userId).onQueue("emails").withDelay(60).withTries(3);
 ```
 
 ## Key Exports
 
-| Export | Description |
-|--------|-------------|
-| `Job` | Base job class |
-| `@Queueable()` | Job decorator |
-| `dispatch()` | Dispatch helper |
-| `PendingDispatch` | Fluent dispatch builder |
-| `Queue` / `QueueManager` | Queue manager |
-| `Worker` | Queue worker daemon |
-| `Schedule` / `scheduler` | Task scheduler |
+| Export                   | Description             |
+| ------------------------ | ----------------------- |
+| `Job`                    | Base job class          |
+| `@Queueable()`           | Job decorator           |
+| `dispatch()`             | Dispatch helper         |
+| `PendingDispatch`        | Fluent dispatch builder |
+| `Queue` / `QueueManager` | Queue manager           |
+| `Worker`                 | Queue worker daemon     |
+| `Schedule` / `scheduler` | Task scheduler          |
 
 ## Configuration
 
 ```typescript
 // config/queue.config.ts
 export default {
-  default: process.env.QUEUE_CONNECTION || 'sync',
+  default: process.env.QUEUE_CONNECTION || "sync",
   connections: {
-    sync: { driver: 'sync' },
-    database: { driver: 'database', table: 'jobs' },
+    sync: { driver: "sync" },
+    database: { driver: "database", table: "jobs" },
     redis: {
-      driver: 'redis',
+      driver: "redis",
       host: process.env.REDIS_HOST,
-      port: parseInt(process.env.REDIS_PORT || '6379'),
+      port: parseInt(process.env.REDIS_PORT || "6379"),
     },
   },
-}
+};
 ```
 
 ## Next Steps

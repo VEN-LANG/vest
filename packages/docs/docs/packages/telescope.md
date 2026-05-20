@@ -25,21 +25,21 @@ Features include:
 Telescope is automatically registered when you install the `TelescopeServiceProvider`:
 
 ```typescript
-import { TelescopeServiceProvider } from '@lara-node/telescope'
+import { TelescopeServiceProvider } from "@lara-node/telescope";
 
-app.register(TelescopeServiceProvider)
+app.register(TelescopeServiceProvider);
 ```
 
 Visit `/telescope` to access the dashboard.
 
 ## Key Exports
 
-| Export | Description |
-|--------|-------------|
-| `TelescopeStore` | Entry store |
-| `TelescopeDashboard` | HTTP dashboard |
-| `QueryWatcher` | Query watcher |
-| `CacheWatcher` | Cache watcher |
+| Export                     | Description       |
+| -------------------------- | ----------------- |
+| `TelescopeStore`           | Entry store       |
+| `TelescopeDashboard`       | HTTP dashboard    |
+| `QueryWatcher`             | Query watcher     |
+| `CacheWatcher`             | Cache watcher     |
 | `TelescopeServiceProvider` | Auto-registration |
 
 ## Next Steps

@@ -16,11 +16,9 @@ let mongoDb: Db | undefined;
 // before dotenv/config runs.
 
 function readDbType(): "mysql" | "mongodb" {
-  return (
-    (process.env.DB_CONNECTION || process.env.DB_DRIVER || "mysql").toLowerCase() as
-      | "mysql"
-      | "mongodb"
-  );
+  return (process.env.DB_CONNECTION || process.env.DB_DRIVER || "mysql").toLowerCase() as
+    | "mysql"
+    | "mongodb";
 }
 
 function readMysqlCfg() {
@@ -192,7 +190,10 @@ export async function initDatabase(): Promise<void> {
         : isReplicaSet;
 
   const clientOptions: Record<string, unknown> = {
-    serverSelectionTimeoutMS: parseInt(process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS || "10000", 10),
+    serverSelectionTimeoutMS: parseInt(
+      process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS || "10000",
+      10,
+    ),
     retryWrites,
   };
 
@@ -204,7 +205,10 @@ export async function initDatabase(): Promise<void> {
     clientOptions.replicaSet = replicaSet;
   }
 
-  const client = new MongoClient(mongoUri, clientOptions as ConstructorParameters<typeof MongoClient>[1]);
+  const client = new MongoClient(
+    mongoUri,
+    clientOptions as ConstructorParameters<typeof MongoClient>[1],
+  );
   await client.connect();
   mongoClient = client;
   mongoDb = client.db(dbName);

@@ -7,23 +7,23 @@ Configure Horizon for your environment.
 ```typescript
 // config/horizon.config.ts
 export default {
-  domain: '',
-  path: '/horizon',
+  domain: "",
+  path: "/horizon",
   environments: {
     production: {
       supervisor: {
         maxProcesses: 10,
-        balance: 'auto',
+        balance: "auto",
         workers: {
           default: {
-            connection: 'redis',
-            queue: ['default'],
+            connection: "redis",
+            queue: ["default"],
             tries: 3,
             timeout: 60,
           },
           emails: {
-            connection: 'redis',
-            queue: ['emails'],
+            connection: "redis",
+            queue: ["emails"],
             tries: 3,
             timeout: 120,
           },
@@ -35,14 +35,14 @@ export default {
         maxProcesses: 3,
         workers: {
           default: {
-            connection: 'redis',
-            queue: ['default'],
+            connection: "redis",
+            queue: ["default"],
           },
         },
       },
     },
   },
-}
+};
 ```
 
 ## Environment Variables
@@ -53,20 +53,20 @@ HORIZON_PATH=/horizon
 
 ## Supervisor Configuration
 
-| Option | Description |
-|--------|-------------|
+| Option         | Description              |
+| -------------- | ------------------------ |
 | `maxProcesses` | Maximum worker processes |
-| `balance` | Load balancing strategy |
-| `workers` | Worker definitions |
+| `balance`      | Load balancing strategy  |
+| `workers`      | Worker definitions       |
 
 ## Worker Configuration
 
-| Option | Description |
-|--------|-------------|
-| `connection` | Queue connection |
-| `queue` | Queues to process |
-| `tries` | Max retry attempts |
-| `timeout` | Job timeout |
+| Option       | Description        |
+| ------------ | ------------------ |
+| `connection` | Queue connection   |
+| `queue`      | Queues to process  |
+| `tries`      | Max retry attempts |
+| `timeout`    | Job timeout        |
 
 ## Next Steps
 

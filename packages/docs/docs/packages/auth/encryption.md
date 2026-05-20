@@ -19,17 +19,17 @@ pnpm exec artisan key:generate
 ## Encrypting Tokens
 
 ```typescript
-import { encryptToken } from '@lara-node/auth'
+import { encryptToken } from "@lara-node/auth";
 
-const encrypted = encryptToken(token)
+const encrypted = encryptToken(token);
 ```
 
 ## Decrypting Tokens
 
 ```typescript
-import { decryptToken } from '@lara-node/auth'
+import { decryptToken } from "@lara-node/auth";
 
-const decrypted = decryptToken(encrypted)
+const decrypted = decryptToken(encrypted);
 ```
 
 ## Use Cases
@@ -37,18 +37,18 @@ const decrypted = decryptToken(encrypted)
 ### Password Reset Tokens
 
 ```typescript
-const token = generateToken({ userId: user.id, type: 'reset' }, 3600)
-const encrypted = encryptToken(token)
+const token = generateToken({ userId: user.id, type: "reset" }, 3600);
+const encrypted = encryptToken(token);
 
 // Send encrypted token via email
-await Mail.to(user.email).send(new ResetPasswordMail(encrypted))
+await Mail.to(user.email).send(new ResetPasswordMail(encrypted));
 ```
 
 ### Email Verification
 
 ```typescript
-const token = generateToken({ userId: user.id, email: user.email }, 86400)
-const encrypted = encryptToken(token)
+const token = generateToken({ userId: user.id, email: user.email }, 86400);
+const encrypted = encryptToken(token);
 
 // Store in database or send via email
 ```

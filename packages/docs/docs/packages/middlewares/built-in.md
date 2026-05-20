@@ -7,10 +7,10 @@ LaraNode provides several pre-built middleware classes.
 Validates JWT tokens from the `Authorization` header:
 
 ```typescript
-import { AuthMiddleware } from '@lara-node/middlewares'
+import { AuthMiddleware } from "@lara-node/middlewares";
 
 // Sets req.user with decoded token payload
-Route.get('/profile', handler).middleware('auth')
+Route.get("/profile", handler).middleware("auth");
 ```
 
 ## RequestLoggerMiddleware
@@ -18,7 +18,7 @@ Route.get('/profile', handler).middleware('auth')
 Logs each request with details:
 
 ```typescript
-import { RequestLoggerMiddleware } from '@lara-node/middlewares'
+import { RequestLoggerMiddleware } from "@lara-node/middlewares";
 
 // Logs: method, URL, status, duration, IP, user
 ```
@@ -28,13 +28,13 @@ import { RequestLoggerMiddleware } from '@lara-node/middlewares'
 Attaches `req.validate()` method:
 
 ```typescript
-import { ValidatorMiddleware } from '@lara-node/middlewares'
+import { ValidatorMiddleware } from "@lara-node/middlewares";
 
 // In route handler
 const data = req.validate({
-  name: 'required|string',
-  email: 'required|email',
-})
+  name: "required|string",
+  email: "required|email",
+});
 ```
 
 ## ResponseExtenderMiddleware
@@ -42,10 +42,10 @@ const data = req.validate({
 Auto-serializes Model instances in `res.json()`:
 
 ```typescript
-import { ResponseExtenderMiddleware } from '@lara-node/middlewares'
+import { ResponseExtenderMiddleware } from "@lara-node/middlewares";
 
 // Automatically calls toJSONAsync() on Model instances
-res.json(user) // Serialized JSON
+res.json(user); // Serialized JSON
 ```
 
 ## ErrorHandlerMiddleware
@@ -53,7 +53,7 @@ res.json(user) // Serialized JSON
 Handles errors and returns proper responses:
 
 ```typescript
-import { ErrorHandlerMiddleware } from '@lara-node/middlewares'
+import { ErrorHandlerMiddleware } from "@lara-node/middlewares";
 
 // Returns 422 for ValidationError
 // Returns 500 for other errors
@@ -64,10 +64,10 @@ import { ErrorHandlerMiddleware } from '@lara-node/middlewares'
 Sets up AsyncLocalStorage for request context:
 
 ```typescript
-import { AsyncContextMiddleware, asyncLocalStorage } from '@lara-node/middlewares'
+import { AsyncContextMiddleware, asyncLocalStorage } from "@lara-node/middlewares";
 
 // Access request context anywhere
-const store = asyncLocalStorage.getStore()
+const store = asyncLocalStorage.getStore();
 ```
 
 ## Next Steps

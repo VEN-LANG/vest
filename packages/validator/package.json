@@ -2,6 +2,10 @@
   "name": "@lara-node/validator",
   "version": "0.1.10",
   "description": "Laravel-inspired validation engine for Lara-Node",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -13,10 +17,6 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
   "publishConfig": {
     "access": "public"
   },

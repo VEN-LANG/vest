@@ -117,15 +117,15 @@ Extend the `Command` base class, set `signature` and `description`, and implemen
 
 ```ts
 // src/Console/GreetCommand.ts
-import { Command } from '@lara-node/console';
+import { Command } from "@lara-node/console";
 
 export class GreetCommand extends Command {
-  signature = 'greet {name} {--caps : Print name in uppercase}';
-  description = 'Greet a user by name';
+  signature = "greet {name} {--caps : Print name in uppercase}";
+  description = "Greet a user by name";
 
   async handle(): Promise<void> {
-    const name = this.argument('name') as string;
-    const caps  = this.option('caps') as boolean;
+    const name = this.argument("name") as string;
+    const caps = this.option("caps") as boolean;
     this.info(`Hello, ${caps ? name.toUpperCase() : name}!`);
   }
 }
@@ -134,29 +134,29 @@ export class GreetCommand extends Command {
 ### Argument / option helpers
 
 ```ts
-this.argument('name')          // positional argument value
-this.option('caps')            // boolean flag value
-this.option('port')            // option with value (--port=8080)
+this.argument("name"); // positional argument value
+this.option("caps"); // boolean flag value
+this.option("port"); // option with value (--port=8080)
 
-this.info('message')           // green output
-this.error('message')          // red output (also to stderr)
-this.warn('message')           // yellow output
-this.line('message')           // plain output
-this.comment('message')        // dim comment line
-this.newLine()                 // blank line
+this.info("message"); // green output
+this.error("message"); // red output (also to stderr)
+this.warn("message"); // yellow output
+this.line("message"); // plain output
+this.comment("message"); // dim comment line
+this.newLine(); // blank line
 
-const answer = await this.ask('What is your name?');
-const secret = await this.secret('Enter password:');
-const confirmed = await this.confirm('Are you sure?');
-const choice = await this.choice('Pick a driver', ['file', 'redis', 'database']);
+const answer = await this.ask("What is your name?");
+const secret = await this.secret("Enter password:");
+const confirmed = await this.confirm("Are you sure?");
+const choice = await this.choice("Pick a driver", ["file", "redis", "database"]);
 ```
 
 ### Registering commands
 
 ```ts
 // src/Console/Kernel.ts
-import { Kernel } from '@lara-node/console';
-import { GreetCommand } from './GreetCommand';
+import { Kernel } from "@lara-node/console";
+import { GreetCommand } from "./GreetCommand";
 
 export class AppKernel extends Kernel {
   protected commands = [GreetCommand];
@@ -167,7 +167,7 @@ Then point the `artisan` entrypoint at your kernel:
 
 ```ts
 // artisan.ts
-import { AppKernel } from './src/Console/Kernel';
+import { AppKernel } from "./src/Console/Kernel";
 AppKernel.handle();
 ```
 
@@ -176,29 +176,23 @@ AppKernel.handle();
 Override `schedule()` in your `Kernel` subclass to register recurring tasks.
 
 ```ts
-import { Kernel } from '@lara-node/console';
+import { Kernel } from "@lara-node/console";
 
 export class AppKernel extends Kernel {
   protected schedule(): void {
     // Run a closure
-    this._scheduler
-      .call(() => console.log('Every minute'))
-      .everyMinute();
+    this._scheduler.call(() => console.log("Every minute")).everyMinute();
 
     // Run a command
-    this._scheduler
-      .command('cache:clear')
-      .daily()
-      .withoutOverlapping()
-      .onOneServer();
+    this._scheduler.command("cache:clear").daily().withoutOverlapping().onOneServer();
 
     // Custom cron expression
     this._scheduler
       .call(async () => {
         await sendWeeklyReport();
       })
-      .cron('0 8 * * 1')  // 08:00 every Monday
-      .timezone('UTC');
+      .cron("0 8 * * 1") // 08:00 every Monday
+      .timezone("UTC");
   }
 }
 ```
@@ -219,7 +213,7 @@ Set this up as a system cron to poll every minute:
 
 ## Environment Variables
 
-| Variable | Default     | Description                          |
-|----------|-------------|--------------------------------------|
-| `PORT`   | `3000`      | Port used by the `serve` command     |
-| `HOST`   | `localhost` | Host used by the `serve` command     |
+| Variable | Default     | Description                      |
+| -------- | ----------- | -------------------------------- |
+| `PORT`   | `3000`      | Port used by the `serve` command |
+| `HOST`   | `localhost` | Host used by the `serve` command |

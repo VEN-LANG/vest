@@ -26,7 +26,7 @@ export async function autoRegisterModels(modelsDir: string): Promise<void> {
       const full = path.join(dir, ent.name);
       if (ent.isDirectory()) {
         await walk(full);
-      } else if (ent.isFile() && /\.(ts|js)$/.test(ent.name) && !ent.name.endsWith('.d.ts')) {
+      } else if (ent.isFile() && /\.(ts|js)$/.test(ent.name) && !ent.name.endsWith(".d.ts")) {
         try {
           // eslint-disable-next-line @typescript-eslint/no-require-imports
           const mod: Record<string, unknown> = require(full);
@@ -40,9 +40,8 @@ export async function autoRegisterModels(modelsDir: string): Promise<void> {
               val.prototype &&
               isModelSubclass(val as typeof Model)
             ) {
-              const className = key === "default"
-                ? ((val as typeof Model).name || path.parse(ent.name).name)
-                : key;
+              const className =
+                key === "default" ? (val as typeof Model).name || path.parse(ent.name).name : key;
               RouterBuilder.registerModel(className.toLowerCase(), val as typeof Model);
               found.push({ name: className, file: full });
             }

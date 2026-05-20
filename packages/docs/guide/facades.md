@@ -11,67 +11,67 @@ Facades are proxy classes that redirect method calls to the underlying service i
 ### Cache Facade
 
 ```typescript
-import { Cache } from '@lara-node/cache'
+import { Cache } from "@lara-node/cache";
 
 // Store a value
-Cache.set('key', 'value', 3600)
+Cache.set("key", "value", 3600);
 
 // Retrieve a value
-const value = Cache.get('key')
+const value = Cache.get("key");
 
 // Get with default
-const value = Cache.get('key', 'default')
+const value = Cache.get("key", "default");
 
 // Remember (get or set)
-const users = Cache.remember('users', 3600, async () => {
-  return User.all()
-})
+const users = Cache.remember("users", 3600, async () => {
+  return User.all();
+});
 ```
 
 ### DB Facade
 
 ```typescript
-import { DB } from '@lara-node/db'
+import { DB } from "@lara-node/db";
 
 // Query builder
-const users = DB.table('users').where('active', true).get()
+const users = DB.table("users").where("active", true).get();
 
 // Raw query
-const results = DB.select('SELECT * FROM users WHERE active = ?', [true])
+const results = DB.select("SELECT * FROM users WHERE active = ?", [true]);
 
 // Transaction
 await DB.transaction(async (db) => {
-  await db.table('users').insert({ name: 'John' })
-  await db.table('profiles').insert({ user_id: 1 })
-})
+  await db.table("users").insert({ name: "John" });
+  await db.table("profiles").insert({ user_id: 1 });
+});
 ```
 
 ### Broadcast Facade
 
 ```typescript
-import { Broadcast } from '@lara-node/events'
+import { Broadcast } from "@lara-node/events";
 
-Broadcast.channel('chat').emit('message', data)
+Broadcast.channel("chat").emit("message", data);
 ```
 
 ### Mail Facade
 
 ```typescript
-import { Mail } from '@lara-node/mail'
+import { Mail } from "@lara-node/mail";
 
-Mail.to('user@example.com').send(new WelcomeMail())
+Mail.to("user@example.com").send(new WelcomeMail());
 ```
 
 ### RateLimiter Facade
 
 ```typescript
-import { RateLimiter } from '@lara-node/cache'
+import { RateLimiter } from "@lara-node/cache";
 
-if (RateLimiter.tooManyAttempts('key', 60)) {
-  throw new RateLimitExceededException()
+if (RateLimiter.tooManyAttempts("key", 60)) {
+  throw new RateLimitExceededException();
 }
 
-RateLimiter.hit('key', 60)
+RateLimiter.hit("key", 60);
 ```
 
 ## How Facades Work
@@ -87,23 +87,23 @@ Facades work by:
 You can create your own facades:
 
 ```typescript
-import { Container } from '@lara-node/core'
+import { Container } from "@lara-node/core";
 
 export const MyService = {
   get method() {
-    return container.make(MyServiceClass).method.bind(container.make(MyServiceClass))
-  }
-}
+    return container.make(MyServiceClass).method.bind(container.make(MyServiceClass));
+  },
+};
 ```
 
 ## Facade vs Direct Injection
 
-| Facade | Direct Injection |
-|--------|-----------------|
-| `Cache.get('key')` | `const cache = app(CacheManager); cache.get('key')` |
-| Cleaner syntax | More explicit |
-| Good for quick access | Better for testing |
-| | Better for type inference |
+| Facade                | Direct Injection                                    |
+| --------------------- | --------------------------------------------------- |
+| `Cache.get('key')`    | `const cache = app(CacheManager); cache.get('key')` |
+| Cleaner syntax        | More explicit                                       |
+| Good for quick access | Better for testing                                  |
+|                       | Better for type inference                           |
 
 ## Next Steps
 

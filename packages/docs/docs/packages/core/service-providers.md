@@ -14,7 +14,7 @@ Service providers handle:
 ## The ServiceProvider Class
 
 ```typescript
-import { ServiceProvider } from '@lara-node/core'
+import { ServiceProvider } from "@lara-node/core";
 
 export class AppServiceProvider extends ServiceProvider {
   register() {
@@ -35,13 +35,13 @@ Access the container via `this.app`:
 export class AppServiceProvider extends ServiceProvider {
   register() {
     this.app.singleton(UserService, () => {
-      return new UserService(this.app.make(DatabaseService))
-    })
+      return new UserService(this.app.make(DatabaseService));
+    });
   }
 
   boot() {
-    const service = this.app.make(UserService)
-    service.initialize()
+    const service = this.app.make(UserService);
+    service.initialize();
   }
 }
 ```
@@ -61,10 +61,10 @@ export class HttpMiddlewareProvider extends MiddlewareServiceProvider {
         throttle: ThrottleMiddleware,
       },
       groups: {
-        api: ['auth', 'throttle'],
+        api: ["auth", "throttle"],
       },
-      priority: ['throttle'],
-    }
+      priority: ["throttle"],
+    };
   }
 }
 ```

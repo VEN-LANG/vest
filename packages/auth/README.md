@@ -11,19 +11,25 @@ pnpm add @lara-node/auth
 ## Quick Start
 
 ```ts
-import { generateToken, verifyToken, hashPassword, comparePassword, authMiddleware } from '@lara-node/auth';
+import {
+  generateToken,
+  verifyToken,
+  hashPassword,
+  comparePassword,
+  authMiddleware,
+} from "@lara-node/auth";
 
 // Hash a password at registration
-const hash = await hashPassword('secret123');
+const hash = await hashPassword("secret123");
 
 // Verify on login
-const match = await comparePassword('secret123', hash); // true
+const match = await comparePassword("secret123", hash); // true
 
 // Issue a JWT
-const token = generateToken({ userId: 42, role: 'admin' }, 3600);
+const token = generateToken({ userId: 42, role: "admin" }, 3600);
 
 // Protect a route
-app.get('/me', authMiddleware, (req, res) => {
+app.get("/me", authMiddleware, (req, res) => {
   res.json(req.user);
 });
 ```
@@ -35,8 +41,8 @@ app.get('/me', authMiddleware, (req, res) => {
 Signs an HS256 JWT using `APP_KEY`. The key must be a base64-encoded 32-byte value (see Environment Variables).
 
 ```ts
-const token = generateToken({ userId: 1 });          // default: no expiry
-const token = generateToken({ userId: 1 }, 86400);   // expires in 24 h
+const token = generateToken({ userId: 1 }); // default: no expiry
+const token = generateToken({ userId: 1 }, 86400); // expires in 24 h
 ```
 
 Returns a signed JWT string.
@@ -48,7 +54,7 @@ Decodes and verifies a JWT. Returns the payload object on success, or `null` if 
 ```ts
 const payload = verifyToken(token);
 if (!payload) {
-  throw new Error('Unauthorized');
+  throw new Error("Unauthorized");
 }
 console.log(payload.userId);
 ```
@@ -58,7 +64,7 @@ console.log(payload.userId);
 Hashes a plaintext password with bcrypt (falls back to scrypt if bcrypt is unavailable). Always async.
 
 ```ts
-const hash = await hashPassword('my-password');
+const hash = await hashPassword("my-password");
 ```
 
 ### `comparePassword(password, hash)`
@@ -66,7 +72,7 @@ const hash = await hashPassword('my-password');
 Compares a plaintext password against a stored hash. Returns `true` on match, `false` otherwise.
 
 ```ts
-const ok = await comparePassword('my-password', storedHash);
+const ok = await comparePassword("my-password", storedHash);
 ```
 
 ### `encryptToken(token)`
@@ -91,12 +97,12 @@ const original = decryptToken(encrypted);
 Express middleware that reads the `Authorization: Bearer <token>` header, verifies the JWT, and attaches the decoded payload to `req.user`. Responds with `401` if the token is missing or invalid.
 
 ```ts
-import express from 'express';
-import { authMiddleware } from '@lara-node/auth';
+import express from "express";
+import { authMiddleware } from "@lara-node/auth";
 
 const app = express();
 
-app.get('/profile', authMiddleware, (req, res) => {
+app.get("/profile", authMiddleware, (req, res) => {
   res.json({ user: req.user });
 });
 ```
@@ -105,9 +111,9 @@ To extend the `Request` type:
 
 ```ts
 // src/types/express.d.ts
-import '@lara-node/auth';
+import "@lara-node/auth";
 
-declare module 'express-serve-static-core' {
+declare module "express-serve-static-core" {
   interface Request {
     user?: Record<string, unknown>;
   }
@@ -116,9 +122,9 @@ declare module 'express-serve-static-core' {
 
 ## Environment Variables
 
-| Variable  | Default   | Description                                                        |
-|-----------|-----------|--------------------------------------------------------------------|
-| `APP_KEY` | —         | **Required.** Base64-encoded 32-byte key. Format: `base64:<key>`. |
+| Variable  | Default | Description                                                       |
+| --------- | ------- | ----------------------------------------------------------------- |
+| `APP_KEY` | —       | **Required.** Base64-encoded 32-byte key. Format: `base64:<key>`. |
 
 Generate a key:
 

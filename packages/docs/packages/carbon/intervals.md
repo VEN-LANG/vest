@@ -7,19 +7,19 @@ Work with date intervals and periods.
 Represent a duration:
 
 ```typescript
-import { CarbonInterval } from '@lara-node/carbon'
+import { CarbonInterval } from "@lara-node/carbon";
 
-const interval = CarbonInterval.years(2).months(3).days(5)
+const interval = CarbonInterval.years(2).months(3).days(5);
 
-interval.years   // 2
-interval.months  // 3
-interval.days    // 5
+interval.years; // 2
+interval.months; // 3
+interval.days; // 5
 
 // Between two dates
-const interval = CarbonInterval.between(date1, date2)
+const interval = CarbonInterval.between(date1, date2);
 
 // Human readable
-interval.humanize() // "2 years 3 months 5 days"
+interval.humanize(); // "2 years 3 months 5 days"
 ```
 
 ## CarbonPeriod
@@ -27,20 +27,20 @@ interval.humanize() // "2 years 3 months 5 days"
 Iterate over a date range:
 
 ```typescript
-import { CarbonPeriod } from '@lara-node/carbon'
+import { CarbonPeriod } from "@lara-node/carbon";
 
-const period = CarbonPeriod.create(startDate, endDate)
+const period = CarbonPeriod.create(startDate, endDate);
 
 // Iterate
 for (const date of period.everyDay()) {
-  console.log(date.format('YYYY-MM-DD'))
+  console.log(date.format("YYYY-MM-DD"));
 }
 
 // Frequencies
-period.everyDay()
-period.everyWeek()
-period.everyMonth()
-period.everyYear()
+period.everyDay();
+period.everyWeek();
+period.everyMonth();
+period.everyYear();
 ```
 
 ## Next Steps

@@ -340,7 +340,8 @@ export class MiddlewareStack {
   protected isClass(value: unknown): boolean {
     return (
       typeof value === "function" &&
-      (value as { prototype?: { constructor?: unknown; handle?: unknown } }).prototype !== undefined &&
+      (value as { prototype?: { constructor?: unknown; handle?: unknown } }).prototype !==
+        undefined &&
       (value as { prototype: { constructor?: unknown } }).prototype.constructor === value &&
       (value as { prototype: { handle?: unknown } }).prototype.handle !== undefined
     );
@@ -382,6 +383,6 @@ const _STACK_KEY = "__lara_node_middleware_stack__";
 if (!(globalThis as Record<string, unknown>)[_STACK_KEY]) {
   (globalThis as Record<string, unknown>)[_STACK_KEY] = new MiddlewareStack();
 }
-export const middlewareStack: MiddlewareStack = (
-  globalThis as Record<string, unknown>
-)[_STACK_KEY] as MiddlewareStack;
+export const middlewareStack: MiddlewareStack = (globalThis as Record<string, unknown>)[
+  _STACK_KEY
+] as MiddlewareStack;

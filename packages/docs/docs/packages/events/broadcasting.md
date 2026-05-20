@@ -5,29 +5,29 @@ Broadcast events to clients via WebSockets.
 ## Channel Types
 
 ```typescript
-import { PublicChannel, PrivateChannel, PresenceChannel } from '@lara-node/events'
+import { PublicChannel, PrivateChannel, PresenceChannel } from "@lara-node/events";
 
 // Public channel (anyone can listen)
-new PublicChannel('chat')
+new PublicChannel("chat");
 
 // Private channel (requires auth)
-new PrivateChannel(`user.${userId}`)
+new PrivateChannel(`user.${userId}`);
 
 // Presence channel (tracks who is online)
-new PresenceChannel(`room.${roomId}`)
+new PresenceChannel(`room.${roomId}`);
 ```
 
 ## Broadcasting Events
 
 ```typescript
-import { ShouldBroadcast, BroadcastAs, BroadcastToOthers } from '@lara-node/events'
+import { ShouldBroadcast, BroadcastAs, BroadcastToOthers } from "@lara-node/events";
 
 @ShouldBroadcast()
 class MessageSent {
   constructor(public message: Message) {}
 
   broadcastOn() {
-    return new PrivateChannel(`chat.${this.message.roomId}`)
+    return new PrivateChannel(`chat.${this.message.roomId}`);
   }
 }
 ```
@@ -36,11 +36,11 @@ class MessageSent {
 
 ```typescript
 @ShouldBroadcast()
-@BroadcastAs('new-message')
+@BroadcastAs("new-message")
 @BroadcastToOthers()
 class MessageSent {
   broadcastOn() {
-    return new Channel('chat')
+    return new Channel("chat");
   }
 
   broadcastWith() {
@@ -48,7 +48,7 @@ class MessageSent {
       id: this.message.id,
       text: this.message.text,
       user: this.message.user.name,
-    }
+    };
   }
 }
 ```
@@ -59,7 +59,7 @@ class MessageSent {
 @ShouldBroadcast()
 class OrderStatusChanged {
   broadcastWhen() {
-    return this.order.status === 'shipped'
+    return this.order.status === "shipped";
   }
 }
 ```
@@ -67,10 +67,10 @@ class OrderStatusChanged {
 ## Broadcast Facade
 
 ```typescript
-import { Broadcast } from '@lara-node/events'
+import { Broadcast } from "@lara-node/events";
 
-Broadcast.channel('chat').emit('message', data)
-Broadcast.toOthers().channel('chat').emit('message', data)
+Broadcast.channel("chat").emit("message", data);
+Broadcast.toOthers().channel("chat").emit("message", data);
 ```
 
 ## Configuration

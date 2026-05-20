@@ -168,13 +168,13 @@ function _route(prefix: string, ...classMiddleware: string[]): ClassDecorator {
  */
 export const Route = Object.assign(_route, {
   /** @Route.get(path, ...middleware) — registers a GET route on this method. */
-  get:    makeVerbDecorator("get"),
+  get: makeVerbDecorator("get"),
   /** @Route.post(path, ...middleware) — registers a POST route on this method. */
-  post:   makeVerbDecorator("post"),
+  post: makeVerbDecorator("post"),
   /** @Route.put(path, ...middleware) — registers a PUT route on this method. */
-  put:    makeVerbDecorator("put"),
+  put: makeVerbDecorator("put"),
   /** @Route.patch(path, ...middleware) — registers a PATCH route on this method. */
-  patch:  makeVerbDecorator("patch"),
+  patch: makeVerbDecorator("patch"),
   /** @Route.delete(path, ...middleware) — registers a DELETE route on this method. */
   delete: makeVerbDecorator("delete"),
 });

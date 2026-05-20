@@ -1,12 +1,16 @@
-import { Event } from '@lara-node/events';
+import { Event } from "@lara-node/events";
 
 export class UserRegistered extends Event {
   constructor(
     public readonly userId: string | number,
     public readonly email: string,
     public readonly name: string,
-  ) { super(); }
-  eventName() { return 'user.registered'; }
+  ) {
+    super();
+  }
+  eventName() {
+    return "user.registered";
+  }
 }
 
 export class UserLoggedIn extends Event {
@@ -14,11 +18,19 @@ export class UserLoggedIn extends Event {
     public readonly userId: string | number,
     public readonly email: string,
     public readonly ipAddress?: string,
-  ) { super(); }
-  eventName() { return 'user.logged_in'; }
+  ) {
+    super();
+  }
+  eventName() {
+    return "user.logged_in";
+  }
 }
 
 export class UserLoggedOut extends Event {
-  constructor(public readonly userId: string | number) { super(); }
-  eventName() { return 'user.logged_out'; }
+  constructor(public readonly userId: string | number) {
+    super();
+  }
+  eventName() {
+    return "user.logged_out";
+  }
 }

@@ -21,33 +21,33 @@ Features include:
 ## Quick Start
 
 ```typescript
-import { Carbon } from '@lara-node/carbon'
+import { Carbon } from "@lara-node/carbon";
 
 // Current time
-const now = Carbon.current()
+const now = Carbon.current();
 
 // Create from string
-const date = Carbon.from('2024-01-15')
+const date = Carbon.from("2024-01-15");
 
 // Create from timestamp
-const date = Carbon.fromTimestamp(1705276800)
+const date = Carbon.fromTimestamp(1705276800);
 
 // Format
-date.format('YYYY-MM-DD HH:mm:ss')
+date.format("YYYY-MM-DD HH:mm:ss");
 
 // Human readable
-date.diffForHumans() // "2 days ago"
+date.diffForHumans(); // "2 days ago"
 ```
 
 ## Key Exports
 
-| Export | Description |
-|--------|-------------|
-| `Carbon` | Main date class |
-| `CarbonImmutable` | Strictly immutable variant |
-| `CarbonInterval` | Duration representation |
-| `CarbonPeriod` | Iterable date range |
-| `MONDAY` - `SUNDAY` | Day constants |
+| Export              | Description                |
+| ------------------- | -------------------------- |
+| `Carbon`            | Main date class            |
+| `CarbonImmutable`   | Strictly immutable variant |
+| `CarbonInterval`    | Duration representation    |
+| `CarbonPeriod`      | Iterable date range        |
+| `MONDAY` - `SUNDAY` | Day constants              |
 
 ## Next Steps
 

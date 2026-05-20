@@ -120,7 +120,9 @@ export class VendorPublishCommand extends Command {
         this.info(`Published ${published} file(s).`);
       }
       if (skipped > 0) {
-        this.comment(`Skipped ${skipped} file(s) that already exist. Run with --force to overwrite.`);
+        this.comment(
+          `Skipped ${skipped} file(s) that already exist. Run with --force to overwrite.`,
+        );
       }
       if (published === 0 && skipped === 0) {
         this.warn("Nothing to publish.");

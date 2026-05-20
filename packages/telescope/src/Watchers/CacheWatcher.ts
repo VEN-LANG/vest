@@ -1,7 +1,6 @@
 import { TelescopeStore } from "../TelescopeStore.js";
 import telescopeConfig from "../telescope.config.js";
 
-
 export interface CacheRecord {
   type: "get" | "set" | "del" | "has" | "clear" | "remember";
   key: string;
@@ -39,15 +38,15 @@ export const CacheWatcher = {
     }
 
     TelescopeStore.record(
-        "cache",
-        {
-          type: data.type,
-          key: data.key,
-          hit: data.hit ?? null,
-          value: data.value !== undefined ? truncateValue(data.value) : null,
-          ttlSeconds: data.ttlSeconds ?? null,
-        },
-        tags,
+      "cache",
+      {
+        type: data.type,
+        key: data.key,
+        hit: data.hit ?? null,
+        value: data.value !== undefined ? truncateValue(data.value) : null,
+        ttlSeconds: data.ttlSeconds ?? null,
+      },
+      tags,
     );
   },
 };

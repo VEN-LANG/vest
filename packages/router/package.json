@@ -2,6 +2,10 @@
   "name": "@lara-node/router",
   "version": "0.2.8",
   "description": "Lara-Node Express router builder, middleware stack, and OpenAPI generator",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -13,10 +17,6 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
   "publishConfig": {
     "access": "public"
   },
@@ -33,13 +33,13 @@
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
+    "@lara-node/core": "workspace:^",
     "@types/express": "^5.0.6",
     "@types/node": "^24.12.2",
     "rimraf": "^6.0.1",
     "tsdown": "^0.12.9",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.3",
-    "@lara-node/core": "workspace:^"
+    "vitest": "^3.2.3"
   },
   "peerDependencies": {
     "@lara-node/core": "^0.1.5",

@@ -24,29 +24,29 @@ Features include:
 ## Quick Start
 
 ```typescript
-import { Route } from '@lara-node/router'
+import { Route } from "@lara-node/router";
 
 // Basic routes
-Route.get('/users', UserController.index)
-Route.post('/users', UserController.store)
-Route.get('/users/:id', UserController.show)
-Route.put('/users/:id', UserController.update)
-Route.delete('/users/:id', UserController.destroy)
+Route.get("/users", UserController.index);
+Route.post("/users", UserController.store);
+Route.get("/users/:id", UserController.show);
+Route.put("/users/:id", UserController.update);
+Route.delete("/users/:id", UserController.destroy);
 ```
 
 ## Key Exports
 
-| Export | Description |
-|--------|-------------|
-| `RouterBuilder` | Fluent route builder |
-| `Route` | Route decorator for controllers |
-| `@Route()` | Class decorator |
-| `@Route.get()` | Method decorator |
-| `@Bind()` | Route model binding decorator |
-| `@Middleware()` | Middleware alias decorator |
-| `Doc` | OpenAPI documentation decorator |
-| `OpenApiGenerator` | OpenAPI spec generator |
-| `HttpKernel` | HTTP kernel base class |
+| Export             | Description                     |
+| ------------------ | ------------------------------- |
+| `RouterBuilder`    | Fluent route builder            |
+| `Route`            | Route decorator for controllers |
+| `@Route()`         | Class decorator                 |
+| `@Route.get()`     | Method decorator                |
+| `@Bind()`          | Route model binding decorator   |
+| `@Middleware()`    | Middleware alias decorator      |
+| `Doc`              | OpenAPI documentation decorator |
+| `OpenApiGenerator` | OpenAPI spec generator          |
+| `HttpKernel`       | HTTP kernel base class          |
 
 ## Next Steps
 

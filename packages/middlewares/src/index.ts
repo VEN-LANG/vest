@@ -47,7 +47,9 @@ export class RequestLoggerMiddleware {
   handle(req: Request, res: Response, next: NextFunction): void {
     const start = process.hrtime();
     const { method, originalUrl } = req;
-    const ip = (req.ip || req.headers["x-forwarded-for"] || (req.socket && req.socket.remoteAddress)) as string | undefined;
+    const ip = (req.ip ||
+      req.headers["x-forwarded-for"] ||
+      (req.socket && req.socket.remoteAddress)) as string | undefined;
 
     res.on("finish", () => {
       const [sec, nano] = process.hrtime(start);
@@ -58,10 +60,16 @@ export class RequestLoggerMiddleware {
       if (status >= 500) color = "\x1b[31m";
       else if (status >= 400) color = "\x1b[33m";
       const maybeUser = (req as any).user;
-      const userInfo = maybeUser ? ` - user:${maybeUser.id ?? maybeUser.email ?? JSON.stringify(maybeUser)}` : "";
-      const query = req.query && Object.keys(req.query).length ? ` query=${JSON.stringify(req.query)}` : "";
-      const params = req.params && Object.keys(req.params).length ? ` params=${JSON.stringify(req.params)}` : "";
-      console.log(`${method} ${originalUrl} ${color}${status}${reset} - ${ms} ms - ${ip || "-"}${userInfo}${query}${params}`);
+      const userInfo = maybeUser
+        ? ` - user:${maybeUser.id ?? maybeUser.email ?? JSON.stringify(maybeUser)}`
+        : "";
+      const query =
+        req.query && Object.keys(req.query).length ? ` query=${JSON.stringify(req.query)}` : "";
+      const params =
+        req.params && Object.keys(req.params).length ? ` params=${JSON.stringify(req.params)}` : "";
+      console.log(
+        `${method} ${originalUrl} ${color}${status}${reset} - ${ms} ms - ${ip || "-"}${userInfo}${query}${params}`,
+      );
     });
 
     next();
@@ -86,7 +94,10 @@ export class ValidatorMiddleware {
         !Array.isArray(payloadOrRules) &&
         Object.keys(payloadOrRules || {}).length &&
         Object.values(payloadOrRules).every(
-          (v) => typeof v === "string" || typeof v === "function" || (typeof v === "object" && v && "rule" in (v as any)),
+          (v) =>
+            typeof v === "string" ||
+            typeof v === "function" ||
+            (typeof v === "object" && v && "rule" in (v as any)),
         )
       ) {
         rules = payloadOrRules;
@@ -95,7 +106,7 @@ export class ValidatorMiddleware {
         payload = payloadOrRules;
         rules = maybeRules;
       } else {
-        payload = payloadOrRules ?? ((req as any).body?.payload ?? (req as any).body);
+        payload = payloadOrRules ?? (req as any).body?.payload ?? (req as any).body;
         rules = maybeRules;
       }
 
@@ -166,7 +177,14 @@ export class ResponseExtenderMiddleware {
 // ─── AuthMiddleware ─────────────────────────────────────────────────────────────
 
 export interface AuthMiddlewareOptions {
-  userLoader?: (uid: string | number) => Promise<{ id: number | string; roles?: string[]; permissions?: string[]; [key: string]: any } | null>;
+  userLoader?: (
+    uid: string | number,
+  ) => Promise<{
+    id: number | string;
+    roles?: string[];
+    permissions?: string[];
+    [key: string]: any;
+  } | null>;
   decryptToken?: (token: string) => string;
 }
 
@@ -196,7 +214,10 @@ export class AuthMiddleware {
 
       if (this.userLoader) {
         const user = await this.userLoader(uid);
-        if (!user) { res.status(401).json({ message: "Unauthorized" }); return; }
+        if (!user) {
+          res.status(401).json({ message: "Unauthorized" });
+          return;
+        }
         req.user = { id: user.id, roles: user.roles, permissions: user.permissions };
         const store = asyncLocalStorage.getStore();
         if (store) store.user = user;
@@ -220,12 +241,17 @@ export class AuthMiddleware {
 export class AuthorizeByStatusMiddleware {
   handle(req: Request, res: Response, next: NextFunction): void {
     const user = req.user as any;
-    if (!user) { res.status(401).json({ message: "Unauthorized" }); return; }
+    if (!user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
     if (typeof user.isActive === "function" && !user.isActive()) {
-      res.status(401).json({ message: "Account Inactive" }); return;
+      res.status(401).json({ message: "Account Inactive" });
+      return;
     }
     if (user.status && user.status !== "active") {
-      res.status(401).json({ message: "Account Inactive" }); return;
+      res.status(401).json({ message: "Account Inactive" });
+      return;
     }
     next();
   }
@@ -238,7 +264,9 @@ export class ErrorHandlerMiddleware {
     if (res.headersSent) return;
 
     if (err instanceof ValidationError) {
-      res.status(422).json({ success: false, errors: err.errors, messages: err.messages, message: err.message });
+      res
+        .status(422)
+        .json({ success: false, errors: err.errors, messages: err.messages, message: err.message });
       return;
     }
 
@@ -265,7 +293,8 @@ export function authorizeRoles(...roles: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const userRoles = req.user?.roles || [];
     if (!roles.some((r) => userRoles.includes(r))) {
-      res.status(403).json({ message: "Forbidden" }); return;
+      res.status(403).json({ message: "Forbidden" });
+      return;
     }
     next();
   };
@@ -275,7 +304,8 @@ export function authorizePermissions(...perms: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const userPerms = req.user?.permissions || [];
     if (!perms.some((p) => userPerms.includes(p))) {
-      res.status(403).json({ message: "Forbidden" }); return;
+      res.status(403).json({ message: "Forbidden" });
+      return;
     }
     next();
   };

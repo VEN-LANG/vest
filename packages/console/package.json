@@ -5,6 +5,10 @@
   "bin": {
     "artisan": "./dist/artisan.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -17,10 +21,6 @@
     },
     "./artisan": "./dist/artisan.js"
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
   "publishConfig": {
     "access": "public"
   },
@@ -43,13 +43,13 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
+    "@lara-node/core": "workspace:^",
     "@types/node": "^24.12.2",
     "@types/yargs": "^17.0.35",
     "rimraf": "^6.0.1",
     "tsdown": "^0.12.9",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.3",
-    "@lara-node/core": "workspace:^"
+    "vitest": "^3.2.3"
   },
   "peerDependencies": {
     "@lara-node/core": "^0.1.5"

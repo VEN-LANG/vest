@@ -5,14 +5,14 @@ The Container is LaraNode's dependency injection container. It manages class dep
 ## Basic Usage
 
 ```typescript
-import { Container, container } from '@lara-node/core'
+import { Container, container } from "@lara-node/core";
 
 // Use the singleton
-container.bind('service', () => new MyService())
-const service = container.make('service')
+container.bind("service", () => new MyService());
+const service = container.make("service");
 
 // Or create your own
-const myContainer = new Container()
+const myContainer = new Container();
 ```
 
 ## Binding Methods
@@ -22,8 +22,8 @@ const myContainer = new Container()
 Register a transient binding (new instance each time):
 
 ```typescript
-container.bind(Logger, () => new Logger())
-container.bind('mailer', () => new MailManager())
+container.bind(Logger, () => new Logger());
+container.bind("mailer", () => new MailManager());
 ```
 
 ### `singleton()`
@@ -32,8 +32,8 @@ Register a singleton (same instance always):
 
 ```typescript
 container.singleton(DatabaseService, () => {
-  return new DatabaseService(config('database'))
-})
+  return new DatabaseService(config("database"));
+});
 ```
 
 ### `instance()`
@@ -41,8 +41,8 @@ container.singleton(DatabaseService, () => {
 Bind an existing instance:
 
 ```typescript
-const expressApp = express()
-container.instance('express', expressApp)
+const expressApp = express();
+container.instance("express", expressApp);
 ```
 
 ### `alias()`
@@ -50,8 +50,8 @@ container.instance('express', expressApp)
 Create an alias for an existing binding:
 
 ```typescript
-container.bind('cache', () => new CacheManager())
-container.alias('cache', CacheManager)
+container.bind("cache", () => new CacheManager());
+container.alias("cache", CacheManager);
 ```
 
 ## Resolving
@@ -61,8 +61,8 @@ container.alias('cache', CacheManager)
 Resolve a service from the container:
 
 ```typescript
-const service = container.make(UserService)
-const mailer = container.make('mailer')
+const service = container.make(UserService);
+const mailer = container.make("mailer");
 ```
 
 ### `app()` Helper
@@ -70,13 +70,13 @@ const mailer = container.make('mailer')
 Convenient helper for resolving:
 
 ```typescript
-import { app } from '@lara-node/core'
+import { app } from "@lara-node/core";
 
 // Resolve a service
-const service = app(UserService)
+const service = app(UserService);
 
 // Get the container
-const container = app()
+const container = app();
 ```
 
 ## Automatic Resolution
@@ -84,18 +84,18 @@ const container = app()
 The container can automatically resolve dependencies:
 
 ```typescript
-import { Injectable } from '@lara-node/core'
+import { Injectable } from "@lara-node/core";
 
 @Injectable()
 class UserService {
   constructor(
     private db: DatabaseService,
-    private cache: CacheManager
+    private cache: CacheManager,
   ) {}
 }
 
 // Container resolves DatabaseService and CacheManager automatically
-const service = container.make(UserService)
+const service = container.make(UserService);
 ```
 
 ## Resolving Callbacks
@@ -104,22 +104,22 @@ Register callbacks that fire when a type is resolved:
 
 ```typescript
 container.resolving(UserService, (service) => {
-  service.initialize()
-})
+  service.initialize();
+});
 
-container.resolving('*', (resolved) => {
-  console.log('Resolved:', resolved.constructor.name)
-})
+container.resolving("*", (resolved) => {
+  console.log("Resolved:", resolved.constructor.name);
+});
 ```
 
 ## Checking Bindings
 
 ```typescript
 // Check if bound
-container.bound('service') // boolean
+container.bound("service"); // boolean
 
 // Check if singleton
-container.isSingleton(Logger) // boolean
+container.isSingleton(Logger); // boolean
 ```
 
 ## Practical Example
@@ -127,23 +127,20 @@ container.isSingleton(Logger) // boolean
 ```typescript
 // Register services
 container.singleton(DatabaseService, () => {
-  return new DatabaseService(config('database'))
-})
+  return new DatabaseService(config("database"));
+});
 
 container.singleton(CacheManager, () => {
-  return new CacheManager(config('cache'))
-})
+  return new CacheManager(config("cache"));
+});
 
 container.bind(UserService, () => {
-  return new UserService(
-    container.make(DatabaseService),
-    container.make(CacheManager)
-  )
-})
+  return new UserService(container.make(DatabaseService), container.make(CacheManager));
+});
 
 // Resolve
-const users = container.make(UserService)
-const allUsers = await users.all()
+const users = container.make(UserService);
+const allUsers = await users.all();
 ```
 
 ## Next Steps

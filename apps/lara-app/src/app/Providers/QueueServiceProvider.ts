@@ -1,7 +1,7 @@
-import { ServiceProvider } from '@lara-node/core';
-import { Queue, QueueManager, scheduler, Schedule } from '@lara-node/queue';
-import { CleanupJob } from '../Jobs/CleanupJob';
-import { WelcomeEmailJob } from '../Jobs/WelcomeEmailJob';
+import { ServiceProvider } from "@lara-node/core";
+import { Queue, QueueManager, scheduler, Schedule } from "@lara-node/queue";
+import { CleanupJob } from "../Jobs/CleanupJob";
+import { WelcomeEmailJob } from "../Jobs/WelcomeEmailJob";
 
 export class QueueServiceProvider extends ServiceProvider {
   register(): void {
@@ -10,7 +10,7 @@ export class QueueServiceProvider extends ServiceProvider {
   }
 
   boot(): void {
-    scheduler.job(CleanupJob).dailyAt('02:00');
-    scheduler.job(WelcomeEmailJob, { to: '', name: '' }).cron('0 9 * * 1');
+    scheduler.job(CleanupJob).dailyAt("02:00");
+    scheduler.job(WelcomeEmailJob, { to: "", name: "" }).cron("0 9 * * 1");
   }
 }

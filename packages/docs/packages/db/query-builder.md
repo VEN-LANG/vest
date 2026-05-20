@@ -6,17 +6,14 @@ The `EloquentBuilder` provides a fluent interface for constructing database quer
 
 ```typescript
 // Get all
-const users = await User.query().get()
+const users = await User.query().get();
 
 // Where clauses
-const users = await User.where('active', true).get()
-const users = await User.where('age', '>=', 18).get()
+const users = await User.where("active", true).get();
+const users = await User.where("age", ">=", 18).get();
 
 // Multiple where
-const users = await User
-  .where('active', true)
-  .where('role', 'admin')
-  .get()
+const users = await User.where("active", true).where("role", "admin").get();
 ```
 
 ## Where Clauses
@@ -91,7 +88,7 @@ const users = await User
 ## Pagination
 
 ```typescript
-const result = await User.paginate(15, { page: 2 })
+const result = await User.paginate(15, { page: 2 });
 // { data: [...], total: 100, page: 2, perPage: 15, lastPage: 7 }
 ```
 
@@ -100,17 +97,17 @@ const result = await User.paginate(15, { page: 2 })
 ```typescript
 await User.chunk(100, async (users) => {
   // Process 100 users at a time
-})
+});
 
 await User.chunkById(100, async (users) => {
   // Process by ID
-})
+});
 ```
 
 ## Cursor
 
 ```typescript
-const cursor = User.where('active', true).cursor()
+const cursor = User.where("active", true).cursor();
 for await (const user of cursor) {
   // Process one at a time
 }
@@ -120,19 +117,19 @@ for await (const user of cursor) {
 
 ```typescript
 // Get single column values
-const names = await User.pluck('name')
+const names = await User.pluck("name");
 
 // Get single value
-const email = await User.where('id', 1).value('email')
+const email = await User.where("id", 1).value("email");
 ```
 
 ## First or Fail
 
 ```typescript
-const user = await User.where('email', 'test@test.com').firstOrFail()
+const user = await User.where("email", "test@test.com").firstOrFail();
 // Throws if not found
 
-const user = await User.sole()
+const user = await User.sole();
 // Throws if not exactly one result
 ```
 
@@ -140,12 +137,12 @@ const user = await User.sole()
 
 ```typescript
 // Load relationships
-const users = await User.with('posts', 'profile').get()
+const users = await User.with("posts", "profile").get();
 
 // Constrained eager loading
 const users = await User.with({
-  posts: (query) => query.where('published', true),
-}).get()
+  posts: (query) => query.where("published", true),
+}).get();
 ```
 
 ## Soft Deletes

@@ -9,16 +9,16 @@ LaraNode provides a dot-notation configuration system for managing application s
 Get a configuration value:
 
 ```typescript
-import { config } from '@lara-node/core'
+import { config } from "@lara-node/core";
 
 // Get value
-const host = config('database.mysql.host')
+const host = config("database.mysql.host");
 
 // Get with default
-const port = config('app.port', 3000)
+const port = config("app.port", 3000);
 
 // Get entire section
-const dbConfig = config('database')
+const dbConfig = config("database");
 ```
 
 ### `setConfig()`
@@ -26,10 +26,10 @@ const dbConfig = config('database')
 Set a configuration value:
 
 ```typescript
-import { setConfig } from '@lara-node/core'
+import { setConfig } from "@lara-node/core";
 
-setConfig('app.debug', true)
-setConfig('database.mysql.host', 'localhost')
+setConfig("app.debug", true);
+setConfig("database.mysql.host", "localhost");
 ```
 
 ### `hasConfig()`
@@ -37,9 +37,9 @@ setConfig('database.mysql.host', 'localhost')
 Check if a configuration key exists:
 
 ```typescript
-import { hasConfig } from '@lara-node/core'
+import { hasConfig } from "@lara-node/core";
 
-if (hasConfig('cache.redis')) {
+if (hasConfig("cache.redis")) {
   // Redis is configured
 }
 ```
@@ -49,10 +49,10 @@ if (hasConfig('cache.redis')) {
 Get all configuration:
 
 ```typescript
-import { allConfig } from '@lara-node/core'
+import { allConfig } from "@lara-node/core";
 
-const all = allConfig()
-console.log(all.database)
+const all = allConfig();
+console.log(all.database);
 ```
 
 ## Loading Configuration
@@ -61,12 +61,12 @@ Configuration is typically loaded from files in `src/config/`:
 
 ```typescript
 // src/bootstrap/app.ts
-import { setConfig } from '@lara-node/core'
-import databaseConfig from '../config/database.config'
-import cacheConfig from '../config/cache.config'
+import { setConfig } from "@lara-node/core";
+import databaseConfig from "../config/database.config";
+import cacheConfig from "../config/cache.config";
 
-setConfig('database', databaseConfig)
-setConfig('cache', cacheConfig)
+setConfig("database", databaseConfig);
+setConfig("cache", cacheConfig);
 ```
 
 ## Dot Notation
@@ -77,14 +77,14 @@ Access nested values with dot notation:
 // config/database.config.ts
 export default {
   mysql: {
-    host: 'localhost',
-    port: 3306
-  }
-}
+    host: "localhost",
+    port: 3306,
+  },
+};
 
 // Access
-config('database.mysql.host') // 'localhost'
-config('database.mysql.port') // 3306
+config("database.mysql.host"); // 'localhost'
+config("database.mysql.port"); // 3306
 ```
 
 ## Next Steps

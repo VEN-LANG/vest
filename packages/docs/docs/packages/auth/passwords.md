@@ -5,17 +5,17 @@ Securely hash and verify passwords using bcrypt.
 ## Hashing Passwords
 
 ```typescript
-import { hashPassword } from '@lara-node/auth'
+import { hashPassword } from "@lara-node/auth";
 
-const hashed = await hashPassword('my-secret-password')
+const hashed = await hashPassword("my-secret-password");
 ```
 
 ## Verifying Passwords
 
 ```typescript
-import { comparePassword } from '@lara-node/auth'
+import { comparePassword } from "@lara-node/auth";
 
-const isValid = await comparePassword('my-secret-password', hashed)
+const isValid = await comparePassword("my-secret-password", hashed);
 // true or false
 ```
 
@@ -68,12 +68,12 @@ Hash passwords automatically using a model observer:
 @Observe(User)
 class UserObserver extends Observer {
   async creating(user: User) {
-    user.password = await hashPassword(user.password)
+    user.password = await hashPassword(user.password);
   }
 
   async updating(user: User) {
-    if (user.isDirty('password')) {
-      user.password = await hashPassword(user.password)
+    if (user.isDirty("password")) {
+      user.password = await hashPassword(user.password);
     }
   }
 }

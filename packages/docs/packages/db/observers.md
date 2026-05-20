@@ -7,8 +7,8 @@ Observers allow you to listen to model lifecycle events.
 Extend the `Observer` class:
 
 ```typescript
-import { Observer } from '@lara-node/db'
-import { User } from '../Models/User'
+import { Observer } from "@lara-node/db";
+import { User } from "../Models/User";
 
 @Observe(User)
 class UserObserver extends Observer {
@@ -18,7 +18,7 @@ class UserObserver extends Observer {
 
   async created(user: User) {
     // After creating
-    console.log(`User created: ${user.email}`)
+    console.log(`User created: ${user.email}`);
   }
 
   async updating(user: User) {
@@ -53,18 +53,18 @@ class UserObserver extends Observer {
 
 ## Available Events
 
-| Event | When |
-|-------|------|
-| `creating` | Before a new model is saved |
-| `created` | After a new model is saved |
-| `updating` | Before an existing model is updated |
-| `updated` | After an existing model is updated |
-| `saving` | Before a model is saved (create or update) |
-| `saved` | After a model is saved |
-| `deleting` | Before a model is deleted |
-| `deleted` | After a model is deleted |
-| `restoring` | Before a soft-deleted model is restored |
-| `restored` | After a soft-deleted model is restored |
+| Event       | When                                         |
+| ----------- | -------------------------------------------- |
+| `creating`  | Before a new model is saved                  |
+| `created`   | After a new model is saved                   |
+| `updating`  | Before an existing model is updated          |
+| `updated`   | After an existing model is updated           |
+| `saving`    | Before a model is saved (create or update)   |
+| `saved`     | After a model is saved                       |
+| `deleting`  | Before a model is deleted                    |
+| `deleted`   | After a model is deleted                     |
+| `restoring` | Before a soft-deleted model is restored      |
+| `restored`  | After a soft-deleted model is restored       |
 | `retrieved` | After a model is retrieved from the database |
 
 ## Registering Observers
@@ -72,7 +72,7 @@ class UserObserver extends Observer {
 ### Using @Observe Decorator
 
 ```typescript
-import { Observe } from '@lara-node/db'
+import { Observe } from "@lara-node/db";
 
 @Observe(User)
 class UserObserver extends Observer {
@@ -85,7 +85,7 @@ class UserObserver extends Observer {
 ### Manual Registration
 
 ```typescript
-User.observe(UserObserver)
+User.observe(UserObserver);
 ```
 
 ## Example: Hash Password
@@ -95,13 +95,13 @@ User.observe(UserObserver)
 class UserObserver extends Observer {
   async creating(user: User) {
     if (user.password) {
-      user.password = await hashPassword(user.password)
+      user.password = await hashPassword(user.password);
     }
   }
 
   async updating(user: User) {
-    if (user.isDirty('password')) {
-      user.password = await hashPassword(user.password)
+    if (user.isDirty("password")) {
+      user.password = await hashPassword(user.password);
     }
   }
 }
@@ -113,7 +113,7 @@ class UserObserver extends Observer {
 @Observe(User)
 class UserObserver extends Observer {
   async created(user: User) {
-    await Mail.to(user.email).send(new WelcomeMailable(user))
+    await Mail.to(user.email).send(new WelcomeMailable(user));
   }
 }
 ```
@@ -124,11 +124,11 @@ class UserObserver extends Observer {
 @Observe(User)
 class UserObserver extends Observer {
   async updated(user: User) {
-    await Cache.del(`user:${user.id}`)
+    await Cache.del(`user:${user.id}`);
   }
 
   async deleted(user: User) {
-    await Cache.del(`user:${user.id}`)
+    await Cache.del(`user:${user.id}`);
   }
 }
 ```

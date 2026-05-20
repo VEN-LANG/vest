@@ -1,15 +1,20 @@
 import { RequestHandler } from "express";
 import { middlewareStack, MiddlewareStack } from "./MiddlewareStack.js";
-import type { Middleware, IMiddleware, MiddlewareGroupConfig, MiddlewareEntry } from "./MiddlewareStack.js";
+import type {
+  Middleware,
+  IMiddleware,
+  MiddlewareGroupConfig,
+  MiddlewareEntry,
+} from "./MiddlewareStack.js";
 
 // globalThis singleton — survives multiple versions of this module in the same process
 const _REGISTRY_KEY = "__lara_node_middleware_registry__";
 if (!(globalThis as Record<string, unknown>)[_REGISTRY_KEY]) {
   (globalThis as Record<string, unknown>)[_REGISTRY_KEY] = {};
 }
-const registry: Record<string, MiddlewareEntry> = (
-  globalThis as Record<string, unknown>
-)[_REGISTRY_KEY] as Record<string, MiddlewareEntry>;
+const registry: Record<string, MiddlewareEntry> = (globalThis as Record<string, unknown>)[
+  _REGISTRY_KEY
+] as Record<string, MiddlewareEntry>;
 
 export function registerMiddleware(name: string, entry: MiddlewareEntry | Middleware): void {
   registry[name] = entry as MiddlewareEntry;
@@ -60,4 +65,11 @@ export function resolveMiddleware(
   throw new Error(`Unknown middleware: ${String(mw)}`);
 }
 
-export { MiddlewareStack, Middleware, IMiddleware, MiddlewareGroupConfig, middlewareStack, MiddlewareEntry };
+export {
+  MiddlewareStack,
+  Middleware,
+  IMiddleware,
+  MiddlewareGroupConfig,
+  middlewareStack,
+  MiddlewareEntry,
+};

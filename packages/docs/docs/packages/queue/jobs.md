@@ -5,16 +5,16 @@ Jobs are classes that represent units of work to be processed by queue workers.
 ## Creating Jobs
 
 ```typescript
-import { Job, Queueable } from '@lara-node/queue'
+import { Job, Queueable } from "@lara-node/queue";
 
 @Queueable()
 class ProcessPodcast extends Job {
   constructor(private podcastId: number) {
-    super()
+    super();
   }
 
   async handle() {
-    const podcast = await Podcast.find(this.podcastId)
+    const podcast = await Podcast.find(this.podcastId);
     // Process the podcast
   }
 }
@@ -24,8 +24,8 @@ class ProcessPodcast extends Job {
 
 ```typescript
 @Queueable({
-  queue: 'default',
-  connection: 'redis',
+  queue: "default",
+  connection: "redis",
   tries: 3,
   timeout: 60,
   backoff: [10, 30, 60],
@@ -35,29 +35,29 @@ class MyJob extends Job {
 }
 ```
 
-| Property | Default | Description |
-|----------|---------|-------------|
-| `queue` | `'default'` | Queue name |
-| `connection` | default | Queue connection |
-| `tries` | 1 | Max retry attempts |
-| `timeout` | 60 | Timeout in seconds |
-| `backoff` | `[]` | Delay between retries |
-| `delay` | 0 | Delay before running |
+| Property     | Default     | Description           |
+| ------------ | ----------- | --------------------- |
+| `queue`      | `'default'` | Queue name            |
+| `connection` | default     | Queue connection      |
+| `tries`      | 1           | Max retry attempts    |
+| `timeout`    | 60          | Timeout in seconds    |
+| `backoff`    | `[]`        | Delay between retries |
+| `delay`      | 0           | Delay before running  |
 
 ## Dispatching Jobs
 
 ```typescript
 // Basic dispatch
-await ProcessPodcast.dispatch(podcastId)
+await ProcessPodcast.dispatch(podcastId);
 
 // Fluent dispatch
 await ProcessPodcast.dispatch(podcastId)
-  .onQueue('podcasts')
-  .onConnection('redis')
+  .onQueue("podcasts")
+  .onConnection("redis")
   .withDelay(300)
   .withTries(5)
   .withTimeout(120)
-  .withBackoff([10, 30, 60])
+  .withBackoff([10, 30, 60]);
 ```
 
 ## Sync Dispatch
@@ -65,13 +65,13 @@ await ProcessPodcast.dispatch(podcastId)
 Run immediately without queue:
 
 ```typescript
-await ProcessPodcast.dispatchSync(podcastId)
+await ProcessPodcast.dispatchSync(podcastId);
 ```
 
 ## Dispatch After Response
 
 ```typescript
-await ProcessPodcast.dispatch(podcastId).afterResponse()
+await ProcessPodcast.dispatch(podcastId).afterResponse();
 ```
 
 ## Job Lifecycle
@@ -84,7 +84,7 @@ class ProcessPodcast extends Job {
 
   async failed(error: Error) {
     // Called when job fails
-    console.error('Job failed:', error.message)
+    console.error("Job failed:", error.message);
   }
 
   async middleware() {
@@ -93,7 +93,7 @@ class ProcessPodcast extends Job {
 
   tags() {
     // Tags for monitoring
-    return ['podcast', `podcast:${this.podcastId}`]
+    return ["podcast", `podcast:${this.podcastId}`];
   }
 }
 ```
@@ -104,7 +104,7 @@ Prevent duplicate jobs:
 
 ```typescript
 @Queueable({
-  uniqueId: 'podcast',
+  uniqueId: "podcast",
   uniqueFor: 3600, // 1 hour
 })
 class ProcessPodcast extends Job {

@@ -2,6 +2,21 @@
   "name": "@lara-node/carbon",
   "version": "0.1.1",
   "description": "Laravel Carbon-inspired date/time library for Node.js — immutable, fluent, zero-dependency",
+  "keywords": [
+    "carbon",
+    "date",
+    "datetime",
+    "fluent",
+    "immutable",
+    "lara-node",
+    "laravel",
+    "timezone"
+  ],
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -13,10 +28,6 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
   "publishConfig": {
     "access": "public"
   },
@@ -33,16 +44,5 @@
     "tsdown": "^0.12.9",
     "typescript": "^5.9.3",
     "vitest": "^3.2.3"
-  },
-  "keywords": [
-    "carbon",
-    "date",
-    "datetime",
-    "immutable",
-    "laravel",
-    "lara-node",
-    "fluent",
-    "timezone"
-  ],
-  "license": "MIT"
+  }
 }

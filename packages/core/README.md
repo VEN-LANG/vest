@@ -11,10 +11,10 @@ pnpm add @lara-node/core
 ## Quick Start
 
 ```ts
-import 'reflect-metadata';
-import { Application, container } from '@lara-node/core';
-import { AppServiceProvider } from './app/Providers/AppServiceProvider';
-import { RouteServiceProvider } from './app/Providers/RouteServiceProvider';
+import "reflect-metadata";
+import { Application, container } from "@lara-node/core";
+import { AppServiceProvider } from "./app/Providers/AppServiceProvider";
+import { RouteServiceProvider } from "./app/Providers/RouteServiceProvider";
 
 const app = new Application(container);
 
@@ -22,7 +22,7 @@ app.register(AppServiceProvider);
 app.register(RouteServiceProvider);
 
 await app.boot();
-app.listen(3000, () => console.log('Listening on :3000'));
+app.listen(3000, () => console.log("Listening on :3000"));
 ```
 
 ## API
@@ -32,7 +32,7 @@ app.listen(3000, () => console.log('Listening on :3000'));
 The main application class. Wraps an Express instance, a service provider registry, and the IoC container.
 
 ```ts
-import { Application, container } from '@lara-node/core';
+import { Application, container } from "@lara-node/core";
 
 const app = new Application(container);
 
@@ -53,7 +53,7 @@ const server = app.getHttpServer();
 
 // Start listening
 app.listen(3000);
-app.listen(3000, () => console.log('Ready'));
+app.listen(3000, () => console.log("Ready"));
 ```
 
 ### `Container`
@@ -61,16 +61,16 @@ app.listen(3000, () => console.log('Ready'));
 Lightweight IoC container with constructor injection via `reflect-metadata`.
 
 ```ts
-import { container } from '@lara-node/core';
+import { container } from "@lara-node/core";
 
 // Bind a factory (new instance each time)
-container.bind('mailer', () => new MailService());
+container.bind("mailer", () => new MailService());
 
 // Bind a singleton
-container.singleton('db', () => new DatabaseService());
+container.singleton("db", () => new DatabaseService());
 
 // Resolve
-const db = container.make<DatabaseService>('db');
+const db = container.make<DatabaseService>("db");
 
 // Register a class directly (uses constructor injection)
 container.singleton(AuthService);
@@ -79,7 +79,7 @@ container.singleton(AuthService);
 container.singleton(IUserRepository, UserRepository);
 
 // Create an alias
-container.alias('cache', 'CacheManager');
+container.alias("cache", "CacheManager");
 ```
 
 ### `ServiceProvider`
@@ -87,9 +87,9 @@ container.alias('cache', 'CacheManager');
 Base class for all service providers. Override `register()` to bind things into the container and `boot()` to run logic after all providers are registered.
 
 ```ts
-import { ServiceProvider } from '@lara-node/core';
-import { AuthService } from '../Services/AuthService';
-import { UserRepository } from '../Repositories/UserRepository';
+import { ServiceProvider } from "@lara-node/core";
+import { AuthService } from "../Services/AuthService";
+import { UserRepository } from "../Repositories/UserRepository";
 
 export class AppServiceProvider extends ServiceProvider {
   register(): void {
@@ -97,7 +97,7 @@ export class AppServiceProvider extends ServiceProvider {
     this.singleton(AuthService);
 
     // Bind with factory
-    this.app.container.bind('stripe', () => new StripeClient(process.env.STRIPE_KEY!));
+    this.app.container.bind("stripe", () => new StripeClient(process.env.STRIPE_KEY!));
   }
 
   async boot(): Promise<void> {
@@ -114,19 +114,19 @@ export class AppServiceProvider extends ServiceProvider {
 Dot-notation config accessor. Namespaces are registered by service providers or at bootstrap.
 
 ```ts
-import { config, setConfig } from '@lara-node/core';
+import { config, setConfig } from "@lara-node/core";
 
 // Register a config namespace (done in a ServiceProvider)
-setConfig('app', {
-  name: process.env.APP_NAME ?? 'Lara-Node',
-  env: process.env.NODE_ENV ?? 'production',
-  debug: process.env.APP_DEBUG === 'true',
+setConfig("app", {
+  name: process.env.APP_NAME ?? "Lara-Node",
+  env: process.env.NODE_ENV ?? "production",
+  debug: process.env.APP_DEBUG === "true",
 });
 
 // Read with dot notation
-const appName = config('app.name');
-const debug   = config<boolean>('app.debug', false);
-const driver  = config('db.default', 'mysql');
+const appName = config("app.name");
+const debug = config<boolean>("app.debug", false);
+const driver = config("db.default", "mysql");
 ```
 
 ### `@Injectable()`
@@ -134,7 +134,7 @@ const driver  = config('db.default', 'mysql');
 Marks a class for automatic constructor injection. Requires `emitDecoratorMetadata: true` in `tsconfig.json` and `import 'reflect-metadata'` before first use.
 
 ```ts
-import { Injectable } from '@lara-node/core';
+import { Injectable } from "@lara-node/core";
 
 @Injectable()
 export class AuthService {
@@ -154,13 +154,11 @@ export class AuthService {
 Manually specify the resolution token for a constructor parameter when the type alone is not sufficient.
 
 ```ts
-import { Injectable, Inject } from '@lara-node/core';
+import { Injectable, Inject } from "@lara-node/core";
 
 @Injectable()
 export class MailService {
-  constructor(
-    @Inject('smtp-config') private readonly config: SmtpConfig,
-  ) {}
+  constructor(@Inject("smtp-config") private readonly config: SmtpConfig) {}
 }
 ```
 
@@ -169,7 +167,7 @@ export class MailService {
 Marks a `ServiceProvider` subclass for auto-discovery via `app.discoverProviders()`. Registration order follows module import order.
 
 ```ts
-import { ServiceProvider, Provider } from '@lara-node/core';
+import { ServiceProvider, Provider } from "@lara-node/core";
 
 @Provider()
 export class AppServiceProvider extends ServiceProvider {
@@ -182,9 +180,9 @@ export class AppServiceProvider extends ServiceProvider {
 In your bootstrap file, import providers in the desired registration order before calling `discoverProviders()`:
 
 ```ts
-import './app/Providers/AppServiceProvider';
-import './app/Providers/MiddlewareServiceProvider';
-import './app/Providers/RouteServiceProvider';
+import "./app/Providers/AppServiceProvider";
+import "./app/Providers/MiddlewareServiceProvider";
+import "./app/Providers/RouteServiceProvider";
 
 app.discoverProviders();
 ```
@@ -192,14 +190,14 @@ app.discoverProviders();
 ### Middleware registration
 
 ```ts
-import { registerMiddleware, resolveMiddleware } from '@lara-node/core';
+import { registerMiddleware, resolveMiddleware } from "@lara-node/core";
 
 // Register a named alias
-registerMiddleware('auth', JwtMiddleware);
-registerMiddleware('throttle', ThrottleMiddleware);
+registerMiddleware("auth", JwtMiddleware);
+registerMiddleware("throttle", ThrottleMiddleware);
 
 // Resolve (used internally by the router)
-const handler = resolveMiddleware('auth');
+const handler = resolveMiddleware("auth");
 ```
 
 ## Config File Pattern
@@ -207,24 +205,24 @@ const handler = resolveMiddleware('auth');
 A typical `config/app.ts`:
 
 ```ts
-import { setConfig } from '@lara-node/core';
+import { setConfig } from "@lara-node/core";
 
-setConfig('app', {
-  name: process.env.APP_NAME ?? 'My API',
-  env: process.env.NODE_ENV ?? 'production',
-  debug: process.env.APP_DEBUG === 'true',
-  url: process.env.APP_URL ?? 'http://localhost:3000',
+setConfig("app", {
+  name: process.env.APP_NAME ?? "My API",
+  env: process.env.NODE_ENV ?? "production",
+  debug: process.env.APP_DEBUG === "true",
+  url: process.env.APP_URL ?? "http://localhost:3000",
   key: process.env.APP_KEY,
-  timezone: 'UTC',
+  timezone: "UTC",
 });
 ```
 
 Load it before calling `app.boot()`:
 
 ```ts
-import './config/app';
-import './config/db';
-import './config/mail';
+import "./config/app";
+import "./config/db";
+import "./config/mail";
 ```
 
 ## Notes

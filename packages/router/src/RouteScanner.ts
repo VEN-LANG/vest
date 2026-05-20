@@ -50,9 +50,9 @@ if (!(globalThis as Record<string, unknown>)[_BUILDERS_KEY]) {
   (globalThis as Record<string, unknown>)[_BUILDERS_KEY] = [];
 }
 /** Registry for route builders — populated by the app at boot time. */
-const _routeBuilders: RouteBuilderEntry[] = (
-  globalThis as Record<string, unknown>
-)[_BUILDERS_KEY] as RouteBuilderEntry[];
+const _routeBuilders: RouteBuilderEntry[] = (globalThis as Record<string, unknown>)[
+  _BUILDERS_KEY
+] as RouteBuilderEntry[];
 
 /**
  * Register a RouterBuilder for OpenAPI scanning and — optionally — mount it

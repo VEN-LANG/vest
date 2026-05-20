@@ -6,22 +6,22 @@ Watchers monitor different aspects of your application.
 
 Telescope records these entry types:
 
-| Type | Description |
-|------|-------------|
-| `request` | HTTP requests |
+| Type        | Description           |
+| ----------- | --------------------- |
+| `request`   | HTTP requests         |
 | `exception` | Errors and exceptions |
-| `query` | Database queries |
-| `cache` | Cache operations |
-| `job` | Queue jobs |
-| `schedule` | Scheduled tasks |
-| `log` | Log entries |
+| `query`     | Database queries      |
+| `cache`     | Cache operations      |
+| `job`       | Queue jobs            |
+| `schedule`  | Scheduled tasks       |
+| `log`       | Log entries           |
 
 ## QueryWatcher
 
 Watches database queries via `db:query` events:
 
 ```typescript
-import { QueryWatcher } from '@lara-node/telescope'
+import { QueryWatcher } from "@lara-node/telescope";
 
 // Automatically logs all queries
 ```
@@ -31,8 +31,8 @@ import { QueryWatcher } from '@lara-node/telescope'
 Watches cache operations:
 
 ```typescript
-import { CacheWatcher } from '@lara-node/telescope'
-import { setCacheWatchHook } from '@lara-node/cache'
+import { CacheWatcher } from "@lara-node/telescope";
+import { setCacheWatchHook } from "@lara-node/cache";
 
 // Hook is set automatically by TelescopeServiceProvider
 ```
@@ -40,20 +40,20 @@ import { setCacheWatchHook } from '@lara-node/cache'
 ## Recording Entries
 
 ```typescript
-import { TelescopeStore } from '@lara-node/telescope'
+import { TelescopeStore } from "@lara-node/telescope";
 
-const store = new TelescopeStore()
+const store = new TelescopeStore();
 
-store.record('request', {
-  method: 'GET',
-  url: '/api/users',
+store.record("request", {
+  method: "GET",
+  url: "/api/users",
   status: 200,
-})
+});
 
-store.record('exception', {
+store.record("exception", {
   message: error.message,
   stack: error.stack,
-})
+});
 ```
 
 ## Querying Entries
@@ -61,27 +61,27 @@ store.record('exception', {
 ```typescript
 // Get entries
 const entries = store.getEntries({
-  type: 'request',
-  tag: 'api',
+  type: "request",
+  tag: "api",
   limit: 50,
-})
+});
 
 // Get single entry
-const entry = store.getEntry(id)
+const entry = store.getEntry(id);
 
 // Stats
-const stats = store.stats()
+const stats = store.stats();
 
 // Clear
-store.clear()
+store.clear();
 ```
 
 ## Metric Buckets
 
 ```typescript
 // Per-minute request metrics
-const requests = store.getRequestBucket()
-const queries = store.getQueryBucket()
+const requests = store.getRequestBucket();
+const queries = store.getQueryBucket();
 ```
 
 ## Next Steps

@@ -5,10 +5,9 @@ Protect routes with JWT authentication middleware.
 ## Basic Usage
 
 ```typescript
-import { authMiddleware } from '@lara-node/auth'
+import { authMiddleware } from "@lara-node/auth";
 
-Route.get('/profile', UserController.profile)
-  .middleware('auth')
+Route.get("/profile", UserController.profile).middleware("auth");
 ```
 
 ## How It Works
@@ -68,9 +67,9 @@ export class MiddlewareProvider extends MiddlewareServiceProvider {
         auth: AuthMiddleware,
       },
       groups: {
-        api: ['auth', 'throttle'],
+        api: ["auth", "throttle"],
       },
-    }
+    };
   }
 }
 ```

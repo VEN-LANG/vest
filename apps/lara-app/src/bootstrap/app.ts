@@ -1,5 +1,5 @@
-import { container, Application } from '@lara-node/core';
-import { AppServiceProvider } from '../app/Providers/AppServiceProvider';
+import { container, Application } from "@lara-node/core";
+import { AppServiceProvider } from "../app/Providers/AppServiceProvider";
 
 export const app = new Application(container);
 
@@ -8,7 +8,7 @@ export async function bootForConsole(): Promise<void> {
     app.register(AppServiceProvider);
     await app.boot();
   } catch (err) {
-    console.error('Failed to boot application:', err);
+    console.error("Failed to boot application:", err);
     process.exit(1);
   }
 }

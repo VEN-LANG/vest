@@ -39,7 +39,10 @@ function resolveMigrationModule(mod: any) {
     if (typeof proto.up === "function" || typeof proto.down === "function") {
       try {
         const inst = new (mod as new () => unknown)();
-        if (inst && (typeof (inst as any).up === "function" || typeof (inst as any).down === "function"))
+        if (
+          inst &&
+          (typeof (inst as any).up === "function" || typeof (inst as any).down === "function")
+        )
           return inst;
       } catch (_) {}
     }
@@ -55,7 +58,10 @@ function resolveMigrationModule(mod: any) {
         if (typeof proto.up === "function" || typeof proto.down === "function") {
           try {
             const inst = new (val as new () => unknown)();
-            if (inst && (typeof (inst as any).up === "function" || typeof (inst as any).down === "function"))
+            if (
+              inst &&
+              (typeof (inst as any).up === "function" || typeof (inst as any).down === "function")
+            )
               return inst;
           } catch (_) {}
         }

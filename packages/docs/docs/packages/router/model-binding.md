@@ -7,38 +7,38 @@ Route model binding automatically resolves route parameters to model instances.
 Use the `@Bind()` decorator on a model:
 
 ```typescript
-import { Model, Bind } from '@lara-node/db'
+import { Model, Bind } from "@lara-node/db";
 
-@Bind('user')
+@Bind("user")
 class User extends Model {
-  static table = 'users'
+  static table = "users";
 }
 ```
 
 Now routes with `:user` parameter automatically resolve:
 
 ```typescript
-Route.get('/users/:user', (req) => {
+Route.get("/users/:user", (req) => {
   // req.user is already the User model instance
-  return req.user
-})
+  return req.user;
+});
 ```
 
 ## Controller Usage
 
 ```typescript
-@Route('/api/users')
+@Route("/api/users")
 class UserController {
-  @Route.get('/:user')
+  @Route.get("/:user")
   async show(req: Request) {
     // req.user is the resolved User model
-    return req.user
+    return req.user;
   }
 
-  @Route.put('/:user')
+  @Route.put("/:user")
   async update(req: Request) {
-    const user = req.user
-    return user.update(req.body)
+    const user = req.user;
+    return user.update(req.body);
   }
 }
 ```
@@ -48,15 +48,15 @@ class UserController {
 You can customize how models are resolved:
 
 ```typescript
-Route.model('user', async (value) => {
-  return User.where('slug', value).firstOrFail()
-})
+Route.model("user", async (value) => {
+  return User.where("slug", value).firstOrFail();
+});
 ```
 
 ## Enable Auto Model Binding
 
 ```typescript
-Route.enableAutoModelBinding()
+Route.enableAutoModelBinding();
 ```
 
 ## Next Steps

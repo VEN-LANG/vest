@@ -60,32 +60,32 @@ export interface SchedulerTaskInfo {
   nextRun: Date | null;
 }
 
-const WORKER_TTL = 90;  // seconds — individual snapshot TTL (refreshed by heartbeat)
-const JOBS_LIMIT  = 500;
+const WORKER_TTL = 90; // seconds — individual snapshot TTL (refreshed by heartbeat)
+const JOBS_LIMIT = 500;
 const SCHEDULER_TTL = 300; // 5 minutes — refreshed on every task run
 
 /** Per-minute aggregation bucket for throughput and duration charts. */
 export interface JobMinuteBucket {
-  ts: number;       // minute start timestamp (ms, floor to minute)
+  ts: number; // minute start timestamp (ms, floor to minute)
   processed: number;
   failed: number;
-  totalMs: number;  // sum of durations (for avg)
-  maxMs: number;    // max single-job duration
+  totalMs: number; // sum of durations (for avg)
+  maxMs: number; // max single-job duration
 }
 
 const appName = () => process.env.APP_NAME || "app";
 
 const K = {
-  wids:      "horizon:wids",
-  worker:    (id: string) => `horizon:w:${id}`,
-  jobs:      "horizon:jobs",
-  throughput:"horizon:throughput",
-  wdefs:     "horizon:wdefs",
+  wids: "horizon:wids",
+  worker: (id: string) => `horizon:w:${id}`,
+  jobs: "horizon:jobs",
+  throughput: "horizon:throughput",
+  wdefs: "horizon:wdefs",
   scheduler: "horizon:scheduler",
   // Must include the APP_NAME segment so the key matches what Worker.checkHorizonSignal
   // constructs (it manually prepends "${APP_NAME}:horizon:ctrl" before calling Cache,
   // and Cache then adds its own CACHE_PREFIX on top of both).
-  ctrl:      (id: string) => `${appName()}:horizon:ctrl:${id}`,
+  ctrl: (id: string) => `${appName()}:horizon:ctrl:${id}`,
 };
 
 class HorizonMetricsStore {
@@ -106,7 +106,9 @@ class HorizonMetricsStore {
       const ids: string[] = (await Cache.get(K.wids)) ?? [];
       if (!ids.includes(id)) ids.push(id);
       await Cache.set(K.wids, ids, null);
-    } catch { /* metrics are best-effort */ }
+    } catch {
+      /* metrics are best-effort */
+    }
   }
 
   /**
@@ -144,7 +146,11 @@ class HorizonMetricsStore {
     try {
       await Cache.del(K.worker(id));
       const ids: string[] = (await Cache.get(K.wids)) ?? [];
-      await Cache.set(K.wids, ids.filter((x) => x !== id), null);
+      await Cache.set(
+        K.wids,
+        ids.filter((x) => x !== id),
+        null,
+      );
     } catch {}
   }
 
@@ -163,7 +169,11 @@ class HorizonMetricsStore {
         const cutoff = Date.now() - 60_000;
         const ts: number[] = (await Cache.get(K.throughput)) ?? [];
         ts.push(Date.now());
-        await Cache.set(K.throughput, ts.filter((t) => t > cutoff), 120);
+        await Cache.set(
+          K.throughput,
+          ts.filter((t) => t > cutoff),
+          120,
+        );
       }
 
       await this.updateMinuteBucket(record);
@@ -175,7 +185,11 @@ class HorizonMetricsStore {
     const key = `horizon:mb:${minuteTs}`;
     try {
       const b: JobMinuteBucket = (await Cache.get(key)) ?? {
-        ts: minuteTs, processed: 0, failed: 0, totalMs: 0, maxMs: 0,
+        ts: minuteTs,
+        processed: 0,
+        failed: 0,
+        totalMs: 0,
+        maxMs: 0,
       };
       if (record.status === "processed") {
         b.processed++;
@@ -250,7 +264,11 @@ class HorizonMetricsStore {
       const snaps = await Promise.all(ids.map((id) => Cache.get(K.worker(id)).catch(() => null)));
       const valid = snaps.filter(Boolean) as WorkerSnapshot[];
       if (valid.length < ids.length) {
-        Cache.set(K.wids, valid.map((w) => w.id), null).catch(() => {});
+        Cache.set(
+          K.wids,
+          valid.map((w) => w.id),
+          null,
+        ).catch(() => {});
       }
       return valid;
     } catch {

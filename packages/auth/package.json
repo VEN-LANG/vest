@@ -2,6 +2,10 @@
   "name": "@lara-node/auth",
   "version": "0.1.7",
   "description": "Lara-Node JWT authentication helpers",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -13,10 +17,6 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
   "publishConfig": {
     "access": "public"
   },
@@ -33,6 +33,7 @@
     "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
+    "@lara-node/core": "workspace:^",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
@@ -40,8 +41,7 @@
     "rimraf": "^6.0.1",
     "tsdown": "^0.12.9",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.3",
-    "@lara-node/core": "workspace:^"
+    "vitest": "^3.2.3"
   },
   "peerDependencies": {
     "@lara-node/core": "^0.1.5"

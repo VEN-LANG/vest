@@ -1,7 +1,11 @@
 import type { Application } from "./Application.js";
 import type { Abstract } from "./Container.js";
 import { middlewareStack, registerMiddleware } from "./middleware.js";
-import type { MiddlewareEntry, Middleware, MiddlewareStack as IMiddlewareStack } from "./MiddlewareStack.js";
+import type {
+  MiddlewareEntry,
+  Middleware,
+  MiddlewareStack as IMiddlewareStack,
+} from "./MiddlewareStack.js";
 import { config as globalConfig, setConfig } from "./Config.js";
 
 export type ServiceProviderClass = new (app: Application) => ServiceProvider;

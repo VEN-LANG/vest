@@ -13,8 +13,8 @@ pnpm add @lara-node/telescope
 Register the service provider in your application bootstrap:
 
 ```ts
-import { Application } from '@lara-node/core';
-import { TelescopeServiceProvider } from '@lara-node/telescope';
+import { Application } from "@lara-node/core";
+import { TelescopeServiceProvider } from "@lara-node/telescope";
 
 const app = new Application(container);
 app.register(TelescopeServiceProvider);
@@ -31,7 +31,7 @@ Open `http://localhost:3000/telescope` to access the dashboard.
 Registers all watchers and mounts the dashboard route. This is the only export you need for standard use.
 
 ```ts
-import { TelescopeServiceProvider } from '@lara-node/telescope';
+import { TelescopeServiceProvider } from "@lara-node/telescope";
 
 app.register(TelescopeServiceProvider);
 ```
@@ -41,18 +41,18 @@ app.register(TelescopeServiceProvider);
 In-memory circular buffer that holds all recorded entries.
 
 ```ts
-import { TelescopeStore } from '@lara-node/telescope';
+import { TelescopeStore } from "@lara-node/telescope";
 
 // Record a custom entry
-TelescopeStore.record('custom', { message: 'Something happened' }, ['tag:foo']);
+TelescopeStore.record("custom", { message: "Something happened" }, ["tag:foo"]);
 
 // Retrieve entries
-const entries = TelescopeStore.getEntries({ type: 'request', limit: 50 });
-const entry   = TelescopeStore.getEntry(entryId);
+const entries = TelescopeStore.getEntries({ type: "request", limit: 50 });
+const entry = TelescopeStore.getEntry(entryId);
 
 // Clear entries
-TelescopeStore.clear();           // clear all
-TelescopeStore.clear('queries');  // clear only DB query entries
+TelescopeStore.clear(); // clear all
+TelescopeStore.clear("queries"); // clear only DB query entries
 ```
 
 ### Watcher classes
@@ -60,7 +60,7 @@ TelescopeStore.clear('queries');  // clear only DB query entries
 Individual watchers can be instantiated and configured separately if you need more control:
 
 ```ts
-import { QueryWatcher, CacheWatcher } from '@lara-node/telescope';
+import { QueryWatcher, CacheWatcher } from "@lara-node/telescope";
 
 const queryWatcher = new QueryWatcher();
 queryWatcher.listen(); // starts recording DB queries
@@ -99,52 +99,48 @@ Configure `ignoredPaths` to exclude health check or metrics endpoints from reque
 Create `config/telescope.config.ts`:
 
 ```ts
-import { TelescopeConfig } from '@lara-node/telescope';
+import { TelescopeConfig } from "@lara-node/telescope";
 
 export default {
   enabled: true,
-  path: '/telescope',
+  path: "/telescope",
   token: process.env.TELESCOPE_TOKEN,
 
   watchers: {
-    requests:   true,
-    queries:    true,
-    jobs:       true,
-    cache:      true,
-    logs:       true,
+    requests: true,
+    queries: true,
+    jobs: true,
+    cache: true,
+    logs: true,
     exceptions: true,
-    scheduler:  true,
+    scheduler: true,
   },
 
   pruneAfterHours: 48,
   maxEntries: 1000,
 
-  ignoredPaths: [
-    '/health',
-    '/metrics',
-    '/telescope',
-  ],
+  ignoredPaths: ["/health", "/metrics", "/telescope"],
 } satisfies TelescopeConfig;
 ```
 
 Load it in a service provider:
 
 ```ts
-import { setConfig } from '@lara-node/core';
-import telescopeConfig from '../config/telescope.config';
+import { setConfig } from "@lara-node/core";
+import telescopeConfig from "../config/telescope.config";
 
-setConfig('telescope', telescopeConfig);
+setConfig("telescope", telescopeConfig);
 ```
 
 ## Environment Variables
 
-| Variable                 | Default      | Description                                               |
-|--------------------------|--------------|-----------------------------------------------------------|
-| `TELESCOPE_ENABLED`      | `true`       | Set to `false` to disable Telescope entirely              |
-| `TELESCOPE_PATH`         | `/telescope` | URL path where the dashboard is mounted                   |
-| `TELESCOPE_TOKEN`        | —            | Optional access token for dashboard protection            |
-| `TELESCOPE_PRUNE_HOURS`  | `48`         | Hours before entries are automatically pruned             |
-| `TELESCOPE_MAX_ENTRIES`  | `1000`       | Maximum number of entries held in memory                  |
+| Variable                | Default      | Description                                    |
+| ----------------------- | ------------ | ---------------------------------------------- |
+| `TELESCOPE_ENABLED`     | `true`       | Set to `false` to disable Telescope entirely   |
+| `TELESCOPE_PATH`        | `/telescope` | URL path where the dashboard is mounted        |
+| `TELESCOPE_TOKEN`       | —            | Optional access token for dashboard protection |
+| `TELESCOPE_PRUNE_HOURS` | `48`         | Hours before entries are automatically pruned  |
+| `TELESCOPE_MAX_ENTRIES` | `1000`       | Maximum number of entries held in memory       |
 
 ## Notes
 
