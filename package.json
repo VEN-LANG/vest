@@ -15,7 +15,8 @@
     "format": "oxfmt packages apps",
     "format:check": "oxfmt --check packages apps",
     "clean": "pnpm -r --filter './packages/*' clean",
-    "create-lara-node": "node packages/create-lara-node/dist/index.js"
+    "create-lara-node": "node packages/create-lara-node/dist/index.js",
+    "docs:dev": "pnpm -r --filter './packages/docs' docs:dev"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.3",
