@@ -1,26 +1,25 @@
 import yargs, { Argv, ArgumentsCamelCase } from "yargs";
 
+export type CommandArguments = Record<
+  string,
+  {
+    type: "string" | "number" | "boolean";
+    description?: string;
+    required?: boolean;
+    default?: any;
+  }
+>;
+export type CommandOptions = Record<string, {
+   type: "string" | "number" | "boolean";
+    description?: string;
+    default?: any,
+    alias?: string | string[]
+}>
 export interface CommandSignature {
   name: string;
   description: string;
-  arguments?: Record<
-    string,
-    {
-      type: "string" | "number" | "boolean";
-      description?: string;
-      required?: boolean;
-      default?: any;
-    }
-  >;
-  options?: Record<
-    string,
-    {
-      type: "string" | "number" | "boolean";
-      description?: string;
-      default?: any;
-      alias?: string | string[];
-    }
-  >;
+  arguments?: CommandArguments;
+  options?: CommandOptions;
 }
 
 export abstract class Command {
