@@ -276,7 +276,7 @@ function fmt(d){if(!d)return'-';const t=new Date(d);return t.toLocaleDateString(
 function dur(ms){if(!ms&&ms!==0)return'-';return ms<1000?ms+'ms':(ms/1000).toFixed(2)+'s';}
 function up(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),x=s%60;return h?h+'h '+m+'m':m?m+'m '+x+'s':x+'s';}
 function badge(s){return '<span class="badge '+s+'">'+s+'</span>';}
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 async function api(p,o={}){
   const r=await fetch(API_BASE+p,{headers:{...H,'Content-Type':'application/json'},...o});
   return r.json();
@@ -291,7 +291,8 @@ function applyFilters(){
   const q=document.getElementById('f-queue').value;
   const st=document.getElementById('f-status').value;
   const s=(document.getElementById('f-search').value||'').toLowerCase();
-  filteredJobs=allJobs.filter(j=>{
+  if(!q&&!st&&!s){filteredJobs=allJobs;jobPage=0;renderJobs();return;}
+  filteredJobs=allJobs.filter(function(j){
     if(q&&j.queue!==q)return false;
     if(st&&j.status!==st)return false;
     if(s&&!(j.displayName||'').toLowerCase().includes(s))return false;
@@ -310,15 +311,14 @@ function updateQueueFilter(jobs){
 }
 
 function renderJobs(){
-  const list=filteredJobs.length||document.getElementById('f-queue').value||document.getElementById('f-status').value||document.getElementById('f-search').value?filteredJobs:allJobs;
-  const total=list.length,pages=Math.max(1,Math.ceil(total/PG));
+  const total=filteredJobs.length,pages=Math.max(1,Math.ceil(total/PG));
   if(jobPage>=pages)jobPage=pages-1;
-  const slice=list.slice(jobPage*PG,(jobPage+1)*PG),base=jobPage*PG;
+  const slice=filteredJobs.slice(jobPage*PG,(jobPage+1)*PG),base=jobPage*PG;
   const maxDur=Math.max(...slice.map(j=>j.durationMs||0),1);
   var html='';
   if(!slice.length){html='<tr><td colspan="6" class="empty">No jobs</td></tr>';}
   else{slice.forEach(function(j,i){
-    html+='<tr class="clickable" onclick="showJobModal('+JSON.stringify(list)+'['+(base+i)+'])">'
+    html+='<tr class="clickable" onclick="showJobModal(filteredJobs['+(base+i)+'])">'
       +'<td class="trunc" title="'+esc(j.displayName||'')+'">'+esc(j.displayName||'-')+'</td>'
       +'<td>'+esc(j.queue||'-')+'</td><td>'+esc(j.connection||'-')+'</td>'
       +'<td>'+badge(j.status||'-')+'</td>'
@@ -499,54 +499,59 @@ async function refresh(){
       chartDur.update('none');
     }
 
-    /* Workers */
+    /* Workers — data-wid / data-act on each button avoids all quote-escaping issues */
     const wb=document.getElementById('wb');
-    wb.innerHTML=!workers.length?'<tr><td colspan="10" class="empty">No workers registered</td></tr>':workers.map(w=>\`
-      <tr>
-        <td class="trunc" title="\${esc(w.id)}">\${esc(w.id)}</td>
-        <td>\${esc(w.connection||'-')}</td>
-        <td>\${esc((Array.isArray(w.queues)?w.queues:['default']).join(', '))}</td>
-        <td>\${badge(w.status)}</td>
-        <td>\${w.jobsProcessed}</td>
-        <td>\${w.memoryMb?Math.round(w.memoryMb)+'MB':'-'}</td>
-        <td>\${w.runtimeSeconds?Math.round(w.runtimeSeconds)+'s':'-'}</td>
-        <td>\${fmt(w.lastRun)}</td>
-        <td class="trunc" title="\${w.currentJob?esc(w.currentJob.displayName):''}">\${w.currentJob?esc(w.currentJob.displayName):'-'}</td>
-        <td><div class="acts">
-          \${w.status==='running'?'<button class="btn" onclick="wAction(\\''+esc(w.id)+'\\',\\'pause\\')">Pause</button>':''}
-          \${w.status==='paused'?'<button class="btn s" onclick="wAction(\\''+esc(w.id)+'\\',\\'resume\\')">Resume</button>':''}
-          \${w.status!=='stopped'?'<button class="btn d" onclick="wAction(\\''+esc(w.id)+'\\',\\'stop\\')">Stop</button>':''}
-        </div></td>
-      </tr>\`).join('');
+    wb.innerHTML=!workers.length?'<tr><td colspan="10" class="empty">No workers registered</td></tr>':workers.map(function(w){
+      var btns='';
+      if(w.status==='running')btns+='<button class="btn" data-wid="'+esc(w.id)+'" data-act="pause" onclick="wAction(this.dataset.wid,this.dataset.act)">Pause</button>';
+      if(w.status==='paused')btns+='<button class="btn s" data-wid="'+esc(w.id)+'" data-act="resume" onclick="wAction(this.dataset.wid,this.dataset.act)">Resume</button>';
+      if(w.status!=='stopped')btns+='<button class="btn d" data-wid="'+esc(w.id)+'" data-act="stop" onclick="wAction(this.dataset.wid,this.dataset.act)">Stop</button>';
+      return '<tr>'
+        +'<td class="trunc" title="'+esc(w.id)+'">'+esc(w.id)+'</td>'
+        +'<td>'+esc(w.connection||'-')+'</td>'
+        +'<td>'+esc((Array.isArray(w.queues)?w.queues:['default']).join(', '))+'</td>'
+        +'<td>'+badge(w.status)+'</td>'
+        +'<td>'+w.jobsProcessed+'</td>'
+        +'<td>'+(w.memoryMb?Math.round(w.memoryMb)+'MB':'-')+'</td>'
+        +'<td>'+(w.runtimeSeconds?Math.round(w.runtimeSeconds)+'s':'-')+'</td>'
+        +'<td>'+fmt(w.lastRun)+'</td>'
+        +'<td class="trunc" title="'+(w.currentJob?esc(w.currentJob.displayName):'')+'">'+(w.currentJob?esc(w.currentJob.displayName):'-')+'</td>'
+        +'<td><div class="acts">'+btns+'</div></td>'
+        +'</tr>';
+    }).join('');
 
-    /* Queues */
+    /* Queues — data-qn on buttons, no quote-in-attribute issues */
     const qg=document.getElementById('qg');
     const qe=Object.entries(queues);
-    qg.innerHTML=!qe.length?'<div style="color:var(--muted)">No queues</div>':qe.map(([n,s])=>
-      '<div class="qcard">'
+    qg.innerHTML=!qe.length?'<div style="color:var(--muted)">No queues</div>':qe.map(function(e){
+      const n=e[0],s=e[1];
+      return '<div class="qcard">'
         +'<div class="qn" title="'+esc(n)+'">'+esc(n)+'</div>'
         +'<div class="qs">'+s+'</div>'
         +'<div class="qacts">'
-          +'<button class="btn p" style="font-size:10px;padding:2px 6px" onclick="browseQueue('+JSON.stringify(n)+')">Browse</button>'
-          +(s>0?'<button class="btn d" style="font-size:10px;padding:2px 6px" onclick="purgeQueue('+JSON.stringify(n)+')">Purge</button>':'')
+          +'<button class="btn p" style="font-size:10px;padding:2px 6px" data-qn="'+esc(n)+'" onclick="browseQueue(this.dataset.qn)">Browse</button>'
+          +(s>0?'<button class="btn d" style="font-size:10px;padding:2px 6px" data-qn="'+esc(n)+'" onclick="purgeQueue(this.dataset.qn)">Purge</button>':'')
         +'</div>'
-      +'</div>').join('');
+        +'</div>';
+    }).join('');
 
-    /* Scheduler */
+    /* Scheduler — data-tn on button, no quote escaping needed */
     const sb=document.getElementById('sb');
-    sb.innerHTML=!sched.length?'<tr><td colspan="7" class="empty">No scheduled tasks</td></tr>':sched.map(t=>\`
-      <tr>
-        <td class="trunc" title="\${esc(t.name)}">\${esc(t.name)}</td>
-        <td><code>\${esc(t.expression)}</code></td>
-        <td>\${esc(t.description||'-')}</td>
-        <td>\${fmt(t.lastRun)}</td>
-        <td>\${fmt(t.nextRun)}</td>
-        <td>\${t.isRunning?badge('running'):'-'}</td>
-        <td><button class="btn y" onclick="runTaskNow(\\''+esc(t.name)+'\\')">Run Now</button></td>
-      </tr>\`).join('');
+    sb.innerHTML=!sched.length?'<tr><td colspan="7" class="empty">No scheduled tasks</td></tr>':sched.map(function(t){
+      return '<tr>'
+        +'<td class="trunc" title="'+esc(t.name)+'">'+esc(t.name)+'</td>'
+        +'<td><code>'+esc(t.expression)+'</code></td>'
+        +'<td>'+esc(t.description||'-')+'</td>'
+        +'<td>'+fmt(t.lastRun)+'</td>'
+        +'<td>'+fmt(t.nextRun)+'</td>'
+        +'<td>'+(t.isRunning?badge('running'):'-')+'</td>'
+        +'<td><button class="btn y" data-tn="'+esc(t.name)+'" onclick="runTaskNow(this.dataset.tn)">Run Now</button></td>'
+        +'</tr>';
+    }).join('');
 
     /* Recent Jobs */
     allJobs=Array.isArray(jobs)?jobs:[];
+    filteredJobs=allJobs;
     updateQueueFilter(allJobs);
     applyFilters();
 
