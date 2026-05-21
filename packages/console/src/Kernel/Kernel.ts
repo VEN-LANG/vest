@@ -1,6 +1,9 @@
+import fs from "fs";
+import path from "path";
 import { Argv } from "yargs";
 import { Command } from "../Command.js";
 import * as SystemCommands from "../Commands/index.js";
+import { getRegisteredCommands } from "../decorators.js";
 import { scheduler, Schedule } from "@lara-node/queue";
 import type { Application } from "@lara-node/core";
 
@@ -33,7 +36,8 @@ export class Kernel {
       }
     }
 
-    for (const CommandClass of this.commands) {
+    const allAppCommands = [...this.commands, ...getRegisteredCommands()];
+    for (const CommandClass of allAppCommands) {
       try {
         commandInstances.push(new CommandClass());
       } catch {
@@ -49,6 +53,19 @@ export class Kernel {
       cli = command.buildCommand(cli);
     }
     return cli;
+  }
+
+  discoverCommands(dirPath: string): void {
+    if (!fs.existsSync(dirPath)) return;
+    const files = fs.readdirSync(dirPath).filter((f) => f.endsWith(".ts") || f.endsWith(".js"));
+    for (const file of files) {
+      const mod: Record<string, unknown> = require(path.join(dirPath, file));
+      for (const exported of Object.values(mod)) {
+        if (typeof exported === "function" && exported.prototype instanceof Command) {
+          this.commands.push(exported as new () => Command);
+        }
+      }
+    }
   }
 
   addCommand(command: new () => Command): void {
