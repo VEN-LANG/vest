@@ -28,6 +28,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@lara-node/validator": "workspace:^",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "reflect-metadata": "^0.2.2"
