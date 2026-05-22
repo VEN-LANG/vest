@@ -75,6 +75,7 @@ export default defineConfig({
             { text: "Application", link: "/packages/core/application" },
             { text: "Service Providers", link: "/packages/core/service-providers" },
             { text: "Configuration", link: "/packages/core/config" },
+            { text: "Request", link: "/packages/core/request" },
           ],
         },
         {

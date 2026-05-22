@@ -25,7 +25,9 @@ export class ValidationError extends Error {
     Object.setPrototypeOf(this, ValidationError.prototype);
   }
 }
-
+/*
+ *
+ */
 export type RuleFn = (
   value: any,
   field: string,
