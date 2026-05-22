@@ -109,3 +109,5 @@ export {
   MakeFactoryCommand,
   MakeTestCommand,
 } from "./MakeCommands.js";
+
+export { MakeController as MakeControllerCommand } from "./MakeCommand.js";
