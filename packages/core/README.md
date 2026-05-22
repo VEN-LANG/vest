@@ -187,6 +187,147 @@ import "./app/Providers/RouteServiceProvider";
 app.discoverProviders();
 ```
 
+### `FormRequest`
+
+Base class for typed, validated HTTP requests. Extend it in a controller file, declare `rules()`, and type the first parameter of your controller method with it — the router resolves, validates, and injects the instance automatically.
+
+```ts
+import { FormRequest } from "@lara-node/core";
+
+class CreateUserRequest extends FormRequest<{ name: string; email: string }> {
+  rules() {
+    return {
+      name:  "required|string|min:2|max:100",
+      email: "required|email|unique:users,email",
+    };
+  }
+
+  // optional — default is true
+  authorize(): boolean {
+    return !!this.user();
+  }
+}
+
+// In your controller:
+async store(req: CreateUserRequest, res: Response) {
+  const { name, email } = req.validated(); // typed as { name: string; email: string }
+  // or via hydrated proxy:
+  console.log(req.name, req.email);        // direct property access
+}
+```
+
+#### Input retrieval
+
+| Method | Description |
+|---|---|
+| `all()` | All merged input (body + query + params) |
+| `input(key?, default?)` | Single value or all input |
+| `post(key?, default?)` | Body-only input |
+| `json(key?, default?)` | Alias for `post()` |
+| `only(...keys)` | Subset of input keys |
+| `except(...keys)` | Input minus specified keys |
+| `keys()` | All input key names |
+| `intersect(...keys)` | Keys present in both input and given list |
+
+#### Type-cast helpers
+
+| Method | Returns |
+|---|---|
+| `string(key, default?)` | `string` |
+| `integer(key, default?)` | `number` (integer) |
+| `float(key, default?)` | `number` (float) |
+| `boolean(key, default?)` | `boolean` — truthy: `"true"/"1"/"yes"/"on"` |
+| `date(key)` | `Date \| null` |
+| `collect(key?)` | `T[]` — wraps scalar in array, returns array as-is |
+
+#### Presence checks
+
+| Method | Description |
+|---|---|
+| `has(...keys)` | All keys exist in input |
+| `hasAny(...keys)` | At least one key exists |
+| `filled(...keys)` | All keys exist and are non-empty |
+| `isNotFilled(...keys)` | Inverse of `filled()` |
+| `missing(...keys)` | All keys absent from input |
+
+#### Conditionals
+
+```ts
+req.whenHas("role",    (v) => assignRole(v));
+req.whenFilled("bio",  (v) => updateBio(v), () => clearBio());
+req.whenMissing("otp", ()  => sendOtp());
+```
+
+#### Mutation
+
+```ts
+req.merge({ tenant_id: 42 });           // add/overwrite keys
+req.mergeIfMissing({ locale: "en" });   // add only when absent
+req.replace({ id: 1, name: "Alice" });  // replace all input
+```
+
+#### Files
+
+```ts
+const avatar = req.file("avatar");        // UploadedFile | null
+req.hasFile("avatar");                    // boolean
+req.allFiles();                           // Record<string, UploadedFile | UploadedFile[]>
+```
+
+#### Headers & cookies
+
+```ts
+req.header("x-api-key");          // string | undefined
+req.hasHeader("authorization");   // boolean
+req.cookie("session");            // string | undefined
+req.hasCookie("session");         // boolean
+req.cookies();                    // Record<string, string>
+req.bearerToken();                // string | null
+```
+
+#### Request type
+
+```ts
+req.isMethod("POST")   // boolean
+req.isJson()           // Content-Type: application/json
+req.wantsJson()        // Accept: application/json
+req.expectsJson()      // isJson() || wantsJson()
+req.ajax()             // X-Requested-With: XMLHttpRequest
+req.isSecure()         // HTTPS or x-forwarded-proto: https
+```
+
+#### URL helpers
+
+```ts
+req.fullUrl()                              // https://example.com/api/users?page=2
+req.fullUrlWithQuery({ sort: "name" })     // appends/overwrites query params
+req.fullUrlWithoutQuery("page", "sort")    // removes query params
+req.root()                                 // https://example.com
+req.host()                                 // example.com
+req.scheme()                               // "https" | "http"
+req.segments()                             // ["api", "users", "42"]
+req.segment(1)                             // "api"
+req.decodedPath()                          // URL-decoded path string
+req.pathIs("/api/*")                       // wildcard path matching
+```
+
+#### Client info
+
+```ts
+req.ip                  // string | undefined  (getter)
+req.ips()               // string[]  (x-forwarded-for chain)
+req.userAgent()         // string | undefined
+req.fingerprint()       // SHA-256 of method + url + ip + user-agent
+req.server("remote_addr")
+```
+
+#### Authenticated user
+
+```ts
+req.user()             // req.user property set by auth middleware
+req.user<UserModel>()  // typed overload
+```
+
 ### Middleware registration
 
 ```ts
