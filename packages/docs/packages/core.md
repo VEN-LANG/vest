@@ -43,6 +43,7 @@ await app.listen(3000);
 | `ServiceProvider`           | Base class for service providers |
 | `MiddlewareServiceProvider` | Base for middleware providers    |
 | `MiddlewareStack`           | Middleware manager               |
+| `FormRequest`               | Validated request base class     |
 | `Injectable()`              | DI decorator                     |
 | `@Provider()`               | Auto-discovery decorator         |
 | `config()`                  | Config helper                    |
@@ -74,3 +75,4 @@ await app.listen(3000);
 - [Application](/packages/core/application) -- Application bootstrap
 - [Service Providers](/packages/core/service-providers) -- Creating providers
 - [Configuration](/packages/core/config) -- Configuration system
+- [Request](/packages/core/request) -- Form request validation
