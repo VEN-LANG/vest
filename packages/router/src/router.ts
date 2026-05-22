@@ -2,7 +2,7 @@ import { Router, RequestHandler, Request, Response } from "express";
 import { resolveMiddleware } from "./Middleware/middleware.js";
 import { Model } from "@lara-node/db";
 import { EloquentBuilder } from "@lara-node/db";
-import { container } from "@lara-node/core";
+import { container, FormRequest } from "@lara-node/core";
 import { getRegisteredControllers } from "./ControllerDecorators.js";
 
 // Type for controller method with model injection
@@ -383,6 +383,20 @@ export class RouterBuilder {
     }
   }
 
+  private resolveControllerArgs(
+    controllerClass: any,
+    methodName: string,
+    req: any,
+    res: any,
+  ): any[] {
+    const paramTypes: any[] =
+      Reflect.getMetadata("design:paramtypes", controllerClass.prototype, methodName) || [];
+    if (paramTypes.length > 0 && paramTypes[0]?.prototype instanceof FormRequest) {
+      return [new paramTypes[0](req), res];
+    }
+    return [req, res];
+  }
+
   private async resolveParameterBinding(paramName: string, value: string, req: any): Promise<any> {
     // First try explicit binder
     if (this.explicitBinders.has(paramName)) {
@@ -456,8 +470,25 @@ export class RouterBuilder {
             );
           }
 
+          const args = this.resolveControllerArgs(ControllerClass, String(methodName), req, res);
           const allModels = [_firstBound, ...models].filter((v) => v !== undefined);
-          return controllerInstance[methodName](req, res, ...allModels);
+
+          if (args[0] instanceof FormRequest) {
+            try {
+              await (args[0] as any).validate();
+            } catch (error: any) {
+              if (error.errors) {
+                return res.status(422).json({
+                  success: false,
+                  message: error.message || "Validation failed.",
+                  errors: error.messages,
+                });
+              }
+              throw error;
+            }
+          }
+
+          return controllerInstance[methodName](...args, ...allModels);
         };
       } else if (this.isClassConstructor(h)) {
         const ControllerClass = h;
@@ -468,8 +499,32 @@ export class RouterBuilder {
           const method =
             controllerInstance.handle || controllerInstance.__invoke || controllerInstance;
           if (typeof method === "function") {
+            let args: any[];
+            if (controllerInstance.handle) {
+              args = this.resolveControllerArgs(ControllerClass, "handle", req, res);
+            } else if (controllerInstance.__invoke) {
+              args = this.resolveControllerArgs(ControllerClass, "__invoke", req, res);
+            } else {
+              args = [req, res];
+            }
             const allModels = [_firstBound, ...models].filter((v) => v !== undefined);
-            return method.call(controllerInstance, req, res, ...allModels);
+
+            if (args[0] instanceof FormRequest) {
+              try {
+                await (args[0] as any).validate();
+              } catch (error: any) {
+                if (error.errors) {
+                  return res.status(422).json({
+                    success: false,
+                    message: error.message || "Validation failed.",
+                    errors: error.messages,
+                  });
+                }
+                throw error;
+              }
+            }
+
+            return method.call(controllerInstance, ...args, ...allModels);
           }
           return method;
         };
