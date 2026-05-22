@@ -225,6 +225,65 @@ import "./config/db";
 import "./config/mail";
 ```
 
+## Helpers
+
+### `dd(...values)`
+
+Laravel-style **dump and die**. Pretty-prints every argument to stdout using Node's `util.inspect` (with colours and full depth) then terminates the process. Useful for quick debugging — drop it anywhere and the process stops so you can read the output.
+
+```ts
+import { dd } from '@lara-node/core';
+
+dd(user);                             // inspect one value and exit
+dd('label', request.body, response); // inspect multiple values and exit
+```
+
+### `clone(value)`
+
+Creates a **deep copy** of any value. Supports plain objects, class instances, functions, arrays, `Date`, `RegExp`, `Map`, `Set`, `ArrayBuffer`, `TypedArray`, `DataView`, symbol-keyed properties, and circular references.
+
+| Input | Behaviour |
+|---|---|
+| Primitives | Returned as-is |
+| Plain objects | Deep copy of all own properties |
+| Class instances | `Object.create(proto)` — prototype chain preserved, `instanceof` works |
+| Functions | New wrapper function; own properties deep-cloned; prototype methods shared |
+| Date / RegExp | New instance with same value |
+| Map / Set | New instance with deep-cloned entries |
+| ArrayBuffer / TypedArray / DataView | Buffer copy |
+| Circular references | Handled — no infinite loop |
+| Getters / setters | Preserved as descriptors, not invoked |
+
+```ts
+import { clone } from '@lara-node/core';
+
+// Plain object
+const original = { user: { name: 'Alice', roles: ['admin'] } };
+const copy = clone(original);
+copy.user.name = 'Bob';
+console.log(original.user.name); // 'Alice' — no shared reference
+
+// Class instance — prototype preserved
+class Point {
+  constructor(public x: number, public y: number) {}
+  toString() { return `(${this.x}, ${this.y})`; }
+}
+const p = new Point(1, 2);
+const p2 = clone(p);
+p2.x = 99;
+console.log(p.x);          // 1
+console.log(p2 instanceof Point); // true
+console.log(p2.toString()); // (99, 2)
+
+// Function — distinct object, own properties deep-cloned
+const fn = (x: number) => x * 2;
+fn.meta = { version: 1 };
+const fn2 = clone(fn);
+fn2.meta.version = 99;
+console.log(fn.meta.version);  // 1
+console.log(fn2(5));           // 10
+```
+
 ## Notes
 
 - `reflect-metadata` must be imported once, as early as possible in your entry file, before any decorator-annotated class is loaded.
