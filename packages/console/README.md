@@ -113,25 +113,36 @@ node artisan schedule:run   # execute all due scheduled tasks immediately
 
 ## Custom Commands
 
-Extend the `Command` base class, set `signature` and `description`, and implement `handle()`.
+### Commands in `app/Console/Commands/`
+
+The generated `ConsoleKernel` auto-discovers every `Command` subclass exported from files in `app/Console/Commands/`. Just create a file there — no manual registration needed.
 
 ```ts
-// src/Console/GreetCommand.ts
-import { Command } from "@lara-node/console";
+// src/app/Console/Commands/GreetCommand.ts
+import { Command } from '@lara-node/console';
+import type { ArgumentsCamelCase } from 'yargs';
 
 export class GreetCommand extends Command {
-  signature = "greet {name} {--caps : Print name in uppercase}";
-  description = "Greet a user by name";
+  protected signature = 'greet';
+  protected description = 'Greet a user by name';
+  protected arguments = {
+    name: { type: 'string' as const, description: 'The name to greet' },
+  };
+  protected options = {
+    caps: { type: 'boolean' as const, description: 'Print name in uppercase', default: false },
+  };
 
-  async handle(): Promise<void> {
-    const name = this.argument("name") as string;
-    const caps = this.option("caps") as boolean;
+  async handle(args: ArgumentsCamelCase): Promise<void> {
+    const name = args.name as string;
+    const caps = args.caps as boolean;
     this.info(`Hello, ${caps ? name.toUpperCase() : name}!`);
   }
 }
 ```
 
-### Argument / option helpers
+### Commands outside `app/Console/Commands/`
+
+For commands defined elsewhere (e.g. inside a package or a different directory), decorate the class with `@Artisan()`. It will be registered automatically when its module is imported.
 
 ```ts
 this.argument("name"); // positional argument value
@@ -144,6 +155,50 @@ this.warn("message"); // yellow output
 this.line("message"); // plain output
 this.comment("message"); // dim comment line
 this.newLine(); // blank line
+import type { ArgumentsCamelCase } from 'yargs';
+
+@Artisan()
+export class SendNewsletterCommand extends Command {
+  protected signature = 'newsletter:send';
+  protected description = 'Send the daily newsletter';
+
+  async handle(args: ArgumentsCamelCase): Promise<void> {
+    this.info('Sending newsletter...');
+    // ...
+  }
+}
+```
+
+Import the file somewhere in your bootstrap path so the decorator fires before artisan boots.
+
+### ConsoleKernel
+
+The scaffolded `ConsoleKernel` wires both mechanisms together:
+
+```ts
+// src/app/Console/Kernel.ts
+import path from 'path';
+import { Kernel as BaseKernel } from '@lara-node/console';
+
+export class ConsoleKernel extends BaseKernel {
+  async boot(): Promise<void> {
+    this.discoverCommands(path.join(__dirname, 'Commands'));
+    await super.boot();
+  }
+}
+```
+
+To manually register additional commands you can also call `this.addCommand(MyCommand)` inside `boot()`.
+
+### Output helpers
+
+```ts
+this.info('message')           // green output
+this.error('message')          // red output (also to stderr)
+this.warn('message')           // yellow output
+this.line('message')           // plain output
+this.comment('message')        // dim comment line
+this.newLine()                 // blank line
 
 const answer = await this.ask("What is your name?");
 const secret = await this.secret("Enter password:");
@@ -173,12 +228,19 @@ AppKernel.handle();
 
 ## Cron Scheduler
 
-Override `schedule()` in your `Kernel` subclass to register recurring tasks.
+Override `schedule()` in your `ConsoleKernel` subclass to register recurring tasks.
 
 ```ts
-import { Kernel } from "@lara-node/console";
 
-export class AppKernel extends Kernel {
+import path from 'path';
+import { Kernel as BaseKernel } from '@lara-node/console';
+
+export class ConsoleKernel extends BaseKernel {
+  async boot(): Promise<void> {
+    this.discoverCommands(path.join(__dirname, 'Commands'));
+    await super.boot();
+  }
+
   protected schedule(): void {
     // Run a closure
     this._scheduler.call(() => console.log("Every minute")).everyMinute();

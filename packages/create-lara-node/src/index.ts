@@ -571,19 +571,35 @@ process.on('SIGINT',  () => void shutdown('SIGINT'));
 `,
   );
 
+  // ── src/app/Console/Kernel.ts ─────────────────────────────────────────────────
+  w(
+    dir,
+    "src/app/Console/Kernel.ts",
+    `import path from 'path';
+import { Kernel as BaseKernel } from '@lara-node/console';
+
+export class ConsoleKernel extends BaseKernel {
+  async boot(): Promise<void> {
+    this.discoverCommands(path.join(__dirname, 'Commands'));
+    await super.boot();
+  }
+}
+`,
+  );
+
   // ── src/artisan.ts ────────────────────────────────────────────────────────────
   w(
     dir,
     "src/artisan.ts",
     `import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { Kernel } from '@lara-node/console';
+import { ConsoleKernel } from './app/Console/Kernel';
 import { app, bootForConsole } from './bootstrap/app';
 
 async function main() {
   await bootForConsole();
 
-  const kernel = new Kernel(app);
+  const kernel = new ConsoleKernel(app);
   await kernel.boot();
 
   let cli = yargs(hideBin(process.argv))
@@ -1680,7 +1696,6 @@ export class FileController {
     `import { RoleController } from '../Http/Controllers/User/RoleController';`,
     `import { PermissionController } from '../Http/Controllers/User/PermissionController';`,
     `import { FileController } from '../Http/Controllers/File/FileController';`,
-    `import { PermissionsSyncCommand, PermissionsListCommand } from '../Console/Commands/PermissionCommands';`,
     `import { ConfigServiceProvider } from './ConfigServiceProvider';`,
     `import { DatabaseServiceProvider } from '@lara-node/db';`,
     `import { CacheServiceProvider } from '@lara-node/cache';`,
@@ -1735,8 +1750,6 @@ export class AppServiceProvider extends ServiceProvider {
     this.singleton(RoleController);
     this.singleton(PermissionController);
     this.singleton(FileController);
-    this.singleton(PermissionsSyncCommand);
-    this.singleton(PermissionsListCommand);
   }
 
   boot(): void {}
@@ -3236,7 +3249,9 @@ pnpm dev                      # start dev server on http://localhost:3000
 \`\`\`
 src/
 ├── app/
-│   ├── Console/Commands/       # Artisan commands
+│   ├── Console/
+│   │   ├── Commands/           # Artisan commands (auto-discovered)
+│   │   └── Kernel.ts           # ConsoleKernel — extends base Kernel
 │   ├── Events/                 # Event classes
 │   ├── Http/
 │   │   ├── Controllers/        # Request handlers (IoC auto-wired)
