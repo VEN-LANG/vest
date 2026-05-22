@@ -91,3 +91,21 @@ export { ServeCommand } from "./ServeCommand.js";
 
 // Vendor Publish
 export { VendorPublishCommand } from "./VendorPublishCommand.js";
+
+// Make Commands
+export {
+  MakeModelCommand,
+  MakeMiddlewareCommand,
+  MakeProviderCommand,
+  MakePolicyCommand,
+  MakeRequestCommand,
+  MakeJobCommand,
+  MakeEventCommand,
+  MakeListenerCommand,
+  MakeNotificationCommand,
+  MakeMailCommand,
+  MakeRuleCommand,
+  MakeResourceCommand,
+  MakeFactoryCommand,
+  MakeTestCommand,
+} from "./MakeCommands.js";
