@@ -1,0 +1,44 @@
+{
+  "name": "@lara-node/pdf",
+  "version": "0.2.0",
+  "description": "Laravel-inspired class-based PDF generation for Lara-Node using Puppeteer",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "puppeteer": "^24.0.0"
+  },
+  "peerDependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.12.2",
+    "rimraf": "^6.0.1",
+    "tsdown": "^0.12.9",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.3"
+  }
+}
