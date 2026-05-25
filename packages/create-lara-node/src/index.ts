@@ -16,9 +16,9 @@ const VERSIONS: Record<string, string> = {
   "@lara-node/core": "0.1.11",
   "@lara-node/router": "0.2.9",
   "@lara-node/db": "0.1.14",
-  "@lara-node/auth": "0.1.7",
+  "@lara-node/auth": "0.1.8",
   "@lara-node/console": "0.1.15",
-  "@lara-node/validator": "0.1.10",
+  "@lara-node/validator": "0.1.11",
   "@lara-node/middlewares": "0.1.11",
   "@lara-node/events": "0.1.8",
   "@lara-node/queue": "0.1.15",
@@ -164,6 +164,7 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
     "src/app/Observers",
     "src/app/Providers",
     "src/app/Services",
+    "src/app/Helpers",
     "src/app/Http/Requests",
     "src/app/Subscribers",
     "src/bootstrap",
@@ -454,7 +455,7 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
   );
 
   // ── src/register.ts ───────────────────────────────────────────────────────────
-  w(dir, "src/register.ts", `import 'reflect-metadata';\nimport 'dotenv/config';\n`);
+  w(dir, "src/register.ts", `import 'reflect-metadata';\nimport 'dotenv/config';\nimport '@lara-node/auth';\n`);
 
   // ── .env.example ─────────────────────────────────────────────────────────────
   const dbName = name.replace(/-/g, "_");
@@ -541,6 +542,39 @@ declare global {
 }
 
 export {};
+`,
+  );
+
+  // ── src/types/global.d.ts ─────────────────────────────────────────────────────
+  w(
+    dir,
+    "src/types/global.d.ts",
+    `import type { AuthGuard } from '@lara-node/auth';
+
+declare global {
+  /** Returns the auth guard for the current request context. */
+  function auth<U = Record<string, unknown>>(): AuthGuard<U>;
+
+  /** Set the authenticated user for the current request context. */
+  function setUser<U = unknown>(user: U): void;
+
+  /** Remove the authenticated user from the current request context. */
+  function clearUser(): void;
+
+  /** Get the raw user value from the current request context. */
+  function getUser<U = unknown>(): U | undefined;
+}
+
+export {};
+`,
+  );
+
+  // ── src/app/Helpers/auth.ts ──────────────────────────────────────────────────
+  w(
+    dir,
+    "src/app/Helpers/auth.ts",
+    `export { auth, setUser, clearUser, getUser } from '@lara-node/auth';
+export type { AuthGuard } from '@lara-node/auth';
 `,
   );
 
@@ -1595,14 +1629,12 @@ export class UserController {
     params: [{ name: 'user', in: 'path', type: 'integer', description: 'User ID — auto-bound to User model' }],
     responses: [{ status: 200, description: 'User with profile and roles' }, { status: 404, description: 'Not found' }],
   })
-  async show(req: Request, res: Response): Promise<void> {
-    const user = req.params.user as unknown as User;
+  async show(_req: Request, res: Response, user: User): Promise<void> {
     res.json({ success: true, data: user });
   }
 
   @Doc({ summary: "Get a user's profile", tags: ['Users'], auth: true })
-  async showProfile(req: Request, res: Response): Promise<void> {
-    const user = req.params.user as unknown as User;
+  async showProfile(_req: Request, res: Response, user: User): Promise<void> {
     const full = await this.userService.find(user.getAttribute('id') as number | string) as (User & { profile?: unknown }) | null;
     res.json({ success: true, data: full?.profile ?? null });
   }
@@ -1615,23 +1647,20 @@ export class UserController {
   }
 
   @Doc({ summary: 'Update a user', tags: ['Users'], auth: true })
-  async update(req: UpdateUserRequest, res: Response): Promise<void> {
-    const user = req.params.user as unknown as User;
+  async update(req: UpdateUserRequest, res: Response, user: User): Promise<void> {
     const data = req.validated();
     await user.update({ ...data, updated_at: new Date() });
     res.json({ success: true, data: user });
   }
 
   @Doc({ summary: "Update a user's profile", tags: ['Users'], auth: true })
-  async updateProfile(req: Request, res: Response): Promise<void> {
-    const user = req.params.user as unknown as User;
+  async updateProfile(req: Request, res: Response, user: User): Promise<void> {
     const profile = await this.userService.updateProfile(user.getAttribute('id') as number | string, req.body as Record<string, unknown>);
     res.json({ success: true, data: profile });
   }
 
   @Doc({ summary: 'Change user password', tags: ['Users'], auth: true, body: { password: { type: 'string', description: 'New password (min 8 chars)' } } })
-  async setPassword(req: SetPasswordRequest, res: Response): Promise<void> {
-    const user = req.params.user as unknown as User;
+  async setPassword(req: SetPasswordRequest, res: Response, user: User): Promise<void> {
     const { password } = req.validated();
     const hashed = await bcrypt.hash(password, 12);
     await user.update({ password: hashed, updated_at: new Date() });
@@ -1644,31 +1673,26 @@ export class UserController {
   }
 
   @Doc({ summary: 'Assign a role to a user', tags: ['Users'], auth: true, body: { role_id: { type: 'integer', description: 'Role ID to assign' } } })
-  async addRole(req: AddRoleRequest, res: Response): Promise<void> {
-    const user = req.params.user as unknown as UserWithRoles;
+  async addRole(req: AddRoleRequest, res: Response, user: User): Promise<void> {
     const { role_id } = req.validated();
-    await user.roles().attach([role_id]);
+    await (user as UserWithRoles).roles().attach([role_id]);
     res.json({ success: true, data: user });
   }
 
   @Doc({ summary: 'Remove a role from a user', tags: ['Users'], auth: true })
-  async removeRole(req: Request, res: Response): Promise<void> {
-    const user = req.params.user as unknown as UserWithRoles;
-    const role = req.params.role as unknown as Role;
-    await user.roles().detach([role.getAttribute('id') as number | string]);
+  async removeRole(_req: Request, res: Response, user: User, role: Role): Promise<void> {
+    await (user as UserWithRoles).roles().detach([role.getAttribute('id') as number | string]);
     res.json({ success: true, message: 'Role removed' });
   }
 
   @Doc({ summary: 'Delete a user (soft delete)', tags: ['Users'], auth: true, responses: [{ status: 200, description: 'User deleted' }, { status: 404, description: 'Not found' }] })
-  async destroy(req: Request, res: Response): Promise<void> {
-    const user = req.params.user as unknown as User;
+  async destroy(_req: Request, res: Response, user: User): Promise<void> {
     await user.delete();
     res.json({ success: true, message: 'User deleted' });
   }
 
   @Doc({ summary: 'Toggle user active/inactive status', tags: ['Users'], auth: true })
-  async toggleStatus(req: Request, res: Response): Promise<void> {
-    const user = req.params.user as unknown as User;
+  async toggleStatus(_req: Request, res: Response, user: User): Promise<void> {
     const current = user.getAttribute('status') as string | null;
     const newStatus = current === 'active' ? 'inactive' : 'active';
     await user.update({ status: newStatus, updated_at: new Date() });
@@ -1707,8 +1731,7 @@ export class RoleController {
     params: [{ name: 'role', in: 'path', type: 'integer', description: 'Role ID — auto-bound to Role model' }],
     responses: [{ status: 200, description: 'Role with permissions' }, { status: 404, description: 'Not found' }],
   })
-  async show(req: Request, res: Response): Promise<void> {
-    const role = req.params.role as unknown as Role;
+  async show(_req: Request, res: Response, role: Role): Promise<void> {
     res.json({ success: true, data: role });
   }
 
@@ -1728,16 +1751,14 @@ export class RoleController {
   }
 
   @Doc({ summary: 'Update a role', tags: ['Roles'], auth: true })
-  async update(req: UpdateRoleRequest, res: Response): Promise<void> {
-    const role = req.params.role as unknown as Role;
+  async update(req: UpdateRoleRequest, res: Response, role: Role): Promise<void> {
     const data = req.validated();
     await role.update({ ...data, updated_at: new Date() });
     res.json({ success: true, data: role });
   }
 
   @Doc({ summary: 'Delete a role (soft delete)', tags: ['Roles'], auth: true })
-  async destroy(req: Request, res: Response): Promise<void> {
-    const role = req.params.role as unknown as Role;
+  async destroy(_req: Request, res: Response, role: Role): Promise<void> {
     await role.delete();
     res.json({ success: true, message: 'Role deleted' });
   }
@@ -1748,10 +1769,9 @@ export class RoleController {
     auth: true,
     body: { permission_ids: { type: 'array', description: 'Array of permission IDs' } },
   })
-  async syncPermissions(req: SyncPermissionsRequest, res: Response): Promise<void> {
-    const role = req.params.role as unknown as RoleWithPermissions;
+  async syncPermissions(req: SyncPermissionsRequest, res: Response, role: Role): Promise<void> {
     const { permission_ids } = req.validated();
-    await role.permissions().sync(permission_ids);
+    await (role as RoleWithPermissions).permissions().sync(permission_ids);
     res.json({ success: true, data: role });
   }
 }
@@ -1784,8 +1804,7 @@ export class PermissionController {
     params: [{ name: 'permission', in: 'path', type: 'integer', description: 'Permission ID — auto-bound to Permission model' }],
     responses: [{ status: 200, description: 'Permission' }, { status: 404, description: 'Not found' }],
   })
-  async show(req: Request, res: Response): Promise<void> {
-    const permission = req.params.permission as unknown as Permission;
+  async show(_req: Request, res: Response, permission: Permission): Promise<void> {
     res.json({ success: true, data: permission });
   }
 }
@@ -1832,8 +1851,7 @@ export class FileController {
     params: [{ name: 'file', in: 'path', type: 'integer', description: 'File ID — auto-bound to File model' }],
     responses: [{ status: 200, description: 'File metadata' }, { status: 404, description: 'Not found' }],
   })
-  async show(req: Request, res: Response): Promise<void> {
-    const file = req.params.file as unknown as FileModel;
+  async show(_req: Request, res: Response, file: FileModel): Promise<void> {
     res.json({ success: true, data: file });
   }
 
@@ -1844,8 +1862,7 @@ export class FileController {
   }
 
   @Doc({ summary: 'Download a file by ID (route-model binding)', tags: ['Files'], auth: true })
-  async download(req: Request, res: Response): Promise<void> {
-    const file = req.params.file as unknown as FileModel;
+  async download(_req: Request, res: Response, file: FileModel): Promise<void> {
     res.download(
       file.getAttribute('disk_path') as string,
       file.getAttribute('original_name') as string,
@@ -1853,8 +1870,7 @@ export class FileController {
   }
 
   @Doc({ summary: 'Delete a file (soft delete + remove from disk)', tags: ['Files'], auth: true })
-  async destroy(req: Request, res: Response): Promise<void> {
-    const file = req.params.file as unknown as FileModel;
+  async destroy(_req: Request, res: Response, file: FileModel): Promise<void> {
     await this.fileService.destroy(file.getAttribute('id') as number | string);
     res.json({ success: true, message: 'File deleted' });
   }
