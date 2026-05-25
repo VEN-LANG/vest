@@ -13,18 +13,18 @@ import pc from "picocolors";
 import prompts from "prompts";
 
 const VERSIONS: Record<string, string> = {
-  "@lara-node/core": "0.1.7",
-  "@lara-node/router": "0.2.6",
+  "@lara-node/core": "0.1.11",
+  "@lara-node/router": "0.2.9",
   "@lara-node/db": "0.1.14",
   "@lara-node/auth": "0.1.7",
-  "@lara-node/console": "0.1.13",
+  "@lara-node/console": "0.1.15",
   "@lara-node/validator": "0.1.10",
   "@lara-node/middlewares": "0.1.11",
   "@lara-node/events": "0.1.8",
-  "@lara-node/queue": "0.1.12",
+  "@lara-node/queue": "0.1.15",
   "@lara-node/mail": "0.1.8",
-  "@lara-node/horizon": "0.1.11",
-  "@lara-node/telescope": "0.1.12",
+  "@lara-node/horizon": "0.1.16",
+  "@lara-node/telescope": "0.1.13",
   "@lara-node/cache": "0.1.10",
 };
 
@@ -164,6 +164,7 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
     "src/app/Observers",
     "src/app/Providers",
     "src/app/Services",
+    "src/app/Http/Requests",
     "src/app/Subscribers",
     "src/bootstrap",
     "src/config",
@@ -981,7 +982,9 @@ export default Role;
     "src/app/Models/User/Permission.ts",
     `import { Model, use } from '@lara-node/db';
 import { SoftDeletes } from '@lara-node/db';
+import { Bind } from '@lara-node/router';
 
+@Bind()            // registers 'permission' for route-model binding
 @use(SoftDeletes)
 export class Permission extends Model {
   static table = 'permissions';
@@ -1066,7 +1069,9 @@ export { PermissionsRoles } from './PermissionsRoles';
     "src/app/Models/File/File.ts",
     `import { Model, use } from '@lara-node/db';
 import { SoftDeletes, Timestamps } from '@lara-node/db';
+import { Bind } from '@lara-node/router';
 
+@Bind()            // registers 'file' for route-model binding
 @use(SoftDeletes, Timestamps)
 export class File extends Model {
   static table = 'files';
@@ -1333,6 +1338,167 @@ export { FileService } from './FileService';
 `,
   );
 
+  // ── Requests ──────────────────────────────────────────────────────────────────
+  w(
+    dir,
+    "src/app/Http/Requests/RegisterRequest.ts",
+    `import { FormRequest } from '@lara-node/core';
+
+export class RegisterRequest extends FormRequest<{ name: string; email: string; password: string }> {
+  rules() {
+    return {
+      name: 'required|string|min:2|max:100',
+      email: 'required|email',
+      password: 'required|string|min:8',
+    };
+  }
+}
+`,
+  );
+
+  w(
+    dir,
+    "src/app/Http/Requests/LoginRequest.ts",
+    `import { FormRequest } from '@lara-node/core';
+
+export class LoginRequest extends FormRequest<{ email: string; password: string }> {
+  rules() {
+    return {
+      email: 'required|email',
+      password: 'required|string',
+    };
+  }
+}
+`,
+  );
+
+  w(
+    dir,
+    "src/app/Http/Requests/StoreUserRequest.ts",
+    `import { FormRequest } from '@lara-node/core';
+
+export class StoreUserRequest extends FormRequest<{ name: string; email: string; password: string }> {
+  rules() {
+    return {
+      name: 'required|string|min:2|max:100',
+      email: 'required|email',
+      password: 'required|string|min:8',
+    };
+  }
+}
+`,
+  );
+
+  w(
+    dir,
+    "src/app/Http/Requests/UpdateUserRequest.ts",
+    `import { FormRequest } from '@lara-node/core';
+
+export class UpdateUserRequest extends FormRequest<{ name?: string; email?: string }> {
+  rules() {
+    return {
+      name: 'sometimes|string|min:2|max:100',
+      email: 'sometimes|email',
+    };
+  }
+}
+`,
+  );
+
+  w(
+    dir,
+    "src/app/Http/Requests/SetPasswordRequest.ts",
+    `import { FormRequest } from '@lara-node/core';
+
+export class SetPasswordRequest extends FormRequest<{ password: string }> {
+  rules() {
+    return {
+      password: 'required|string|min:8',
+    };
+  }
+}
+`,
+  );
+
+  w(
+    dir,
+    "src/app/Http/Requests/AddRoleRequest.ts",
+    `import { FormRequest } from '@lara-node/core';
+
+export class AddRoleRequest extends FormRequest<{ role_id: number }> {
+  rules() {
+    return {
+      role_id: 'required|integer',
+    };
+  }
+}
+`,
+  );
+
+  w(
+    dir,
+    "src/app/Http/Requests/StoreRoleRequest.ts",
+    `import { FormRequest } from '@lara-node/core';
+
+export class StoreRoleRequest extends FormRequest<{ name: string; slug: string; description?: string }> {
+  rules() {
+    return {
+      name: 'required|string|min:2|max:100',
+      slug: 'required|string|min:2|max:100',
+      description: 'nullable|string',
+    };
+  }
+}
+`,
+  );
+
+  w(
+    dir,
+    "src/app/Http/Requests/UpdateRoleRequest.ts",
+    `import { FormRequest } from '@lara-node/core';
+
+export class UpdateRoleRequest extends FormRequest<{ name?: string; slug?: string; description?: string }> {
+  rules() {
+    return {
+      name: 'sometimes|string|min:2|max:100',
+      slug: 'sometimes|string|min:2|max:100',
+      description: 'nullable|string',
+    };
+  }
+}
+`,
+  );
+
+  w(
+    dir,
+    "src/app/Http/Requests/SyncPermissionsRequest.ts",
+    `import { FormRequest } from '@lara-node/core';
+
+export class SyncPermissionsRequest extends FormRequest<{ permission_ids: number[] }> {
+  rules() {
+    return {
+      permission_ids: 'required|array',
+    };
+  }
+}
+`,
+  );
+
+  w(
+    dir,
+    "src/app/Http/Requests/index.ts",
+    `export { RegisterRequest } from './RegisterRequest';
+export { LoginRequest } from './LoginRequest';
+export { StoreUserRequest } from './StoreUserRequest';
+export { UpdateUserRequest } from './UpdateUserRequest';
+export { SetPasswordRequest } from './SetPasswordRequest';
+export { AddRoleRequest } from './AddRoleRequest';
+export { StoreRoleRequest } from './StoreRoleRequest';
+export { UpdateRoleRequest } from './UpdateRoleRequest';
+export { SyncPermissionsRequest } from './SyncPermissionsRequest';
+`,
+  );
+
   // ── Controllers ───────────────────────────────────────────────────────────────
   w(
     dir,
@@ -1341,6 +1507,7 @@ export { FileService } from './FileService';
 import { Injectable } from '@lara-node/core';
 import { Doc } from '@lara-node/router';
 import { AuthService } from '@app/Services/index';
+import { RegisterRequest, LoginRequest } from '@app/Http/Requests/index';
 
 @Injectable()
 export class AuthController {
@@ -1356,12 +1523,8 @@ export class AuthController {
     },
     responses: [{ status: 201, description: 'User created' }, { status: 422, description: 'Validation error' }],
   })
-  async register(req: Request, res: Response): Promise<void> {
-    const data = await req.validate<{ name: string; email: string; password: string }>({
-      name: 'required|string|min:2|max:100',
-      email: 'required|email',
-      password: 'required|string|min:8',
-    });
+  async register(req: RegisterRequest, res: Response): Promise<void> {
+    const data = req.validated();
     const user = await this.authService.register(data);
     res.status(201).json({ success: true, data: user });
   }
@@ -1375,11 +1538,8 @@ export class AuthController {
     },
     responses: [{ status: 200, description: 'JWT token and user' }, { status: 401, description: 'Invalid credentials' }],
   })
-  async login(req: Request, res: Response): Promise<void> {
-    const { email, password } = await req.validate<{ email: string; password: string }>({
-      email: 'required|email',
-      password: 'required|string',
-    });
+  async login(req: LoginRequest, res: Response): Promise<void> {
+    const { email, password } = req.validated();
     const result = await this.authService.login(email, password);
     res.json({ success: true, data: result });
   }
@@ -1407,6 +1567,15 @@ import { Injectable } from '@lara-node/core';
 import { Doc } from '@lara-node/router';
 import { UserService } from '@app/Services/index';
 import User from '@app/Models/User/User';
+import Role from '@app/Models/User/Role';
+import {
+  StoreUserRequest,
+  UpdateUserRequest,
+  SetPasswordRequest,
+  AddRoleRequest,
+} from '@app/Http/Requests/index';
+
+type UserWithRoles = User & { roles: () => { attach: (ids: (number | string)[]) => Promise<void>; detach: (ids: (number | string)[]) => Promise<void> } };
 
 @Injectable()
 export class UserController {
@@ -1418,52 +1587,54 @@ export class UserController {
     res.json({ success: true, data });
   }
 
-  @Doc({ summary: 'Get a user by ID', tags: ['Users'], auth: true, params: [{ name: 'id', in: 'path', type: 'integer', description: 'User ID' }] })
+  @Doc({
+    summary: 'Get a user by ID (route-model binding)',
+    description: 'The :user parameter is automatically resolved to a User model instance via ModelRegistry.',
+    tags: ['Users'],
+    auth: true,
+    params: [{ name: 'user', in: 'path', type: 'integer', description: 'User ID — auto-bound to User model' }],
+    responses: [{ status: 200, description: 'User with profile and roles' }, { status: 404, description: 'Not found' }],
+  })
   async show(req: Request, res: Response): Promise<void> {
-    const user = await this.userService.find(req.params.id);
-    if (!user) { res.status(404).json({ success: false, message: 'Not found' }); return; }
+    const user = req.params.user as unknown as User;
     res.json({ success: true, data: user });
   }
 
   @Doc({ summary: "Get a user's profile", tags: ['Users'], auth: true })
   async showProfile(req: Request, res: Response): Promise<void> {
-    const user = await this.userService.find(req.params.id) as (User & { profile?: unknown }) | null;
-    if (!user) { res.status(404).json({ success: false, message: 'Not found' }); return; }
-    res.json({ success: true, data: user.profile });
+    const user = req.params.user as unknown as User;
+    const full = await this.userService.find(user.getAttribute('id') as number | string) as (User & { profile?: unknown }) | null;
+    res.json({ success: true, data: full?.profile ?? null });
   }
 
   @Doc({ summary: 'Create a new user', tags: ['Users'], auth: true, body: { name: { type: 'string' }, email: { type: 'string' }, password: { type: 'string' } } })
-  async store(req: Request, res: Response): Promise<void> {
-    const data = await req.validate<{ name: string; email: string; password: string }>({
-      name: 'required|string|min:2|max:100',
-      email: 'required|email',
-      password: 'required|string|min:8',
-    });
+  async store(req: StoreUserRequest, res: Response): Promise<void> {
+    const data = req.validated();
     const user = await this.userService.create(data);
     res.status(201).json({ success: true, data: user });
   }
 
   @Doc({ summary: 'Update a user', tags: ['Users'], auth: true })
-  async update(req: Request, res: Response): Promise<void> {
-    const data = await req.validate<{ name?: string; email?: string }>({
-      name: 'sometimes|string|min:2|max:100',
-      email: 'sometimes|email',
-    });
-    const user = await this.userService.update(req.params.id, data);
+  async update(req: UpdateUserRequest, res: Response): Promise<void> {
+    const user = req.params.user as unknown as User;
+    const data = req.validated();
+    await user.update({ ...data, updated_at: new Date() });
     res.json({ success: true, data: user });
   }
 
   @Doc({ summary: "Update a user's profile", tags: ['Users'], auth: true })
   async updateProfile(req: Request, res: Response): Promise<void> {
-    const profile = await this.userService.updateProfile(req.params.id, req.body as Record<string, unknown>);
+    const user = req.params.user as unknown as User;
+    const profile = await this.userService.updateProfile(user.getAttribute('id') as number | string, req.body as Record<string, unknown>);
     res.json({ success: true, data: profile });
   }
 
   @Doc({ summary: 'Change user password', tags: ['Users'], auth: true, body: { password: { type: 'string', description: 'New password (min 8 chars)' } } })
-  async setPassword(req: Request, res: Response): Promise<void> {
-    const { password } = await req.validate<{ password: string }>({ password: 'required|string|min:8' });
+  async setPassword(req: SetPasswordRequest, res: Response): Promise<void> {
+    const user = req.params.user as unknown as User;
+    const { password } = req.validated();
     const hashed = await bcrypt.hash(password, 12);
-    await this.userService.update(req.params.id, { password: hashed });
+    await user.update({ password: hashed, updated_at: new Date() });
     res.json({ success: true, message: 'Password updated' });
   }
 
@@ -1473,27 +1644,34 @@ export class UserController {
   }
 
   @Doc({ summary: 'Assign a role to a user', tags: ['Users'], auth: true, body: { role_id: { type: 'integer', description: 'Role ID to assign' } } })
-  async addRole(req: Request, res: Response): Promise<void> {
-    const { role_id } = await req.validate<{ role_id: number }>({ role_id: 'required|integer' });
-    const user = await this.userService.addRole(req.params.id, role_id);
+  async addRole(req: AddRoleRequest, res: Response): Promise<void> {
+    const user = req.params.user as unknown as UserWithRoles;
+    const { role_id } = req.validated();
+    await user.roles().attach([role_id]);
     res.json({ success: true, data: user });
   }
 
   @Doc({ summary: 'Remove a role from a user', tags: ['Users'], auth: true })
   async removeRole(req: Request, res: Response): Promise<void> {
-    await this.userService.removeRole(req.params.id, req.params.roleId);
+    const user = req.params.user as unknown as UserWithRoles;
+    const role = req.params.role as unknown as Role;
+    await user.roles().detach([role.getAttribute('id') as number | string]);
     res.json({ success: true, message: 'Role removed' });
   }
 
   @Doc({ summary: 'Delete a user (soft delete)', tags: ['Users'], auth: true, responses: [{ status: 200, description: 'User deleted' }, { status: 404, description: 'Not found' }] })
   async destroy(req: Request, res: Response): Promise<void> {
-    await this.userService.destroy(req.params.id);
+    const user = req.params.user as unknown as User;
+    await user.delete();
     res.json({ success: true, message: 'User deleted' });
   }
 
   @Doc({ summary: 'Toggle user active/inactive status', tags: ['Users'], auth: true })
   async toggleStatus(req: Request, res: Response): Promise<void> {
-    const user = await this.userService.toggleStatus(req.params.user);
+    const user = req.params.user as unknown as User;
+    const current = user.getAttribute('status') as string | null;
+    const newStatus = current === 'active' ? 'inactive' : 'active';
+    await user.update({ status: newStatus, updated_at: new Date() });
     res.json({ success: true, data: user });
   }
 }
@@ -1508,6 +1686,9 @@ import { Injectable } from '@lara-node/core';
 import { Doc } from '@lara-node/router';
 import { RoleService } from '@app/Services/index';
 import Role from '@app/Models/User/Role';
+import { StoreRoleRequest, UpdateRoleRequest, SyncPermissionsRequest } from '@app/Http/Requests/index';
+
+type RoleWithPermissions = Role & { permissions: () => { sync: (ids: number[]) => Promise<void> } };
 
 @Injectable()
 export class RoleController {
@@ -1527,7 +1708,6 @@ export class RoleController {
     responses: [{ status: 200, description: 'Role with permissions' }, { status: 404, description: 'Not found' }],
   })
   async show(req: Request, res: Response): Promise<void> {
-    // req.params.role is already a loaded Role model instance (route-model binding via ModelRegistry)
     const role = req.params.role as unknown as Role;
     res.json({ success: true, data: role });
   }
@@ -1542,28 +1722,23 @@ export class RoleController {
       description: { type: 'string', required: false, description: 'Optional description' },
     },
   })
-  async store(req: Request, res: Response): Promise<void> {
-    const data = await req.validate({
-      name: 'required|string|min:2|max:100',
-      slug: 'required|string|min:2|max:100',
-      description: 'nullable|string',
-    });
+  async store(req: StoreRoleRequest, res: Response): Promise<void> {
+    const data = req.validated();
     res.status(201).json({ success: true, data: await this.roleService.create(data) });
   }
 
   @Doc({ summary: 'Update a role', tags: ['Roles'], auth: true })
-  async update(req: Request, res: Response): Promise<void> {
-    const data = await req.validate<{ name?: string; slug?: string; description?: string }>({
-      name: 'sometimes|string|min:2|max:100',
-      slug: 'sometimes|string|min:2|max:100',
-      description: 'nullable|string',
-    });
-    res.json({ success: true, data: await this.roleService.update(req.params.id, data) });
+  async update(req: UpdateRoleRequest, res: Response): Promise<void> {
+    const role = req.params.role as unknown as Role;
+    const data = req.validated();
+    await role.update({ ...data, updated_at: new Date() });
+    res.json({ success: true, data: role });
   }
 
   @Doc({ summary: 'Delete a role (soft delete)', tags: ['Roles'], auth: true })
   async destroy(req: Request, res: Response): Promise<void> {
-    await this.roleService.destroy(req.params.id);
+    const role = req.params.role as unknown as Role;
+    await role.delete();
     res.json({ success: true, message: 'Role deleted' });
   }
 
@@ -1573,9 +1748,11 @@ export class RoleController {
     auth: true,
     body: { permission_ids: { type: 'array', description: 'Array of permission IDs' } },
   })
-  async syncPermissions(req: Request, res: Response): Promise<void> {
-    const { permission_ids } = await req.validate<{ permission_ids: number[] }>({ permission_ids: 'required|array' });
-    res.json({ success: true, data: await this.roleService.syncPermissions(req.params.id, permission_ids) });
+  async syncPermissions(req: SyncPermissionsRequest, res: Response): Promise<void> {
+    const role = req.params.role as unknown as RoleWithPermissions;
+    const { permission_ids } = req.validated();
+    await role.permissions().sync(permission_ids);
+    res.json({ success: true, data: role });
   }
 }
 `,
@@ -1588,6 +1765,7 @@ export class RoleController {
 import { Injectable } from '@lara-node/core';
 import { Doc } from '@lara-node/router';
 import { PermissionService } from '@app/Services/index';
+import Permission from '@app/Models/User/Permission';
 
 @Injectable()
 export class PermissionController {
@@ -1598,11 +1776,17 @@ export class PermissionController {
     res.json({ success: true, data: await this.permissionService.index() });
   }
 
-  @Doc({ summary: 'Get a permission by ID', tags: ['Permissions'], auth: true, params: [{ name: 'id', in: 'path', type: 'integer' }] })
+  @Doc({
+    summary: 'Get a permission by ID (route-model binding)',
+    description: 'The :permission parameter is automatically resolved to a Permission model instance.',
+    tags: ['Permissions'],
+    auth: true,
+    params: [{ name: 'permission', in: 'path', type: 'integer', description: 'Permission ID — auto-bound to Permission model' }],
+    responses: [{ status: 200, description: 'Permission' }, { status: 404, description: 'Not found' }],
+  })
   async show(req: Request, res: Response): Promise<void> {
-    const p = await this.permissionService.find(req.params.id);
-    if (!p) { res.status(404).json({ success: false, message: 'Not found' }); return; }
-    res.json({ success: true, data: p });
+    const permission = req.params.permission as unknown as Permission;
+    res.json({ success: true, data: permission });
   }
 }
 `,
@@ -1617,6 +1801,7 @@ import path from 'path';
 import { Injectable } from '@lara-node/core';
 import { Doc } from '@lara-node/router';
 import { FileService } from '@app/Services/index';
+import FileModel from '@app/Models/File/File';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || 'uploads/files';
 
@@ -1639,10 +1824,16 @@ export class FileController {
     res.json({ success: true, data: await this.fileService.index() });
   }
 
-  @Doc({ summary: 'Get file metadata by ID', tags: ['Files'], auth: true, params: [{ name: 'id', in: 'path', type: 'integer' }] })
+  @Doc({
+    summary: 'Get file metadata by ID (route-model binding)',
+    description: 'The :file parameter is automatically resolved to a File model instance.',
+    tags: ['Files'],
+    auth: true,
+    params: [{ name: 'file', in: 'path', type: 'integer', description: 'File ID — auto-bound to File model' }],
+    responses: [{ status: 200, description: 'File metadata' }, { status: 404, description: 'Not found' }],
+  })
   async show(req: Request, res: Response): Promise<void> {
-    const file = await this.fileService.find(req.params.id);
-    if (!file) { res.status(404).json({ success: false, message: 'Not found' }); return; }
+    const file = req.params.file as unknown as FileModel;
     res.json({ success: true, data: file });
   }
 
@@ -1652,10 +1843,9 @@ export class FileController {
     res.status(201).json({ success: true, data: await this.fileService.store(req.file, req.user!.id) });
   }
 
-  @Doc({ summary: 'Download a file by ID', tags: ['Files'], auth: true })
+  @Doc({ summary: 'Download a file by ID (route-model binding)', tags: ['Files'], auth: true })
   async download(req: Request, res: Response): Promise<void> {
-    const file = await this.fileService.find(req.params.id);
-    if (!file) { res.status(404).json({ success: false, message: 'Not found' }); return; }
+    const file = req.params.file as unknown as FileModel;
     res.download(
       file.getAttribute('disk_path') as string,
       file.getAttribute('original_name') as string,
@@ -1664,7 +1854,8 @@ export class FileController {
 
   @Doc({ summary: 'Delete a file (soft delete + remove from disk)', tags: ['Files'], auth: true })
   async destroy(req: Request, res: Response): Promise<void> {
-    await this.fileService.destroy(req.params.id);
+    const file = req.params.file as unknown as FileModel;
+    await this.fileService.destroy(file.getAttribute('id') as number | string);
     res.json({ success: true, message: 'File deleted' });
   }
 }
@@ -2550,41 +2741,45 @@ rb.prefix('/auth').group((g: RouterBuilder) => {
   g.get('/me', 'auth', [AuthController, 'me']);
 });
 
+// :user — route-model binding auto-resolves to User model instance
 rb.prefix('/users').middleware(['auth', 'must-be-active']).group((g: RouterBuilder) => {
   g.get('/', 'can:view_users', [UserController, 'index']);
-  g.get('/:id', 'can:view_users', [UserController, 'show']);
-  g.get('/:id/profile', [UserController, 'showProfile']);
+  g.get('/:user', 'can:view_users', [UserController, 'show']);
+  g.get('/:user/profile', [UserController, 'showProfile']);
   g.post('/', 'can:create_users', [UserController, 'store']);
-  g.put('/:id', 'can:update_users', [UserController, 'update']);
-  g.put('/:id/profile', [UserController, 'updateProfile']);
-  g.post('/:id/password', 'can:update_users', [UserController, 'setPassword']);
-  g.post('/:id/password/reset', [UserController, 'resetPassword']);
-  g.post('/:id/roles', 'can:add_roles_to_users', [UserController, 'addRole']);
-  g.delete('/:id/roles/:roleId', 'can:remove_roles_from_users', [UserController, 'removeRole']);
-  g.delete('/:id', 'can:delete_users', [UserController, 'destroy']);
+  g.put('/:user', 'can:update_users', [UserController, 'update']);
+  g.put('/:user/profile', [UserController, 'updateProfile']);
+  g.post('/:user/password', 'can:update_users', [UserController, 'setPassword']);
+  g.post('/:user/password/reset', [UserController, 'resetPassword']);
+  g.post('/:user/roles', 'can:add_roles_to_users', [UserController, 'addRole']);
+  g.delete('/:user/roles/:role', 'can:remove_roles_from_users', [UserController, 'removeRole']);
+  g.delete('/:user', 'can:delete_users', [UserController, 'destroy']);
   g.patch('/:user/status', 'can:activate_and_deactivate_users', [UserController, 'toggleStatus']);
 });
 
+// :role — route-model binding auto-resolves to Role model instance
 rb.prefix('/roles').middleware(['auth', 'must-be-active']).group((g: RouterBuilder) => {
   g.get('/', 'can:view_roles', [RoleController, 'index']);
   g.get('/:role', 'can:view_roles', [RoleController, 'show']);
   g.post('/', 'can:create_roles', [RoleController, 'store']);
-  g.put('/:id', 'can:update_roles', [RoleController, 'update']);
-  g.delete('/:id', 'can:delete_roles', [RoleController, 'destroy']);
-  g.post('/:id/permissions', 'can:add_permissions_to_roles', [RoleController, 'syncPermissions']);
+  g.put('/:role', 'can:update_roles', [RoleController, 'update']);
+  g.delete('/:role', 'can:delete_roles', [RoleController, 'destroy']);
+  g.post('/:role/permissions', 'can:add_permissions_to_roles', [RoleController, 'syncPermissions']);
 });
 
+// :permission — route-model binding auto-resolves to Permission model instance
 rb.prefix('/permissions').middleware(['auth', 'must-be-active']).group((g: RouterBuilder) => {
   g.get('/', 'can:view_permissions', [PermissionController, 'index']);
-  g.get('/:id', 'can:view_permissions', [PermissionController, 'show']);
+  g.get('/:permission', 'can:view_permissions', [PermissionController, 'show']);
 });
 
+// :file — route-model binding auto-resolves to File model instance
 rb.prefix('/files').middleware(['auth', 'must-be-active']).group((g: RouterBuilder) => {
   g.get('/', 'can:view_files', [FileController, 'index']);
-  g.get('/:id', 'can:view_files', [FileController, 'show']);
-  g.get('/:id/download', 'can:view_files', [FileController, 'download']);
+  g.get('/:file', 'can:view_files', [FileController, 'show']);
+  g.get('/:file/download', 'can:view_files', [FileController, 'download']);
   g.post('/', multerUpload.single('file'), 'can:upload_files', [FileController, 'store']);
-  g.delete('/:id', 'can:delete_files', [FileController, 'destroy']);
+  g.delete('/:file', 'can:delete_files', [FileController, 'destroy']);
 });
 
 export default rb;

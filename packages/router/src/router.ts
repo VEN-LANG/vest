@@ -397,7 +397,26 @@ export class RouterBuilder {
     return [req, res];
   }
 
-  private async resolveParameterBinding(paramName: string, value: string, req: any): Promise<any> {
+  // Parse `:param,field` from a raw route path.
+  // Returns the Express-compatible clean path and a map of param → lookup field.
+  private parseRouteBindings(path: string): {
+    cleanPath: string;
+    fieldMap: Record<string, string>;
+  } {
+    const fieldMap: Record<string, string> = {};
+    const cleanPath = path.replace(/:(\w+),(\w+)/g, (_match, param: string, field: string) => {
+      fieldMap[param] = field;
+      return `:${param}`;
+    });
+    return { cleanPath, fieldMap };
+  }
+
+  private async resolveParameterBinding(
+    paramName: string,
+    value: string,
+    req: any,
+    fieldName?: string,
+  ): Promise<any> {
     // First try explicit binder
     if (this.explicitBinders.has(paramName)) {
       return await this.explicitBinders.get(paramName)!(value, req);
@@ -407,11 +426,17 @@ export class RouterBuilder {
     if (this.autoBindEnabled) {
       const modelClass = this.modelRegistry.getModelByName(paramName);
       if (modelClass) {
-        const pk = modelClass.primaryKey || "id";
+        const lookupField = fieldName || modelClass.primaryKey || "id";
         const builder = new EloquentBuilder(modelClass);
+        if (fieldName) {
+          // Custom field lookup — use where().firstOrFail or where().first()
+          return (builder as any).firstOrFail
+            ? await builder.where(lookupField, value).firstOrFail?.()
+            : await builder.where(lookupField, value).first();
+        }
         return builder.findOrFail
           ? await builder.findOrFail(value)
-          : await builder.where(pk, value).first();
+          : await builder.where(lookupField, value).first();
       }
     }
 
@@ -419,14 +444,23 @@ export class RouterBuilder {
     return value;
   }
 
-  private async resolveAllBindings(path: string, req: any): Promise<Record<string, any>> {
+  private async resolveAllBindings(
+    path: string,
+    req: any,
+    fieldMap: Record<string, string> = {},
+  ): Promise<Record<string, any>> {
     const paramMatches = path.match(/:(\w+)/g) || [];
     const params = paramMatches.map((match) => match.substring(1));
     const results: Record<string, any> = {};
 
     for (const param of params) {
       if (req.params[param]) {
-        results[param] = await this.resolveParameterBinding(param, req.params[param], req);
+        results[param] = await this.resolveParameterBinding(
+          param,
+          req.params[param],
+          req,
+          fieldMap[param],
+        );
       }
     }
 
@@ -440,6 +474,10 @@ export class RouterBuilder {
   ) {
     const prefix = this.currentPrefix();
     let fullPath = this.normalizePath([prefix, path]);
+
+    // Extract :param,field hints before applying constraints or registering with Express
+    const { cleanPath, fieldMap } = this.parseRouteBindings(fullPath);
+    fullPath = cleanPath;
 
     // Apply parameter constraints
     const constraints = this.currentConstraints();
@@ -544,7 +582,7 @@ export class RouterBuilder {
     }
 
     // Wrap the final handler to inject models
-    const wrappedHandlers = this.wrapHandlersWithModelInjection(fullPath, resolvedHandlers as any);
+    const wrappedHandlers = this.wrapHandlersWithModelInjection(fullPath, resolvedHandlers as any, fieldMap);
 
     (this.router as any)[method](fullPath, ...middlewares, ...wrappedHandlers);
 
@@ -578,6 +616,7 @@ export class RouterBuilder {
   private wrapHandlersWithModelInjection(
     path: string,
     handlers: Array<RequestHandler | ControllerMethod>,
+    fieldMap: Record<string, string> = {},
   ): RequestHandler[] {
     if (!handlers.length) return handlers as RequestHandler[];
 
@@ -587,7 +626,7 @@ export class RouterBuilder {
 
     const wrappedHandler: RequestHandler = async (req, res, next) => {
       try {
-        const boundModels = await this.resolveAllBindings(path, req);
+        const boundModels = await this.resolveAllBindings(path, req, fieldMap);
         const orderedParamMatches = path.match(/:(\w+)/g) || [];
         const orderedParams = orderedParamMatches.map((m) => m.substring(1));
         const values = orderedParams.map((p) => boundModels[p]).filter((v) => v !== undefined);
