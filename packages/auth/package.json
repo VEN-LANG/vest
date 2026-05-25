@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/auth",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Lara-Node JWT authentication helpers",
   "files": [
     "dist",
@@ -44,6 +44,7 @@
     "vitest": "^3.2.3"
   },
   "peerDependencies": {
-    "@lara-node/core": "^0.1.5"
+    "@lara-node/core": "^0.1.5",
+    "@lara-node/middlewares": "*"
   }
 }
