@@ -19,7 +19,7 @@ const VERSIONS: Record<string, string> = {
   "@lara-node/auth": "0.1.8",
   "@lara-node/console": "0.1.15",
   "@lara-node/validator": "0.1.11",
-  "@lara-node/middlewares": "0.1.11",
+  "@lara-node/middlewares": "0.1.15",
   "@lara-node/events": "0.1.8",
   "@lara-node/queue": "0.1.15",
   "@lara-node/mail": "0.1.8",
@@ -516,28 +516,12 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
   w(
     dir,
     "src/types/express.d.ts",
-    `import type { RuleSpec, RuleFn } from '@lara-node/validator';
+    `import type { FormRequest } from '@lara-node/middlewares';
 
 declare global {
   namespace Express {
-    interface Request {
-      user?: {
-        id: number | string;
-        email?: string;
-        name?: string;
-        roles?: string[];
-        permissions?: string[];
-        [key: string]: unknown;
-      };
-      validate: <T extends Record<string, unknown>>(
-        payloadOrRules?: Record<string, string | RuleFn> | Record<string, unknown>,
-        rulesMaybe?: Record<string, RuleSpec> | Record<string, string | RuleFn>,
-        customMessages?: Record<string, string>,
-      ) => Promise<T>;
-    }
-    interface Response {
-      jsonAsync: <T>(data: T) => Promise<Response>;
-    }
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+    interface Request extends FormRequest {}
   }
 }
 
@@ -739,6 +723,7 @@ import type { Middleware } from '@lara-node/core';
 import {
   AsyncContextMiddleware,
   RequestLoggerMiddleware,
+  RequestExtenderMiddleware,
   ValidatorMiddleware,
   ResponseExtenderMiddleware,
   ErrorHandlerMiddleware,
@@ -762,6 +747,7 @@ export class Kernel extends BaseKernel {
   protected override middleware: RequestHandler[] = middlewareStack.resolveMiddlewareStack([
     AsyncContextMiddleware,
     RequestLoggerMiddleware,
+    RequestExtenderMiddleware,
     ValidatorMiddleware,
     ResponseExtenderMiddleware,
   ] as Middleware[]);

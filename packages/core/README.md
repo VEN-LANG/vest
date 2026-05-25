@@ -252,6 +252,8 @@ export class MailServiceProvider extends ServiceProvider {
 
 Typed, validated HTTP request. Extend it, declare `rules()`, and type your controller's first parameter — the router resolves, validates, and injects the instance automatically.
 
+> **Raw Express `req`:** The same input-helper methods (`req.all()`, `req.input()`, `req.isSecure()`, `req.bearerToken()`, etc.) are also available directly on the Express `Request` object when `RequestExtenderMiddleware` from `@lara-node/middlewares` is in the global middleware stack. `FormRequest` and the raw `req` share the same `FormRequest` interface — the difference is that `FormRequest` also runs `authorize()` and `validated()` automatically.
+
 ```ts
 import { FormRequest } from "@lara-node/core";
 
