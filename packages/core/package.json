@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/core",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Lara-Node IoC container, Application, and ServiceProvider",
   "files": [
     "dist",
@@ -28,7 +28,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@lara-node/validator": "workspace:^",
+    "@lara-node/validator": "^0.1.10",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "reflect-metadata": "^0.2.2"
