@@ -33,6 +33,7 @@
     "onlyBuiltDependencies": [
       "bcrypt",
       "esbuild",
+      "puppeteer",
       "sharp"
     ]
   },

@@ -36,6 +36,7 @@ export default defineConfig({
           { text: "Console", link: "/packages/console" },
           { text: "Horizon", link: "/packages/horizon" },
           { text: "Telescope", link: "/packages/telescope" },
+          { text: "Exports", link: "/packages/exports" },
         ],
       },
       {
@@ -203,6 +204,12 @@ export default defineConfig({
             { text: "Overview", link: "/packages/telescope" },
             { text: "Configuration", link: "/packages/telescope/configuration" },
             { text: "Watchers", link: "/packages/telescope/watchers" },
+          ],
+        },
+        {
+          text: "Exports",
+          items: [
+            { text: "Overview", link: "/packages/exports" },
           ],
         },
       ],
