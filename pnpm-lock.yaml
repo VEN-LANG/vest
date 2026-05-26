@@ -405,7 +405,7 @@ importers:
     dependencies:
       '@lara-node/queue':
         specifier: ^0.1.14
-        version: 0.1.15(@lara-node/core@packages+core)(@types/node@24.12.4)
+        version: 0.1.15(@lara-node/core@packages+core)(@types/node@24.12.4)(socks@2.8.9)
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -563,10 +563,10 @@ importers:
     dependencies:
       '@lara-node/events':
         specifier: ^0.1.4
-        version: 0.1.7(@lara-node/core@packages+core)(@types/node@24.12.4)
+        version: 0.1.7(@lara-node/core@packages+core)(@types/node@24.12.4)(socks@2.8.9)
       '@lara-node/queue':
         specifier: ^0.1.14
-        version: 0.1.15(@lara-node/core@packages+core)(@types/node@24.12.4)
+        version: 0.1.15(@lara-node/core@packages+core)(@types/node@24.12.4)(socks@2.8.9)
       nodemailer:
         specifier: ^8.0.1
         version: 8.0.7
@@ -783,6 +783,9 @@ importers:
       '@lara-node/db':
         specifier: '>=0.1.13'
         version: 0.1.14(@lara-node/core@0.1.11)(@types/node@24.12.4)(socks@2.8.9)
+      '@lara-node/validator':
+        specifier: 0.1.15
+        version: 0.1.15(@lara-node/db@0.1.14)
     devDependencies:
       '@types/node':
         specifier: ^24.12.2
@@ -1127,6 +1130,14 @@ packages:
 
   '@lara-node/validator@0.1.13':
     resolution: {integrity: sha512-Kv5k6CmOFFI9tPUP5ebj0dJ0AzcJO6GjcfkZHPKLhq1CcygUeQjH4yJphME0688Rteb5QnFrMygveiccGQgUPA==}
+    peerDependencies:
+      '@lara-node/db': '>=0.1.13'
+    peerDependenciesMeta:
+      '@lara-node/db':
+        optional: true
+
+  '@lara-node/validator@0.1.15':
+    resolution: {integrity: sha512-QhyfBz0ej/UqTFoLnVhVEnRArRtypuH9bzLm4g/ckWb8JW4ZWHFrjTAGfqm1Gp4mmNqOBJu5RLMqMnkrRMZcXg==}
     peerDependencies:
       '@lara-node/db': '>=0.1.13'
     peerDependenciesMeta:
@@ -4150,23 +4161,6 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@lara-node/cache@0.1.10(@lara-node/core@packages+core)(@types/node@24.12.4)':
-    dependencies:
-      '@lara-node/core': link:packages/core
-      '@lara-node/db': 0.1.14(@lara-node/core@packages+core)(@types/node@24.12.4)
-      redis: 5.12.1
-    transitivePeerDependencies:
-      - '@aws-sdk/credential-providers'
-      - '@mongodb-js/zstd'
-      - '@node-rs/xxhash'
-      - '@opentelemetry/api'
-      - '@types/node'
-      - gcp-metadata
-      - kerberos
-      - mongodb-client-encryption
-      - snappy
-      - socks
-
   '@lara-node/cache@0.1.10(@lara-node/core@packages+core)(@types/node@24.12.4)(socks@2.8.9)':
     dependencies:
       '@lara-node/core': link:packages/core
@@ -4203,7 +4197,7 @@ snapshots:
 
   '@lara-node/core@0.1.11(@lara-node/db@0.1.14)':
     dependencies:
-      '@lara-node/validator': 0.1.13(@lara-node/db@0.1.14)
+      '@lara-node/validator': 0.1.15(@lara-node/db@0.1.14)
       cors: 2.8.6
       express: 5.2.1
       reflect-metadata: 0.2.2
@@ -4283,22 +4277,6 @@ snapshots:
       - snappy
       - socks
 
-  '@lara-node/db@0.1.14(@lara-node/core@packages+core)(@types/node@24.12.4)':
-    dependencies:
-      '@lara-node/core': link:packages/core
-      mongodb: 7.2.0(socks@2.8.9)
-      mysql2: 3.22.3(@types/node@24.12.4)
-      reflect-metadata: 0.2.2
-    transitivePeerDependencies:
-      - '@aws-sdk/credential-providers'
-      - '@mongodb-js/zstd'
-      - '@types/node'
-      - gcp-metadata
-      - kerberos
-      - mongodb-client-encryption
-      - snappy
-      - socks
-
   '@lara-node/db@0.1.14(@lara-node/core@packages+core)(@types/node@24.12.4)(socks@2.8.9)':
     dependencies:
       '@lara-node/core': link:packages/core
@@ -4314,26 +4292,6 @@ snapshots:
       - mongodb-client-encryption
       - snappy
       - socks
-
-  '@lara-node/events@0.1.7(@lara-node/core@packages+core)(@types/node@24.12.4)':
-    dependencies:
-      '@lara-node/core': link:packages/core
-      '@lara-node/queue': 0.1.15(@lara-node/core@packages+core)(@types/node@24.12.4)
-      reflect-metadata: 0.2.2
-      ws: 8.20.1
-    transitivePeerDependencies:
-      - '@aws-sdk/credential-providers'
-      - '@mongodb-js/zstd'
-      - '@node-rs/xxhash'
-      - '@opentelemetry/api'
-      - '@types/node'
-      - bufferutil
-      - gcp-metadata
-      - kerberos
-      - mongodb-client-encryption
-      - snappy
-      - socks
-      - utf-8-validate
 
   '@lara-node/events@0.1.7(@lara-node/core@packages+core)(@types/node@24.12.4)(socks@2.8.9)':
     dependencies:
@@ -4403,32 +4361,12 @@ snapshots:
     dependencies:
       '@lara-node/core': link:packages/core
       '@lara-node/db': 0.1.14(@lara-node/core@packages+core)(@types/node@24.12.4)(socks@2.8.9)
-      '@lara-node/validator': 0.1.13(@lara-node/db@0.1.14(@lara-node/core@packages+core)(@types/node@24.12.4)(socks@2.8.9))
+      '@lara-node/validator': 0.1.15(@lara-node/db@0.1.14(@lara-node/core@packages+core)(@types/node@24.12.4)(socks@2.8.9))
       express: 5.2.1
       jsonwebtoken: 9.0.3
     transitivePeerDependencies:
       - '@aws-sdk/credential-providers'
       - '@mongodb-js/zstd'
-      - '@types/node'
-      - gcp-metadata
-      - kerberos
-      - mongodb-client-encryption
-      - snappy
-      - socks
-
-  '@lara-node/queue@0.1.15(@lara-node/core@packages+core)(@types/node@24.12.4)':
-    dependencies:
-      '@lara-node/cache': 0.1.10(@lara-node/core@packages+core)(@types/node@24.12.4)
-      '@lara-node/core': link:packages/core
-      '@lara-node/db': 0.1.14(@lara-node/core@packages+core)(@types/node@24.12.4)
-      cron-parser: 5.5.0
-      redis: 5.12.1
-      reflect-metadata: 0.2.2
-    transitivePeerDependencies:
-      - '@aws-sdk/credential-providers'
-      - '@mongodb-js/zstd'
-      - '@node-rs/xxhash'
-      - '@opentelemetry/api'
       - '@types/node'
       - gcp-metadata
       - kerberos
@@ -4496,11 +4434,15 @@ snapshots:
       - socks
       - supports-color
 
-  '@lara-node/validator@0.1.13(@lara-node/db@0.1.14(@lara-node/core@packages+core)(@types/node@24.12.4)(socks@2.8.9))':
+  '@lara-node/validator@0.1.13(@lara-node/db@0.1.14)':
+    optionalDependencies:
+      '@lara-node/db': 0.1.14(@lara-node/core@0.1.11)(@types/node@24.12.4)(socks@2.8.9)
+
+  '@lara-node/validator@0.1.15(@lara-node/db@0.1.14(@lara-node/core@packages+core)(@types/node@24.12.4)(socks@2.8.9))':
     optionalDependencies:
       '@lara-node/db': 0.1.14(@lara-node/core@packages+core)(@types/node@24.12.4)(socks@2.8.9)
 
-  '@lara-node/validator@0.1.13(@lara-node/db@0.1.14)':
+  '@lara-node/validator@0.1.15(@lara-node/db@0.1.14)':
     optionalDependencies:
       '@lara-node/db': 0.1.14(@lara-node/core@0.1.11)(@types/node@24.12.4)(socks@2.8.9)
 
