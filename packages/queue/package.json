@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/queue",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "Lara-Node job queue, worker, and scheduler",
   "files": [
     "dist",
@@ -33,10 +33,11 @@
     "@lara-node/db": "^0.1.13",
     "cron-parser": "^5.5.0",
     "redis": "^5.10.0",
-    "reflect-metadata": "^0.2.2"
+    "reflect-metadata": "^0.2.2",
+    "@lara-node/console": "0.1.16"
   },
   "devDependencies": {
-    "@lara-node/core": "workspace:^",
+    "@lara-node/core": "0.1.12",
     "@types/node": "^24.12.2",
     "rimraf": "^6.0.1",
     "tsdown": "^0.12.9",
@@ -44,7 +45,7 @@
     "vitest": "^3.2.3"
   },
   "peerDependencies": {
-    "@lara-node/core": "^0.1.5"
+    "@lara-node/core": "0.1.12"
   },
   "laraNode": {
     "publish": [
