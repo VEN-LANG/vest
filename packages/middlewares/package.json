@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/middlewares",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "description": "Predefined class-based middleware for Lara-Node applications",
   "files": [
     "dist",
@@ -27,20 +27,20 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@lara-node/db": ">=0.1.19",
-    "@lara-node/validator": ">=0.1.15",
-    "jsonwebtoken": "^9.0.2"
+    "@lara-node/db": "workspace:^",
+    "@lara-node/validator": "workspace:^",
+    "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
-    "@types/jsonwebtoken": "^9.0.9",
-    "@types/node": "^24.12.2",
-    "rimraf": "^6.0.1",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.12.4",
+    "rimraf": "^6.1.3",
     "tsdown": "^0.12.9",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "@lara-node/core": "^0.1.5",
+    "@lara-node/core": "workspace:^",
     "express": "^5.2.1"
   }
 }
