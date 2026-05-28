@@ -1,5 +1,5 @@
 {
-  "name": "apps/example",
+  "name": "example",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,20 +11,26 @@
     "migrate:fresh": "node --expose-gc -r @swc-node/register -r tsconfig-paths/register -r ./src/register.ts src/artisan.ts migrate:fresh",
     "db:seed": "node --expose-gc -r @swc-node/register -r tsconfig-paths/register -r ./src/register.ts src/artisan.ts db:seed",
     "test": "vitest run",
-    "lint": "oxlint src",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@lara-node/auth": "workspace:^",
+    "@lara-node/cache": "workspace:^",
+    "@lara-node/console": "workspace:^",
     "@lara-node/core": "workspace:^",
     "@lara-node/db": "workspace:^",
-    "@lara-node/router": "workspace:^",
-    "@lara-node/auth": "workspace:^",
-    "@lara-node/console": "workspace:^",
-    "@lara-node/validator": "workspace:^",
-    "@lara-node/middlewares": "workspace:^",
     "@lara-node/events": "workspace:^",
-    "@lara-node/queue": "workspace:^",
+    "@lara-node/horizon": "workspace:^",
     "@lara-node/mail": "workspace:^",
+    "@lara-node/middlewares": "workspace:^",
+    "@lara-node/queue": "workspace:^",
+    "@lara-node/router": "workspace:^",
+    "@lara-node/telescope": "workspace:^",
+    "@lara-node/csv": "workspace:^",
+    "@lara-node/excel": "workspace:^",
+    "@lara-node/pdf": "workspace:^",
+    "@lara-node/xml": "workspace:^",
+    "@lara-node/validator": "workspace:^",
     "reflect-metadata": "^0.2.2",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
@@ -33,7 +39,7 @@
     "bcryptjs": "^3.0.2",
     "multer": "^2.0.1",
     "yargs": "^18.0.0",
-    "mysql2": "^3.16.0"
+    "mysql2": "^3.14.1"
   },
   "devDependencies": {
     "@types/node": "^24.12.2",
@@ -46,7 +52,6 @@
     "@swc-node/register": "^1.10.9",
     "@swc/core": "^1.11.0",
     "tsconfig-paths": "^4.2.0",
-    "oxlint": "^0.16.6",
     "tsdown": "^0.12.9",
     "typescript": "^5.9.3",
     "vitest": "^3.2.3"

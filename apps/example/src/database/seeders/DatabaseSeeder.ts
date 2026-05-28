@@ -7,8 +7,8 @@ export class DatabaseSeeder {
 
     const { adminRole, userRole } = await new RolePermissionSeeder().run();
     await new UserSeeder().run(
-      adminRole.getAttribute('id') as number,
-      userRole.getAttribute('id') as number,
+      adminRole.id,
+      userRole.id,
     );
 
     console.log('DatabaseSeeder complete');

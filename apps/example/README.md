@@ -6,11 +6,11 @@ A production-ready REST API built with [Lara-Node](https://github.com/venomous-m
 
 - **Runtime**: Node.js with TypeScript (via @swc-node/register — supports decorators + no .js extensions)
 - **Framework**: Express 5 + @lara-node/core (IoC container, service providers)
-- **Database**: MySQL (mysql2)
+- **Database**: MongoDB
 - **Auth**: JWT (@lara-node/auth + jsonwebtoken)
 - **Validation**: @lara-node/validator (Laravel-style rules)
 - **Middleware**: @lara-node/middlewares (class-based)
-- **Packages**: @lara-node/validator, @lara-node/middlewares, @lara-node/events, @lara-node/queue, @lara-node/mail
+- **Packages**: @lara-node/validator, @lara-node/middlewares, @lara-node/events, @lara-node/queue, @lara-node/mail, @lara-node/horizon, @lara-node/telescope
 
 ## Quick Start
 
@@ -45,7 +45,9 @@ pnpm dev                      # start dev server on http://localhost:3000
 ```
 src/
 ├── app/
-│   ├── Console/Commands/       # Artisan commands
+│   ├── Console/
+│   │   ├── Commands/           # Artisan commands (auto-discovered)
+│   │   └── Kernel.ts           # ConsoleKernel — extends base Kernel
 │   ├── Events/                 # Event classes
 │   ├── Http/
 │   │   ├── Controllers/        # Request handlers (IoC auto-wired)
@@ -232,20 +234,21 @@ g.post('/login', 'throttle:10', [AuthController, 'login']);
 
 | Variable | Default | Description |
 |---|---|---|
-| `DB_CONNECTION` | `mysql` | Driver: `mysql` or `mongodb` |
+| `DB_CONNECTION` | `mongodb` | Driver: `mysql` or `mongodb` |
 | `DB_NAME` | `apps/example` | Database / schema name |
 | `SKIP_DB` | — | Set to `1` to skip DB init in CI/test |
 
-### Database — MySQL
+### Database — MongoDB
 
 | Variable | Default | Description |
 |---|---|---|
-| `DB_HOST` | `127.0.0.1` | Host |
-| `DB_PORT` | `3306` | Port |
-| `DB_USER` | `root` | Username |
-| `DB_PASSWORD` | _(empty)_ | Password |
-| `DB_POOL_LIMIT` | `10` | Connection pool size |
-| `DB_SOCKET_PATH` | — | Unix socket path (overrides host/port) |
+| `MONGO_URI` | — | Full connection string (preferred) |
+| `DB_HOST` | `127.0.0.1` | Used to build default URI |
+| `DB_PORT` | `27017` | Used to build default URI |
+| `MONGO_REPLICA_SET` | — | Replica set name |
+| `MONGO_DIRECT_CONNECTION` | auto | `true` / `false` |
+| `MONGO_RETRY_WRITES` | auto | `true` / `false` |
+| `MONGO_SERVER_SELECTION_TIMEOUT_MS` | `10000` | Timeout in ms |
 
 ### Mail / Queue / Broadcast
 

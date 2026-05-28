@@ -1,5 +1,6 @@
 import { Model, use } from '@lara-node/db';
 import { SoftDeletes, Timestamps } from '@lara-node/db';
+import { WithExportable } from '@app/Traits/WithExportable';
 import { Injectable } from '@lara-node/core';
 import { Bind } from '@lara-node/router';
 import Role from './Role';
@@ -8,8 +9,9 @@ import { RolesUsers } from './RolesUsers';
 
 @Bind()            // registers 'user' for route-model binding — :user param auto-resolves
 @Injectable()
-@use(SoftDeletes, Timestamps)
+@use(WithExportable, SoftDeletes, Timestamps)
 export class User extends Model {
+
   static primaryKey = 'id';
   static fillable: string[] = [
     'name', 'email', 'email_verified_at', 'password', 'status',
@@ -17,6 +19,10 @@ export class User extends Model {
     'remember_token', 'avatar', 'phone_number', 'created_at', 'updated_at', 'deleted_at',
   ];
   static hidden: string[] = ['password', 'remember_token'];
+
+  // Export configuration
+  static exportFields = ['id', 'name', 'email', 'phone_number', 'status', 'created_at'];
+  static exportHeadings = ['ID', 'Name', 'Email', 'Phone', 'Status', 'Created At'];
   static casts: Record<string, string> = {
     created_at: 'datetime', updated_at: 'datetime', deleted_at: 'datetime',
     last_login: 'datetime', last_seen_at: 'datetime',
@@ -31,7 +37,7 @@ export class User extends Model {
   }
 
   isActive(): boolean {
-    const status = this.getAttribute('status') as string | undefined | null;
+    const status = this.status;
     return status === undefined || status === null || status === 'active';
   }
 }

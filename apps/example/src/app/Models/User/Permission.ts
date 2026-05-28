@@ -1,6 +1,8 @@
 import { Model, use } from '@lara-node/db';
 import { SoftDeletes } from '@lara-node/db';
+import { Bind } from '@lara-node/router';
 
+@Bind()            // registers 'permission' for route-model binding
 @use(SoftDeletes)
 export class Permission extends Model {
   static table = 'permissions';

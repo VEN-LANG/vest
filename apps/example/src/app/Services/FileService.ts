@@ -23,7 +23,7 @@ export class FileService {
   async destroy(id: number | string) {
     const file = await File.find(id) as File | null;
     if (!file) throw Object.assign(new Error('File not found'), { status: 404 });
-    try { await fs.unlink(file.getAttribute('disk_path') as string); } catch { /* file missing on disk */ }
+    try { await fs.unlink(file.disk_path); } catch { /* file missing on disk */ }
     await file.delete();
   }
 }

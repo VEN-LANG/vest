@@ -1,44 +1,40 @@
-import { ServiceProvider } from '@lara-node/core';
-import { Queue, QueueManager, scheduler, Schedule } from '@lara-node/queue';
+import { QueueServiceProvider as BaseProvider } from '@lara-node/queue';
+import { scheduler } from '@lara-node/queue';
 import { CleanupJob } from '../Jobs/CleanupJob';
 import { GenerateReportJob } from '../Jobs/GenerateReportJob';
+import { PermissionsSyncCommand } from '../Console/Commands/PermissionCommands';
 
 /*
 |--------------------------------------------------------------------------
 | QueueServiceProvider
 |--------------------------------------------------------------------------
 |
-| Registers the queue manager and scheduler, then defines recurring tasks.
+| Extends the framework QueueServiceProvider (which registers QueueManager,
+| scheduler bindings, and all queue/schedule commands automatically).
+|
+| Use boot() to define app-specific scheduled tasks.
+| Use commands() to expose additional app-specific CLI commands.
 |
 | Schedule API:
-|   scheduler.command('permissions:sync').daily();          // every day at midnight
-|   scheduler.command('permissions:sync').hourly();         // every hour
-|   scheduler.job(CleanupJob).dailyAt('02:00');             // daily at 2 AM
-|   scheduler.job(GenerateReportJob).weekly();              // every Sunday at midnight
-|   scheduler.job(GenerateReportJob).monthly();             // 1st of month at midnight
-|   scheduler.call(() => console.log('tick')).everyMinute();
-|   scheduler.command('cache:clear').cron('0 * * * *');     // raw cron expression
+|   scheduler.command('permissions:sync').dailyAt('00:05');
+|   scheduler.job(CleanupJob).dailyAt('02:00');
+|   scheduler.call(() => {}).everyMinute();
+|   scheduler.command('cache:clear').cron('0 * * * *');
 |
 */
-export class QueueServiceProvider extends ServiceProvider {
-  register(): void {
-    this.container.singleton(QueueManager, () => Queue);
-    this.container.alias(QueueManager, 'queue');
-    this.container.singleton(Schedule, () => scheduler);
-    this.container.alias(Schedule, 'schedule');
+export class QueueServiceProvider extends BaseProvider {
+  override commands() {
+    // PermissionsSyncCommand is auto-discovered from Console/Commands/ by ConsoleKernel
+    return super.commands();
   }
 
-  boot(): void {
-    // Sync permissions nightly
+  override boot(): void {
+    super.boot();
+
+    // App-specific scheduled tasks
     scheduler.command('permissions:sync').dailyAt('00:05');
-
-    // Purge soft-deleted records every night at 2 AM
     scheduler.job(CleanupJob).dailyAt('02:00');
-
-    // Generate weekly usage report every Sunday at 8 AM
     scheduler.job(GenerateReportJob, { type: 'users', period: 'weekly' }).weekly();
-
-    // Generate monthly report on the 1st at 6 AM
     scheduler.job(GenerateReportJob, { type: 'activity', period: 'monthly' }).monthlyOn(1, '06:00');
   }
 }

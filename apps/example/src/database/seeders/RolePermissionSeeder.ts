@@ -47,7 +47,7 @@ export class RolePermissionSeeder {
       if (!perm) {
         perm = await Permission.create({ name: p.name, slug: p.slug, created_at: now, updated_at: now }) as Permission;
       }
-      const id = perm?.getAttribute('id') as number | undefined;
+      const id = perm?.id | undefined;
       if (id) permIds.push(id);
     }
 

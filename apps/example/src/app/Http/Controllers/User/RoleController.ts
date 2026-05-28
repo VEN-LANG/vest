@@ -3,6 +3,9 @@ import { Injectable } from '@lara-node/core';
 import { Doc } from '@lara-node/router';
 import { RoleService } from '@app/Services/index';
 import Role from '@app/Models/User/Role';
+import { StoreRoleRequest, UpdateRoleRequest, SyncPermissionsRequest } from '@app/Http/Requests/index';
+
+type RoleWithPermissions = Role & { permissions: () => { sync: (ids: number[]) => Promise<void> } };
 
 @Injectable()
 export class RoleController {
@@ -21,9 +24,7 @@ export class RoleController {
     params: [{ name: 'role', in: 'path', type: 'integer', description: 'Role ID — auto-bound to Role model' }],
     responses: [{ status: 200, description: 'Role with permissions' }, { status: 404, description: 'Not found' }],
   })
-  async show(req: Request, res: Response): Promise<void> {
-    // req.params.role is already a loaded Role model instance (route-model binding via ModelRegistry)
-    const role = req.params.role as unknown as Role;
+  async show(_req: Request, res: Response, role: Role): Promise<void> {
     res.json({ success: true, data: role });
   }
 
@@ -37,28 +38,21 @@ export class RoleController {
       description: { type: 'string', required: false, description: 'Optional description' },
     },
   })
-  async store(req: Request, res: Response): Promise<void> {
-    const data = await req.validate({
-      name: 'required|string|min:2|max:100',
-      slug: 'required|string|min:2|max:100',
-      description: 'nullable|string',
-    });
+  async store(req: StoreRoleRequest, res: Response): Promise<void> {
+    const data = req.validated();
     res.status(201).json({ success: true, data: await this.roleService.create(data) });
   }
 
   @Doc({ summary: 'Update a role', tags: ['Roles'], auth: true })
-  async update(req: Request, res: Response): Promise<void> {
-    const data = await req.validate<{ name?: string; slug?: string; description?: string }>({
-      name: 'sometimes|string|min:2|max:100',
-      slug: 'sometimes|string|min:2|max:100',
-      description: 'nullable|string',
-    });
-    res.json({ success: true, data: await this.roleService.update(req.params.id, data) });
+  async update(req: UpdateRoleRequest, res: Response, role: Role): Promise<void> {
+    const data = req.validated();
+    await role.update({ ...data, updated_at: new Date() });
+    res.json({ success: true, data: role });
   }
 
   @Doc({ summary: 'Delete a role (soft delete)', tags: ['Roles'], auth: true })
-  async destroy(req: Request, res: Response): Promise<void> {
-    await this.roleService.destroy(req.params.id);
+  async destroy(_req: Request, res: Response, role: Role): Promise<void> {
+    await role.delete();
     res.json({ success: true, message: 'Role deleted' });
   }
 
@@ -68,8 +62,9 @@ export class RoleController {
     auth: true,
     body: { permission_ids: { type: 'array', description: 'Array of permission IDs' } },
   })
-  async syncPermissions(req: Request, res: Response): Promise<void> {
-    const { permission_ids } = await req.validate<{ permission_ids: number[] }>({ permission_ids: 'required|array' });
-    res.json({ success: true, data: await this.roleService.syncPermissions(req.params.id, permission_ids) });
+  async syncPermissions(req: SyncPermissionsRequest, res: Response, role: Role): Promise<void> {
+    const { permission_ids } = req.validated();
+    await (role as RoleWithPermissions).permissions().sync(permission_ids);
+    res.json({ success: true, data: role });
   }
 }
