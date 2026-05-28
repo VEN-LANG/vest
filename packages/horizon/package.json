@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/horizon",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "description": "Lara-Node Horizon — queue monitoring dashboard",
   "files": [
     "dist",
@@ -29,12 +29,12 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@lara-node/cache": "^0.1.7",
-    "@lara-node/events": "^0.1.4",
-    "@lara-node/queue": "^0.1.15",
-    "@lara-node/router": "^0.2.7",
+    "@lara-node/cache": ">=0.1.12",
+    "@lara-node/events": ">=0.1.10",
+    "@lara-node/queue": ">=0.1.17",
+    "@lara-node/router": ">=0.2.14",
     "express": "^5.2.1",
-    "@lara-node/console": "0.1.16"
+    "@lara-node/console": ">=0.1.18"
   },
   "devDependencies": {
     "@lara-node/core": ">=0.1.13",
