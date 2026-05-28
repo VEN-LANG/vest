@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/console",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "description": "Lara-Node Artisan CLI — commands, kernel, and scheduler",
   "bin": {
     "artisan": "./dist/artisan.js"
