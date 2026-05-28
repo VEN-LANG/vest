@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/db",
-  "version": "0.1.19",
+  "version": "0.1.20",
   "description": "Lara-Node ORM — Eloquent-style models, migrations, schema builder",
   "files": [
     "dist",
@@ -31,7 +31,7 @@
     "mongodb": "^7.0.0",
     "mysql2": "^3.16.0",
     "reflect-metadata": "^0.2.2",
-    "@lara-node/console": "0.1.16"
+    "@lara-node/console": ">=0.1.18"
   },
   "devDependencies": {
     "@lara-node/core": ">=0.1.13",
