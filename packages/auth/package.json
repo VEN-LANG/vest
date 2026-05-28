@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/auth",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Lara-Node JWT authentication helpers",
   "files": [
     "dist",
