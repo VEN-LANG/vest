@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/mail",
-  "version": "0.1.10",
+  "version": "0.1.12",
   "description": "Lara-Node mail manager with SMTP, log, and array drivers",
   "files": [
     "dist",
