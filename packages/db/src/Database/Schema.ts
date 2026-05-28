@@ -871,6 +871,77 @@ export class TableBuilder {
     return this;
   }
 
+  /** Shorthand: .onDelete('CASCADE') */
+  cascadeOnDelete() { return this.onDelete("CASCADE"); }
+  /** Shorthand: .onUpdate('CASCADE') */
+  cascadeOnUpdate() { return this.onUpdate("CASCADE"); }
+  /** Shorthand: .onDelete('SET NULL') */
+  nullOnDelete() { return this.onDelete("SET NULL"); }
+  /** Shorthand: .onUpdate('SET NULL') */
+  nullOnUpdate() { return this.onUpdate("SET NULL"); }
+  /** Shorthand: .onDelete('RESTRICT') */
+  restrictOnDelete() { return this.onDelete("RESTRICT"); }
+  /** Shorthand: .onUpdate('RESTRICT') */
+  restrictOnUpdate() { return this.onUpdate("RESTRICT"); }
+  /** Shorthand: .onDelete('NO ACTION') */
+  noActionOnDelete() { return this.onDelete("NO ACTION"); }
+
+  /**
+   * Auto-create a foreign ID column and optionally add the constraint.
+   *
+   * @example
+   * table.foreignIdFor('users');               // → user_id BIGINT UNSIGNED
+   * table.foreignIdFor('users').constrained(); // → + FOREIGN KEY (user_id) REFERENCES users(id)
+   */
+  foreignIdFor(table: string, column?: string) {
+    const colName = column ?? `${table.replace(/s$/, "")}_id`;
+    const c = this.column("BIGINT", colName);
+    c.unsigned();
+    // attach a constrained helper to the returned column
+    (c as Column & { constrained: (opts?: { onDelete?: string; onUpdate?: string }) => Column }).constrained = (opts: { onDelete?: string; onUpdate?: string } = {}) => {
+      this.foreign(colName).references("id").inTable(table);
+      if (opts.onDelete) this.onDelete(opts.onDelete);
+      if (opts.onUpdate) this.onUpdate(opts.onUpdate);
+      return c;
+    };
+    return c as Column & { constrained: (opts?: { onDelete?: string; onUpdate?: string }) => Column };
+  }
+
+  /**
+   * Add a full-text index on one or more columns.
+   *
+   * @example
+   * table.fullText(['title', 'body']);
+   */
+  fullText(columns: string[] | string, name?: string) {
+    const cols = Array.isArray(columns) ? columns : [columns];
+    const n = name ?? `${this.name}_${cols.join("_")}_fulltext`;
+    // Store as a special index that renders as FULLTEXT KEY
+    this.indexes.push({ columns: cols, name: `__fulltext__${n}`, unique: false });
+    return this;
+  }
+
+  /**
+   * Add a composite unique index.
+   *
+   * @example
+   * table.compositeUnique(['user_id', 'role_id']);
+   */
+  compositeUnique(columns: string[], name?: string) {
+    return this.uniqueIndex(columns, name);
+  }
+
+  /**
+   * Add a composite primary key.
+   *
+   * @example
+   * table.compositePrimary(['user_id', 'role_id']);
+   */
+  compositePrimary(columns: string[]) {
+    for (const col of columns) this.primaryKeys.push(col);
+    return this;
+  }
+
   // alter-mode helpers
   dropColumn(name: string) {
     this.drops.push(name);
