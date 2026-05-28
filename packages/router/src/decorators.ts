@@ -1,4 +1,3 @@
-import type { Model } from "@lara-node/db";
 import RouterBuilder from "./router.js";
 import { registerMiddleware } from "./Middleware/middleware.js";
 import type { Middleware as MiddlewareEntry } from "./Middleware/MiddlewareStack.js";
@@ -30,9 +29,10 @@ import type { Middleware as MiddlewareEntry } from "./Middleware/MiddlewareStack
  * // req.params.user is a loaded User instance
  */
 export function Bind(name?: string) {
-  return function <T extends typeof Model>(target: T): T {
-    RouterBuilder.registerModel(name ?? target.name.toLowerCase(), target);
-    return target;
+  // Use `(target: Function): void` so the decorator is compatible with any class,
+  // including Model subclasses that declare extra static properties.
+  return function (target: Function): void {
+    RouterBuilder.registerModel(name ?? target.name.toLowerCase(), target as never);
   };
 }
 
