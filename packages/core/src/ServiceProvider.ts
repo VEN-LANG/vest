@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import type { Application } from "./Application.js";
 import type { Abstract } from "./Container.js";
 import { middlewareStack, registerMiddleware } from "./middleware.js";
@@ -6,9 +8,23 @@ import type {
   Middleware,
   MiddlewareStack as IMiddlewareStack,
 } from "./MiddlewareStack.js";
-import { config as globalConfig, setConfig } from "./Config.js";
+import { config as globalConfig, setConfig, mergeConfig } from "./Config.js";
 
 export type ServiceProviderClass = new (app: Application) => ServiceProvider;
+
+/**
+ * Minimal interface that describes an Artisan command constructor.
+ * Only requires handle() so that protected members like signature/description
+ * on the Command base class do not cause TS2322 assignability errors.
+ *
+ * @example
+ * commands(): CommandClass[] {
+ *   return [MigrateCommand, DbSeedCommand];
+ * }
+ */
+export type CommandClass = new (...args: never[]) => {
+  handle(...args: unknown[]): Promise<void>;
+};
 
 export abstract class ServiceProvider {
   /*
@@ -19,6 +35,15 @@ export abstract class ServiceProvider {
   protected bootingCallbacks: Array<() => void | Promise<void>> = [];
   protected bootedCallbacks: Array<() => void | Promise<void>> = [];
 
+  /** Callbacks to fire after a specific abstract is resolved from the container. */
+  private afterResolvingCallbacks: Map<string, Array<(instance: unknown) => void>> = new Map();
+
+  /** Migration paths registered by this provider. */
+  private _migrationPaths: string[] = [];
+
+  /** Config files registered via mergeConfigFrom(). */
+  private _configFiles: Array<{ key: string; path: string }> = [];
+
   constructor(protected app: Application) {}
 
   /*
@@ -28,6 +53,17 @@ export abstract class ServiceProvider {
     */
   protected get container() {
     return this.app.container;
+  }
+
+  /**
+   * Resolve an abstract from the container with full return-type inference.
+   *
+   * @example
+   * const mailer = this.make(MailService);
+   * const cfg = this.make<Record<string,unknown>>('config');
+   */
+  protected make<T>(abstract: Abstract<T> | string): T {
+    return this.app.make<T>(abstract as Abstract<T>);
   }
 
   /*
@@ -70,6 +106,27 @@ export abstract class ServiceProvider {
 
   async callBootedCallbacks(): Promise<void> {
     for (const cb of this.bootedCallbacks) await cb();
+  }
+
+  /**
+   * Register a callback to be invoked each time the given abstract is resolved.
+   *
+   * @example
+   * this.callAfterResolving(MailService, (mailer) => {
+   *   (mailer as MailService).setFromAddress('noreply@example.com');
+   * });
+   */
+  protected callAfterResolving(abstract: Abstract<unknown> | string, callback: (instance: unknown) => void): void {
+    const key = typeof abstract === "string" ? abstract : abstract.name ?? String(abstract);
+    const existing = this.afterResolvingCallbacks.get(key) ?? [];
+    existing.push(callback);
+    this.afterResolvingCallbacks.set(key, existing);
+  }
+
+  /** @internal — called by the Application after each container resolution. */
+  runAfterResolvingCallbacks(key: string, instance: unknown): void {
+    const callbacks = this.afterResolvingCallbacks.get(key) ?? [];
+    for (const cb of callbacks) cb(instance);
   }
 
   /*
@@ -207,10 +264,107 @@ export abstract class ServiceProvider {
     setConfig(key, value);
   }
 
+  /**
+   * Merge a config file into an existing namespace. Package defaults are set
+   * first; application values win on conflict (deep merge).
+   *
+   * @example
+   * // In a package ServiceProvider:
+   * this.mergeConfigFrom(path.join(__dirname, '../config/mail.config.js'), 'mail');
+   */
+  protected mergeConfigFrom(configPath: string, key: string): void {
+    this._configFiles.push({ key, path: configPath });
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const loaded: unknown = require(configPath);
+      const value = (loaded as { default?: unknown }).default ?? loaded;
+      mergeConfig(key, value as Record<string, unknown>);
+    } catch {
+      /* skip if file not found during development */
+    }
+  }
+
+  /*
+    |--------------------------------------------------------------------------
+    | Migrations
+    |--------------------------------------------------------------------------
+    */
+
+  /**
+   * Register a directory of migration files with the framework.
+   * Called in register() or boot() of any package ServiceProvider.
+   *
+   * @example
+   * this.loadMigrationsFrom(path.join(__dirname, '../migrations'));
+   */
+  protected loadMigrationsFrom(migrationsPath: string): void {
+    if (!fs.existsSync(migrationsPath)) return;
+    this._migrationPaths.push(path.resolve(migrationsPath));
+    // Notify the app so the migration runner can discover these paths
+    const existing: string[] = (this.app as unknown as Record<string, unknown>)["_migrationPaths"] as string[] ?? [];
+    existing.push(path.resolve(migrationsPath));
+    (this.app as unknown as Record<string, unknown>)["_migrationPaths"] = existing;
+  }
+
+  /** Return the migration paths registered by this provider. */
+  getMigrationPaths(): string[] {
+    return this._migrationPaths;
+  }
+
+  /*
+    |--------------------------------------------------------------------------
+    | Commands
+    |--------------------------------------------------------------------------
+    |
+    | Return command constructors this provider contributes. The console Kernel
+    | collects these automatically so commands can live next to the feature
+    | that owns them rather than all being shipped in the console module.
+    |
+    | @example
+    | commands(): Array<new () => unknown> {
+    |   return [SyncPermissionsCommand, ImportDataCommand];
+    | }
+    */
+  commands(): CommandClass[] {
+    return [];
+  }
+
+  /*
+    |--------------------------------------------------------------------------
+    | Publishable Resources (Laravel-style vendor:publish)
+    |--------------------------------------------------------------------------
+    |
+    | Declare files this package/provider makes available for publishing into
+    | the consuming application. Supports any package — not just @lara-node/*.
+    |
+    | @example
+    | static publishes(): Array<{ tag: string; from: string; to: string }> {
+    |   return [
+    |     { tag: 'config', from: 'config/mail.config.ts', to: 'config/mail.config.ts' },
+    |     { tag: 'migrations', from: 'migrations/001_create_mails.ts', to: 'database/migrations/001_create_mails.ts' },
+    |   ];
+    | }
+    */
+  static publishes(): Array<{ tag: string; from: string; to: string }> {
+    return [];
+  }
+
   /*
     |--------------------------------------------------------------------------
     | Deferred Services
     |--------------------------------------------------------------------------
+    |
+    | A deferred provider is only registered/booted when one of its provided
+    | bindings is actually requested from the container — not on every request.
+    |
+    | @example
+    | provides(): string[] {
+    |   return ['MailService', 'Mail'];
+    | }
+    |
+    | when(): string[] {
+    |   return ['MailService'];  // boot only when MailService is first resolved
+    | }
     */
   provides(): string[] {
     return [];
