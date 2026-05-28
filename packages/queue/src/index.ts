@@ -36,3 +36,5 @@ export { SyncDriver, DatabaseDriver, RedisDriver } from "./Drivers/index.js";
 export { QueueServiceProvider } from "./QueueServiceProvider.js";
 export { default as queueConfig } from "./queue.config.js";
 export type { QueueConfig, QueueConnectionConfig } from "./queue.config.js";
+
+export * from "./Commands.js";
