@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/events",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Lara-Node event dispatcher, listeners, decorators, and WebSocket broadcasting",
   "files": [
     "dist",
@@ -35,7 +35,7 @@
     "@lara-node/console": "0.1.16"
   },
   "devDependencies": {
-    "@lara-node/core": "0.1.12",
+    "@lara-node/core": ">=0.1.13",
     "@types/node": "^24.12.2",
     "@types/ws": "^8.18.1",
     "rimraf": "^6.0.1",
@@ -44,7 +44,7 @@
     "vitest": "^3.2.3"
   },
   "peerDependencies": {
-    "@lara-node/core": "0.1.12"
+    "@lara-node/core": ">=0.1.13"
   },
   "laraNode": {
     "publish": [
