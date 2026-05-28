@@ -4,14 +4,14 @@ import { Argv } from "yargs";
 import { Command } from "../Command.js";
 import * as SystemCommands from "../Commands/index.js";
 import { getRegisteredCommands } from "../decorators.js";
-import { scheduler, Schedule } from "@lara-node/queue";
-import type { Application } from "@lara-node/core";
+import type { Application, ServiceProvider, CommandClass } from "@lara-node/core";
 
 export class Kernel {
   /** Additional commands registered by the app. Override via addCommand() or subclass. */
   protected commands: Array<new () => Command> = [];
 
-  protected _scheduler: Schedule = scheduler;
+  /** Service providers whose commands() method should be collected at boot. */
+  protected _providers: ServiceProvider[] = [];
 
   protected _app: Application | null = null;
 
@@ -21,6 +21,11 @@ export class Kernel {
 
   get app(): Application | null {
     return this._app;
+  }
+
+  /** Register service providers so their declared commands are auto-collected. */
+  setProviders(providers: ServiceProvider[]): void {
+    this._providers = providers;
   }
 
   getCommands(): Command[] {
@@ -42,6 +47,18 @@ export class Kernel {
         commandInstances.push(new CommandClass());
       } catch {
         /* skip */
+      }
+    }
+
+    // Collect commands declared in service providers
+    for (const provider of this._providers) {
+      const cmds = provider.commands() as CommandClass[];
+      for (const Ctor of cmds) {
+        try {
+          commandInstances.push(new (Ctor as new () => Command)());
+        } catch {
+          /* skip */
+        }
       }
     }
 
@@ -72,13 +89,5 @@ export class Kernel {
     this.commands.push(command);
   }
 
-  protected schedule(): void {}
-
-  async boot(): Promise<void> {
-    this.schedule();
-  }
-
-  getScheduler(): Schedule {
-    return this._scheduler;
-  }
+  async boot(): Promise<void> {}
 }
