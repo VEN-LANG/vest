@@ -13,19 +13,19 @@ import pc from "picocolors";
 import prompts from "prompts";
 
 const VERSIONS: Record<string, string> = {
-  "@lara-node/core": "0.1.11",
-  "@lara-node/router": "0.2.9",
-  "@lara-node/db": "0.1.14",
+  "@lara-node/core": "0.1.12",
+  "@lara-node/router": "0.2.12",
+  "@lara-node/db": "0.1.17",
   "@lara-node/auth": "0.1.8",
-  "@lara-node/console": "0.1.15",
-  "@lara-node/validator": "0.1.11",
+  "@lara-node/console": "0.1.16",
+  "@lara-node/validator": "0.1.15",
   "@lara-node/middlewares": "0.1.15",
-  "@lara-node/events": "0.1.8",
-  "@lara-node/queue": "0.1.15",
+  "@lara-node/events": "0.1.9",
+  "@lara-node/queue": "0.1.16",
   "@lara-node/mail": "0.1.8",
-  "@lara-node/horizon": "0.1.16",
+  "@lara-node/horizon": "0.1.17",
   "@lara-node/telescope": "0.1.13",
-  "@lara-node/cache": "0.1.10",
+  "@lara-node/cache": "0.1.11",
 };
 
 async function main() {
@@ -161,8 +161,11 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
     "src/app/Middleware",
     "src/app/Models/User",
     "src/app/Models/File",
+    "src/app/Exports",
     "src/app/Observers",
+    "src/app/Policies",
     "src/app/Providers",
+    "src/app/Traits",
     "src/app/Services",
     "src/app/Helpers",
     "src/app/Http/Requests",
@@ -177,7 +180,7 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
   ])
     d(dir, dd);
 
-  const coreDeps = new Set(["core", "db", "router", "auth", "console", "validator", "middlewares"]);
+  const coreDeps = new Set(["core", "db", "router", "auth", "console", "validator", "middlewares", "cache"]);
 
   const laraNodeDeps: string[] = [
     "@lara-node/core",
@@ -187,6 +190,7 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
     "@lara-node/console",
     "@lara-node/validator",
     "@lara-node/middlewares",
+    "@lara-node/cache",
   ];
 
   for (const pkg of opts.packages) {
@@ -599,7 +603,14 @@ import { Kernel as BaseKernel } from '@lara-node/console';
 
 export class ConsoleKernel extends BaseKernel {
   async boot(): Promise<void> {
+    // Discover app commands from src/app/Console/Commands/
     this.discoverCommands(path.join(__dirname, 'Commands'));
+
+    // Collect commands declared by all registered service providers
+    if (this._app) {
+      this.setProviders(this._app.getBootedProviders());
+    }
+
     await super.boot();
   }
 }
@@ -646,8 +657,10 @@ main().catch((err) => {
   w(
     dir,
     "src/bootstrap/app.ts",
-    `import path from 'path';
+    `import fs from 'fs';
+import path from 'path';
 import { container, Application } from '@lara-node/core';
+import type { ServiceProviderClass } from '@lara-node/core';
 import { modelRegistryMiddleware } from '@lara-node/router';
 import { Kernel } from '../app/Http/Kernel';
 import { AppServiceProvider } from '../app/Providers/AppServiceProvider';
@@ -656,11 +669,70 @@ export const app = new Application(container);
 
 /*
 |--------------------------------------------------------------------------
+| Package Auto-discovery
+|--------------------------------------------------------------------------
+|
+| Scans node_modules for packages that declare \`laraNode.providers\` in
+| their package.json, then auto-registers those service providers.
+|
+| Example — in a third-party package's package.json:
+|   "laraNode": {
+|     "providers": ["./dist/MyServiceProvider.js"]
+|   }
+|
+*/
+function autoloadProviders(): void {
+  const nodeModules = path.join(process.cwd(), 'node_modules');
+  if (!fs.existsSync(nodeModules)) return;
+
+  const scanDir = (dir: string, pkgName: string): void => {
+    const pkgJson = path.join(dir, 'package.json');
+    if (!fs.existsSync(pkgJson)) return;
+    try {
+      const pkg = JSON.parse(fs.readFileSync(pkgJson, 'utf-8')) as {
+        laraNode?: { providers?: string[] };
+      };
+      for (const rel of pkg.laraNode?.providers ?? []) {
+        try {
+          const providerPath = path.join(dir, rel);
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const mod = require(providerPath) as Record<string, unknown>;
+          for (const exported of Object.values(mod)) {
+            if (typeof exported === 'function') {
+              app.register(exported as ServiceProviderClass);
+            }
+          }
+        } catch {
+          console.warn(\`[autoload] Failed to load provider from \${pkgName}: \${rel}\`);
+        }
+      }
+    } catch { /* skip malformed package.json */ }
+  };
+
+  try {
+    for (const entry of fs.readdirSync(nodeModules)) {
+      if (entry.startsWith('.')) continue;
+      const entryPath = path.join(nodeModules, entry);
+      if (!fs.statSync(entryPath).isDirectory()) continue;
+      if (entry.startsWith('@')) {
+        for (const scoped of fs.readdirSync(entryPath)) {
+          scanDir(path.join(entryPath, scoped), \`\${entry}/\${scoped}\`);
+        }
+      } else {
+        scanDir(entryPath, entry);
+      }
+    }
+  } catch { /* ignore */ }
+}
+
+/*
+|--------------------------------------------------------------------------
 | Boot sequence (console — no HTTP kernel needed)
 |--------------------------------------------------------------------------
 */
 export async function bootForConsole(): Promise<void> {
   try {
+    autoloadProviders();
     app.register(AppServiceProvider);
     await app.boot();
   } catch (err) {
@@ -674,20 +746,19 @@ export async function bootForConsole(): Promise<void> {
 | Boot sequence (HTTP server)
 |
 | Order matters:
-|   1. Register AppServiceProvider (cascades to all additionalProviders)
-|   2. Boot HTTP Kernel — registers global middleware + named route aliases
-|      so that when RouteServiceProvider.boot() lazily loads routes,
-|      string aliases like 'auth' are already resolved.
-|   3. configureBaseMiddleware (cors, json, urlencoded)
-|   4. modelRegistryMiddleware — scans Models/ on the first request so that
-|      route-model binding (:user → User instance) is ready before handlers run.
-|   5. app.boot() — boots all providers (RouteServiceProvider mounts routes)
-|   6. configureErrorHandling — must come after routes are mounted
+|   1. autoloadProviders() — registers providers from installed packages
+|   2. Register AppServiceProvider (cascades to all additionalProviders)
+|   3. Boot HTTP Kernel — registers global middleware + named route aliases
+|   4. configureBaseMiddleware (cors, json, urlencoded)
+|   5. modelRegistryMiddleware — scans Models/ for route-model binding
+|   6. app.boot() — boots all providers (RouteServiceProvider mounts routes)
+|   7. configureErrorHandling — must come after routes are mounted
 |--------------------------------------------------------------------------
 */
 export async function startApplication(): Promise<void> {
   const port = process.env.PORT ?? 3000;
 
+  autoloadProviders();
   app.register(AppServiceProvider);
 
   const kernel = new Kernel(app);
@@ -695,8 +766,6 @@ export async function startApplication(): Promise<void> {
 
   app.configureBaseMiddleware();
 
-  // Auto-load all Model subclasses so route-model binding resolves :param → model instance.
-  // @Bind() decorators on each model fire when the file is required.
   app.useMiddleware(modelRegistryMiddleware(path.join(__dirname, '../app/Models')));
 
   await app.boot();
@@ -770,6 +839,7 @@ import {
   authorizePermissions,
 } from '@lara-node/middlewares';
 import User from '../Models/User/User';
+import { multerUpload } from '../Http/Controllers/File/FileController';
 
 type UserWithRelations = User & {
   roles: Array<{ slug: string; permissions: Array<{ slug: string }> }>;
@@ -784,10 +854,10 @@ type UserWithRelations = User & {
 | This provider runs before RouteServiceProvider so all aliases are
 | available when route files are lazily loaded in boot().
 |
-| Aliases are used in routes:
-|   g.get('/me', 'auth', [AuthController, 'me']);
-|   g.get('/admin', 'role:admin', [UserController, 'index']);
-|   g.get('/resource', 'can:view_resource', [Controller, 'index']);
+| Aliases are used in @Route decorators:
+|   @Route('/api/users', 'auth', 'must-be-active')
+|   @Route.get('/', 'can:view_users')
+|   @Route.post('/', 'file-upload', 'can:upload_files')
 |
 */
 export class MiddlewareServiceProvider extends BaseProvider {
@@ -801,7 +871,7 @@ export class MiddlewareServiceProvider extends BaseProvider {
           const roles = user.roles ?? [];
           const perms = roles.flatMap((r) => r.permissions ?? []);
           return {
-            id: user.getAttribute('id') as number,
+            id: user.id,
             roles: roles.map((r) => r.slug),
             permissions: perms.map((p) => p.slug),
             model: user,
@@ -812,6 +882,9 @@ export class MiddlewareServiceProvider extends BaseProvider {
       can: (...perms: string[]) => authorizePermissions(...perms),
       role: (...roles: string[]) => authorizeRoles(...roles),
     });
+
+    // File upload middleware — use 'file-upload' alias on any route that accepts multipart
+    this.middlewareAlias('file-upload', multerUpload.single('file'));
 
     this.middlewareGroup('web', []);
 
@@ -936,13 +1009,14 @@ export class ThrottleMiddleware {
 import { SoftDeletes, Timestamps } from '@lara-node/db';
 import { Injectable } from '@lara-node/core';
 import { Bind } from '@lara-node/router';
+import { WithExportable } from '@app/Traits/WithExportable';
 import Role from './Role';
 import UserProfile from './UserProfile';
 import { RolesUsers } from './RolesUsers';
 
 @Bind()            // registers 'user' for route-model binding — :user param auto-resolves
 @Injectable()
-@use(SoftDeletes, Timestamps)
+@use(WithExportable, SoftDeletes, Timestamps)
 export class User extends Model {
   static primaryKey = 'id';
   static fillable: string[] = [
@@ -956,6 +1030,10 @@ export class User extends Model {
     last_login: 'datetime', last_seen_at: 'datetime',
   };
 
+  // Export configuration (used by @use(WithExportable))
+  static exportFields  = ['id', 'name', 'email', 'phone_number', 'status', 'created_at'];
+  static exportHeadings = ['ID', 'Name', 'Email', 'Phone', 'Status', 'Created At'];
+
   roles() {
     return this.belongsToMany(Role, RolesUsers.getTable(), 'users_id', 'roles_id');
   }
@@ -965,7 +1043,7 @@ export class User extends Model {
   }
 
   isActive(): boolean {
-    const status = this.getAttribute('status') as string | undefined | null;
+    const status = this.status;
     return status === undefined || status === null || status === 'active';
   }
 }
@@ -1020,18 +1098,30 @@ export default Permission;
     dir,
     "src/app/Models/User/UserProfile.ts",
     `import { Model, use } from '@lara-node/db';
-import { SoftDeletes } from '@lara-node/db';
+import { SoftDeletes, Timestamps } from '@lara-node/db';
 
-@use(SoftDeletes)
+@use(SoftDeletes, Timestamps)
 export class UserProfile extends Model {
   static table = 'user_profiles';
   static fillable: string[] = [
-    'user_id', 'gender', 'id_number', 'city', 'country',
-    'address', 'zip_code', 'date_of_birth', 'metadata',
+    'user_id',
+    // ── Common ─────────────────────────────────────────────────────────────────
+    'type',          // admin | user | staff
+    'gender', 'date_of_birth', 'id_number', 'phone', 'nationality',
+    'city', 'country', 'address', 'zip_code', 'bio', 'avatar_url',
+    // ── Extended profile fields (leave populated as the app grows) ─────────────
+    'headline', 'skills', 'experience_level', 'availability',
+    'preferred_job_type', 'resume_url',
+    'company_name', 'company_size', 'industry', 'company_type',
+    'company_email', 'company_phone', 'company_description', 'company_logo',
+    // ── Extra ──────────────────────────────────────────────────────────────────
+    'metadata',
     'created_at', 'updated_at', 'deleted_at',
   ];
   static casts: Record<string, string> = {
-    date_of_birth: 'datetime', metadata: 'json',
+    date_of_birth: 'datetime',
+    skills: 'json',
+    metadata: 'json',
     created_at: 'datetime', updated_at: 'datetime', deleted_at: 'datetime',
   };
 }
@@ -1109,6 +1199,141 @@ export default File;
 `,
   );
 
+  // ── Traits ───────────────────────────────────────────────────────────────────
+  w(
+    dir,
+    "src/app/Traits/WithExportable.ts",
+    `import { trait } from '@lara-node/db';
+import type { Model } from '@lara-node/db';
+
+/**
+ * WithExportable trait
+ *
+ * Adds CSV / Excel / PDF / XML export support to any Model.
+ * Apply with @use(WithExportable) and configure exportFields / exportHeadings:
+ *
+ * @example
+ * @use(WithExportable, SoftDeletes, Timestamps)
+ * export class User extends Model {
+ *   static exportFields  = ['id', 'name', 'email', 'status', 'created_at'];
+ *   static exportHeadings = ['ID', 'Name', 'Email', 'Status', 'Created At'];
+ * }
+ *
+ * // In a controller:
+ * const exp = User.toExportable();            // implements CsvExportable + Exportable
+ * await CSV.download(exp, 'users.csv', res);
+ * await Excel.download(exp, 'users.xlsx', res);
+ *
+ * // With a scope (filter / order the export set):
+ * const exp = User.toExportable((q) => q.where('status', 'active').orderBy('name'));
+ */
+@trait('WithExportable')
+export class WithExportable {
+  static exportFields: string[] = [];
+  static exportHeadings: string[] = [];
+
+  static toExportable(
+    scope?: (q: ReturnType<typeof Model.query>) => ReturnType<typeof Model.query>,
+  ) {
+    const ModelClass = this as unknown as typeof Model & {
+      exportFields: string[];
+      exportHeadings: string[];
+      fillable?: string[];
+      hidden?: string[];
+    };
+
+    return {
+      async collection(): Promise<Record<string, unknown>[]> {
+        const fields = resolveFields(ModelClass);
+        let q = ModelClass.query();
+        if (scope) q = scope(q);
+        const records = (await q.get()) as Model[];
+        return records.map((record) => {
+          const row: Record<string, unknown> = {};
+          for (const f of fields)
+            row[f] = record.getAttribute ? record.getAttribute(f) : (record as Record<string, unknown>)[f];
+          return row;
+        });
+      },
+
+      headings(): string[] {
+        if (ModelClass.exportHeadings?.length) return ModelClass.exportHeadings;
+        return resolveFields(ModelClass).map((f) =>
+          f.replace(/_/g, ' ').replace(/\\b\\w/g, (c) => c.toUpperCase()),
+        );
+      },
+
+      map(row: Record<string, unknown>): unknown[] {
+        return Object.values(row);
+      },
+    };
+  }
+}
+
+function resolveFields(ModelClass: { exportFields?: string[]; fillable?: string[]; hidden?: string[] }): string[] {
+  if (ModelClass.exportFields?.length) return ModelClass.exportFields;
+  return (ModelClass.fillable ?? []).filter((f) => !(ModelClass.hidden ?? []).includes(f));
+}
+`,
+  );
+
+  // ── Policies ──────────────────────────────────────────────────────────────────
+  w(
+    dir,
+    "src/app/Policies/UserPolicy.ts",
+    `import type { AuthGuard } from '@lara-node/auth';
+import User from '../Models/User/User';
+
+type AuthUser = AuthGuard<{ id: number; roles: string[]; permissions: string[] }>['model'];
+
+/*
+|--------------------------------------------------------------------------
+| UserPolicy
+|--------------------------------------------------------------------------
+|
+| Register in a ServiceProvider (e.g. AppServiceProvider or a dedicated
+| AuthServiceProvider):
+|
+|   import { Gate } from '../Auth/Gate';
+|   import { UserPolicy } from '../Policies/UserPolicy';
+|   import User from '../Models/User/User';
+|
+|   Gate.policy(User, UserPolicy);
+|
+| Then in a controller:
+|
+|   async update(req: Request, res: Response, user: User): Promise<void> {
+|     this.authorize('update', user);  // calls UserPolicy.update(authUser, user)
+|     ...
+|   }
+|
+*/
+export class UserPolicy {
+  viewAny(_user: AuthUser): boolean {
+    return true;
+  }
+
+  view(_user: AuthUser, _subject: User): boolean {
+    return true;
+  }
+
+  create(_user: AuthUser): boolean {
+    return (_user.permissions as string[]).includes('create_users');
+  }
+
+  update(user: AuthUser, subject: User): boolean {
+    // Users can update themselves; admins can update anyone
+    return (user.id as number) === (subject.id)
+      || (user.roles as string[]).includes('admin');
+  }
+
+  delete(_user: AuthUser, _subject: User): boolean {
+    return (_user.roles as string[]).includes('admin');
+  }
+}
+`,
+  );
+
   // ── Observers ─────────────────────────────────────────────────────────────────
   w(
     dir,
@@ -1128,11 +1353,11 @@ import User from '../Models/User/User';
 @Observe(User)
 export class UserObserver extends Observer<User> {
   creating(user: User): void {
-    if (!user.getAttribute('status')) user.setAttribute('status', 'active');
+    if (!user.status) user.setAttribute('status', 'active');
   }
 
   created(user: User): void {
-    console.log(\`[UserObserver] User created: \${user.getAttribute('email') as string}\`);
+    console.log(\`[UserObserver] User created: \${user.email}\`);
   }
 
   updating(user: User): void {
@@ -1140,7 +1365,7 @@ export class UserObserver extends Observer<User> {
   }
 
   deleting(user: User): void {
-    console.log(\`[UserObserver] User soft-deleted: \${user.getAttribute('id') as number}\`);
+    console.log(\`[UserObserver] User soft-deleted: \${user.id}\`);
   }
 }
 `,
@@ -1154,27 +1379,51 @@ export class UserObserver extends Observer<User> {
 import jwt from 'jsonwebtoken';
 import { Injectable } from '@lara-node/core';
 import User from '../Models/User/User';
+import UserProfile from '../Models/User/UserProfile';
 
 @Injectable()
 export class AuthService {
-  async register(data: { name: string; email: string; password: string }) {
+  async register(data: {
+    name: string;
+    email: string;
+    password: string;
+    profile?: Record<string, unknown>;
+  }) {
     const existing = await User.where('email', data.email).first();
     if (existing) throw Object.assign(new Error('Email already registered'), { status: 422 });
 
-    const password = await bcrypt.hash(data.password, 12);
-    return User.create({ ...data, password, status: 'active', created_at: new Date(), updated_at: new Date() });
+    const { profile: profileData, ...userData } = data;
+    const password = await bcrypt.hash(userData.password, 12);
+    const user = await User.create({
+      ...userData,
+      password,
+      status: 'active',
+      created_at: new Date(),
+      updated_at: new Date(),
+    }) as User;
+
+    if (profileData && Object.keys(profileData).length > 0) {
+      await UserProfile.create({
+        user_id: user.id,
+        ...profileData,
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
+    }
+
+    return User.with(['profile', 'roles', 'roles.permissions']).find(user.id);
   }
 
   async login(email: string, password: string) {
     const user = await User.where('email', email).first() as User | null;
     if (!user) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
 
-    const ok = await bcrypt.compare(password, user.getAttribute('password') as string);
+    const ok = await bcrypt.compare(password, user.password);
     if (!ok) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
 
     const secret = process.env.JWT_SECRET ?? 'dev-secret-change';
     const expiresIn = (process.env.JWT_EXPIRES_IN ?? '7d') as jwt.SignOptions['expiresIn'];
-    const token = jwt.sign({ sub: user.getAttribute('id') }, secret, { expiresIn });
+    const token = jwt.sign({ sub: user.id }, secret, { expiresIn });
 
     await user.update({ last_login: new Date(), last_seen_at: new Date() });
     return { token, user };
@@ -1224,20 +1473,20 @@ export class UserService {
   async addRole(userId: number | string, roleId: number | string) {
     const user = await User.with(['roles']).find(userId) as User | null;
     if (!user) throw Object.assign(new Error('User not found'), { status: 404 });
-    await (user as User & { roles: () => { attach: (ids: (number | string)[]) => Promise<void> } }).roles().attach([roleId]);
+    await user.roles().attach([roleId]);
     return user;
   }
 
   async removeRole(userId: number | string, roleId: number | string) {
     const user = await User.find(userId) as User | null;
     if (!user) throw Object.assign(new Error('User not found'), { status: 404 });
-    await (user as User & { roles: () => { detach: (ids: (number | string)[]) => Promise<void> } }).roles().detach([roleId]);
+    await user.roles().detach([roleId]);
   }
 
   async toggleStatus(userId: number | string) {
     const user = await User.find(userId) as User | null;
     if (!user) throw Object.assign(new Error('User not found'), { status: 404 });
-    const current = user.getAttribute('status') as string | null;
+    const current = user.status;
     const newStatus = current === 'active' ? 'inactive' : 'active';
     await user.update({ status: newStatus, updated_at: new Date() });
     return user;
@@ -1262,10 +1511,6 @@ export class UserService {
     `import { Injectable } from '@lara-node/core';
 import Role from '../Models/User/Role';
 
-type RoleWithRelations = Role & {
-  permissions: () => { sync: (ids: number[]) => Promise<void> };
-};
-
 @Injectable()
 export class RoleService {
   async index() { return Role.with(['permissions']).all(); }
@@ -1289,7 +1534,7 @@ export class RoleService {
   }
 
   async syncPermissions(roleId: number | string, permissionIds: number[]) {
-    const role = await Role.find(roleId) as RoleWithRelations | null;
+    const role = await Role.find(roleId) as Role | null;
     if (!role) throw Object.assign(new Error('Role not found'), { status: 404 });
     await role.permissions().sync(permissionIds);
     return Role.with(['permissions']).find(roleId);
@@ -1340,7 +1585,7 @@ export class FileService {
   async destroy(id: number | string) {
     const file = await File.find(id) as File | null;
     if (!file) throw Object.assign(new Error('File not found'), { status: 404 });
-    try { await fs.unlink(file.getAttribute('disk_path') as string); } catch { /* file missing on disk */ }
+    try { await fs.unlink(file.disk_path); } catch { /* file missing on disk */ }
     await file.delete();
   }
 }
@@ -1364,12 +1609,25 @@ export { FileService } from './FileService';
     "src/app/Http/Requests/RegisterRequest.ts",
     `import { FormRequest } from '@lara-node/core';
 
-export class RegisterRequest extends FormRequest<{ name: string; email: string; password: string }> {
+export class RegisterRequest extends FormRequest<{
+  name: string;
+  email: string;
+  password: string;
+  profile?: Record<string, unknown>;
+}> {
+  authorize(): boolean { return true; }
+
   rules() {
     return {
       name: 'required|string|min:2|max:100',
-      email: 'required|email',
+      email: 'required|email|unique:users,email',
       password: 'required|string|min:8',
+      profile: 'nullable|json',
+      'profile.type': 'sometimes|string|in:admin,user,staff',
+      'profile.gender': 'nullable|string|in:male,female,other',
+      'profile.phone': 'nullable|string|max:32',
+      'profile.bio': 'nullable|string|max:2000',
+      'profile.avatar_url': 'nullable|string|max:500',
     };
   }
 }
@@ -1382,10 +1640,12 @@ export class RegisterRequest extends FormRequest<{ name: string; email: string; 
     `import { FormRequest } from '@lara-node/core';
 
 export class LoginRequest extends FormRequest<{ email: string; password: string }> {
+  authorize(): boolean { return true; }
+
   rules() {
     return {
-      email: 'required|email',
-      password: 'required|string',
+      email: 'required|email|exists:users,email',
+      password: 'required|string|min:6',
     };
   }
 }
@@ -1397,12 +1657,37 @@ export class LoginRequest extends FormRequest<{ email: string; password: string 
     "src/app/Http/Requests/StoreUserRequest.ts",
     `import { FormRequest } from '@lara-node/core';
 
-export class StoreUserRequest extends FormRequest<{ name: string; email: string; password: string }> {
+export class StoreUserRequest extends FormRequest<{
+  name: string;
+  email: string;
+  password: string;
+  phone_number?: string;
+  status?: string;
+  profile?: Record<string, unknown>;
+}> {
+  authorize(): boolean { return true; }
+
   rules() {
     return {
       name: 'required|string|min:2|max:100',
-      email: 'required|email',
+      email: 'required|email|unique:users,email',
       password: 'required|string|min:8',
+      phone_number: 'nullable|string|max:32',
+      status: 'nullable|string|in:active,inactive',
+      profile: 'nullable|json',
+      'profile.type': 'sometimes|string|in:admin,user,staff',
+      'profile.gender': 'sometimes|string|in:male,female,other',
+      'profile.date_of_birth': 'sometimes|date',
+      'profile.id_number': 'sometimes|string|max:64',
+      'profile.phone': 'sometimes|string|max:32',
+      'profile.nationality': 'sometimes|string|max:100',
+      'profile.city': 'sometimes|string|max:191',
+      'profile.country': 'sometimes|string|max:191',
+      'profile.address': 'sometimes|string|max:500',
+      'profile.zip_code': 'sometimes|string|max:32',
+      'profile.bio': 'sometimes|string|max:2000',
+      'profile.avatar_url': 'sometimes|string|max:500',
+      'profile.metadata': 'sometimes|nullable',
     };
   }
 }
@@ -1414,11 +1699,91 @@ export class StoreUserRequest extends FormRequest<{ name: string; email: string;
     "src/app/Http/Requests/UpdateUserRequest.ts",
     `import { FormRequest } from '@lara-node/core';
 
-export class UpdateUserRequest extends FormRequest<{ name?: string; email?: string }> {
+export class UpdateUserRequest extends FormRequest<{
+  name?: string;
+  email?: string;
+  phone_number?: string;
+  status?: string;
+}> {
+  authorize(): boolean { return true; }
+
   rules() {
     return {
       name: 'sometimes|string|min:2|max:100',
-      email: 'sometimes|email',
+      email: 'sometimes|email|unique:users,email,' + this.input('user'),
+      phone_number: 'sometimes|string|max:32',
+      status: 'sometimes|string|in:active,inactive',
+    };
+  }
+}
+`,
+  );
+
+  w(
+    dir,
+    "src/app/Http/Requests/UpdateProfileRequest.ts",
+    `import { FormRequest } from '@lara-node/core';
+
+export class UpdateProfileRequest extends FormRequest<{
+  type?: string;
+  gender?: string;
+  date_of_birth?: string;
+  id_number?: string;
+  phone?: string;
+  nationality?: string;
+  city?: string;
+  country?: string;
+  address?: string;
+  zip_code?: string;
+  bio?: string;
+  avatar_url?: string;
+  headline?: string;
+  skills?: string[];
+  experience_level?: string;
+  availability?: string;
+  preferred_job_type?: string;
+  resume_url?: string;
+  company_name?: string;
+  company_size?: string;
+  industry?: string;
+  company_type?: string;
+  company_email?: string;
+  company_phone?: string;
+  company_description?: string;
+  company_logo?: string;
+  metadata?: unknown;
+}> {
+  authorize(): boolean { return true; }
+
+  rules() {
+    return {
+      type: 'sometimes|string|in:admin,user,staff',
+      gender: 'sometimes|string|in:male,female,other',
+      date_of_birth: 'sometimes|date',
+      id_number: 'sometimes|string|max:64',
+      phone: 'sometimes|string|max:32',
+      nationality: 'sometimes|string|max:100',
+      city: 'sometimes|string|max:191',
+      country: 'sometimes|string|max:191',
+      address: 'sometimes|string|max:500',
+      zip_code: 'sometimes|string|max:32',
+      bio: 'sometimes|string|max:2000',
+      avatar_url: 'sometimes|string|max:500',
+      headline: 'sometimes|string|max:255',
+      skills: 'sometimes|array',
+      experience_level: 'sometimes|string|in:entry,mid,senior,executive',
+      availability: 'sometimes|string',
+      preferred_job_type: 'sometimes|string',
+      resume_url: 'sometimes|string|max:500',
+      company_name: 'sometimes|string|max:191',
+      company_size: 'sometimes|string',
+      industry: 'sometimes|string|max:191',
+      company_type: 'sometimes|string',
+      company_email: 'sometimes|email|max:191',
+      company_phone: 'sometimes|string|max:32',
+      company_description: 'sometimes|string|max:5000',
+      company_logo: 'sometimes|string|max:500',
+      metadata: 'sometimes|nullable',
     };
   }
 }
@@ -1430,10 +1795,13 @@ export class UpdateUserRequest extends FormRequest<{ name?: string; email?: stri
     "src/app/Http/Requests/SetPasswordRequest.ts",
     `import { FormRequest } from '@lara-node/core';
 
-export class SetPasswordRequest extends FormRequest<{ password: string }> {
+export class SetPasswordRequest extends FormRequest<{ password: string; password_confirmation: string }> {
+  authorize(): boolean { return true; }
+
   rules() {
     return {
-      password: 'required|string|min:8',
+      password: 'required|string|min:8|confirmed',
+      password_confirmation: 'required|string',
     };
   }
 }
@@ -1445,10 +1813,12 @@ export class SetPasswordRequest extends FormRequest<{ password: string }> {
     "src/app/Http/Requests/AddRoleRequest.ts",
     `import { FormRequest } from '@lara-node/core';
 
-export class AddRoleRequest extends FormRequest<{ role_id: number }> {
+export class AddRoleRequest extends FormRequest<{ role_id: string | number }> {
+  authorize(): boolean { return true; }
+
   rules() {
     return {
-      role_id: 'required|integer',
+      role_id: 'required|exists:roles,id',
     };
   }
 }
@@ -1481,7 +1851,7 @@ export class UpdateRoleRequest extends FormRequest<{ name?: string; slug?: strin
   rules() {
     return {
       name: 'sometimes|string|min:2|max:100',
-      slug: 'sometimes|string|min:2|max:100',
+      slug: 'sometimes|string|min:2|max:100|unique:roles,slug,' + this.input('role'),
       description: 'nullable|string',
     };
   }
@@ -1494,10 +1864,13 @@ export class UpdateRoleRequest extends FormRequest<{ name?: string; slug?: strin
     "src/app/Http/Requests/SyncPermissionsRequest.ts",
     `import { FormRequest } from '@lara-node/core';
 
-export class SyncPermissionsRequest extends FormRequest<{ permission_ids: number[] }> {
+export class SyncPermissionsRequest extends FormRequest<{ permission_ids: string[] }> {
+  authorize(): boolean { return true; }
+
   rules() {
     return {
       permission_ids: 'required|array',
+      'permission_ids.*': 'required|string|exists:permissions,id',
     };
   }
 }
@@ -1511,6 +1884,7 @@ export class SyncPermissionsRequest extends FormRequest<{ permission_ids: number
 export { LoginRequest } from './LoginRequest';
 export { StoreUserRequest } from './StoreUserRequest';
 export { UpdateUserRequest } from './UpdateUserRequest';
+export { UpdateProfileRequest } from './UpdateProfileRequest';
 export { SetPasswordRequest } from './SetPasswordRequest';
 export { AddRoleRequest } from './AddRoleRequest';
 export { StoreRoleRequest } from './StoreRoleRequest';
@@ -1520,43 +1894,196 @@ export { SyncPermissionsRequest } from './SyncPermissionsRequest';
   );
 
   // ── Controllers ───────────────────────────────────────────────────────────────
+  // Add base Controller before controllers
+  w(
+    dir,
+    "src/app/Http/Controllers/Controller.ts",
+    `import { getUser } from '@lara-node/auth';
+import type { AuthGuard } from '@lara-node/auth';
+import { Gate } from '../../Auth/Gate';
+
+type AuthUser = AuthGuard<{ id: number; roles: string[]; permissions: string[] }>;
+
+/*
+|--------------------------------------------------------------------------
+| Base Controller
+|--------------------------------------------------------------------------
+|
+| All application controllers should extend this class to gain access to
+| the authorize() helper, which checks policies registered with the Gate.
+|
+| Usage in a controller method:
+|
+|   async show(_req: Request, res: Response, user: User): Promise<void> {
+|     this.authorize('view', user);   // throws 403 if denied
+|     res.json({ success: true, data: user });
+|   }
+|
+|   async destroy(_req: Request, res: Response, user: User): Promise<void> {
+|     this.authorize('delete', user);
+|     await user.delete();
+|     res.json({ success: true });
+|   }
+|
+*/
+export abstract class Controller {
+  /**
+   * Authorize the current request against a Gate ability/policy.
+   * Throws HTTP 401 if unauthenticated, 403 if unauthorized.
+   *
+   * @param ability  - Gate ability name (e.g. 'update', 'delete') or permission slug.
+   * @param subject  - Optional model instance to pass to the policy method.
+   */
+  protected authorize(ability: string, subject?: unknown): void {
+    const user = getUser<AuthUser['model']>();
+    if (!user) {
+      throw Object.assign(new Error('Unauthenticated'), { status: 401 });
+    }
+    const allowed = Gate.allows(ability, user as AuthUser['model'], subject);
+    if (!allowed) {
+      throw Object.assign(new Error('This action is unauthorized'), { status: 403 });
+    }
+  }
+}
+`,
+  );
+
+  // Gate service
+  w(
+    dir,
+    "src/app/Auth/Gate.ts",
+    `/*
+|--------------------------------------------------------------------------
+| Gate — Policy & Ability Registry
+|--------------------------------------------------------------------------
+|
+| Register abilities (raw callbacks) or bind Model classes to Policy classes.
+| Controllers call this.authorize(ability, subject) which delegates here.
+|
+| Register in a ServiceProvider (e.g. AuthServiceProvider):
+|
+|   Gate.define('update-profile', (user, subject) => {
+|     return (user as { id: number }).id === (subject as { id: number }).id;
+|   });
+|
+|   Gate.policy(User, UserPolicy);
+|
+*/
+
+type AuthUser = Record<string, unknown> & { id?: unknown; permissions?: string[]; roles?: string[] };
+type AbilityCallback = (user: AuthUser, subject?: unknown) => boolean;
+
+const abilities = new Map<string, AbilityCallback>();
+const policies = new Map<new (...args: unknown[]) => unknown, new () => Record<string, unknown>>();
+
+export const Gate = {
+  /**
+   * Register a raw ability callback.
+   *
+   * @example
+   * Gate.define('manage-settings', (user) => (user.roles as string[]).includes('admin'));
+   */
+  define(ability: string, callback: AbilityCallback): void {
+    abilities.set(ability, callback);
+  },
+
+  /**
+   * Bind a Model class to a Policy class.
+   * Policy methods are called with (user, modelInstance).
+   *
+   * @example
+   * Gate.policy(User, UserPolicy);
+   * // Then: this.authorize('update', userInstance) calls UserPolicy.update(user, userInstance)
+   */
+  policy<T>(model: new (...args: unknown[]) => T, policyClass: new () => Record<string, AbilityCallback>): void {
+    policies.set(model as new (...args: unknown[]) => unknown, policyClass as new () => Record<string, unknown>);
+  },
+
+  /**
+   * Check whether the user is allowed to perform \`ability\` on \`subject\`.
+   * Resolution order:
+   *   1. Explicit ability definition (Gate.define)
+   *   2. Policy bound to subject's constructor
+   *   3. User permission slug match (fallback)
+   */
+  allows(ability: string, user: AuthUser, subject?: unknown): boolean {
+    // 1. Explicit ability
+    if (abilities.has(ability)) {
+      return abilities.get(ability)!(user, subject);
+    }
+
+    // 2. Policy lookup
+    if (subject != null) {
+      const PolicyClass = policies.get((subject as object).constructor as new (...args: unknown[]) => unknown);
+      if (PolicyClass) {
+        const policy = new PolicyClass() as Record<string, unknown>;
+        if (typeof policy[ability] === 'function') {
+          return (policy[ability] as AbilityCallback)(user, subject);
+        }
+      }
+    }
+
+    // 3. Fallback: check user.permissions array (RBAC)
+    const perms = user.permissions ?? [];
+    return (perms as string[]).includes(ability);
+  },
+
+  denies(ability: string, user: AuthUser, subject?: unknown): boolean {
+    return !this.allows(ability, user, subject);
+  },
+};
+`,
+  );
+
   w(
     dir,
     "src/app/Http/Controllers/User/AuthController.ts",
     `import { Request, Response } from 'express';
 import { Injectable } from '@lara-node/core';
-import { Doc } from '@lara-node/router';
+import { Route, Doc } from '@lara-node/router';
 import { AuthService } from '@app/Services/index';
 import { RegisterRequest, LoginRequest } from '@app/Http/Requests/index';
+import { Controller } from '../Controller';
 
+@Route('/api/auth')
 @Injectable()
-export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+export class AuthController extends Controller {
+  constructor(private readonly authService: AuthService) { super(); }
 
+  @Route.post('/register')
   @Doc({
     summary: 'Register a new user',
+    description: 'Creates a new user account. Optionally accepts a profile object with type (admin|user|staff) and additional profile fields.',
     tags: ['Auth'],
     body: {
-      name: { type: 'string', description: 'Full name' },
-      email: { type: 'string', description: 'Email address' },
-      password: { type: 'string', description: 'Password (min 8 chars)' },
+      name: { type: 'string', required: true, description: 'Full name (min 2, max 100 chars)' },
+      email: { type: 'string', required: true, description: 'Unique email address' },
+      password: { type: 'string', required: true, description: 'Password (min 8 chars)' },
+      profile: { type: 'object', required: false, description: 'Optional profile data (type, gender, phone, bio, avatar_url, etc.)' },
     },
-    responses: [{ status: 201, description: 'User created' }, { status: 422, description: 'Validation error' }],
+    responses: [
+      { status: 201, description: 'User created — returns user with profile, roles and permissions' },
+      { status: 422, description: 'Validation error or email already registered' },
+    ],
   })
   async register(req: RegisterRequest, res: Response): Promise<void> {
-    const data = req.validated();
-    const user = await this.authService.register(data);
+    const user = await this.authService.register(req.validated());
     res.status(201).json({ success: true, data: user });
   }
 
+  @Route.post('/login')
   @Doc({
-    summary: 'Login and receive JWT token',
+    summary: 'Login and receive a JWT token',
+    description: 'Authenticates the user and returns a Bearer token. Pass the token as Authorization: Bearer <token> on subsequent requests.',
     tags: ['Auth'],
     body: {
-      email: { type: 'string', description: 'Email address' },
-      password: { type: 'string', description: 'Password' },
+      email: { type: 'string', required: true, description: 'Email address' },
+      password: { type: 'string', required: true, description: 'Password (min 6 chars)' },
     },
-    responses: [{ status: 200, description: 'JWT token and user' }, { status: 401, description: 'Invalid credentials' }],
+    responses: [
+      { status: 200, description: 'Returns { token, user }' },
+      { status: 401, description: 'Invalid credentials' },
+    ],
   })
   async login(req: LoginRequest, res: Response): Promise<void> {
     const { email, password } = req.validated();
@@ -1564,11 +2091,16 @@ export class AuthController {
     res.json({ success: true, data: result });
   }
 
+  @Route.get('/me', 'auth')
   @Doc({
     summary: 'Get the authenticated user',
+    description: 'Returns the currently authenticated user with their profile, roles and all permissions.',
     tags: ['Auth'],
     auth: true,
-    responses: [{ status: 200, description: 'Current user with roles and permissions' }],
+    responses: [
+      { status: 200, description: 'Current user with profile, roles and permissions' },
+      { status: 401, description: 'Unauthenticated' },
+    ],
   })
   async me(req: Request, res: Response): Promise<void> {
     const user = await this.authService.me(req.user!.id);
@@ -1584,105 +2116,215 @@ export class AuthController {
     `import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { Injectable } from '@lara-node/core';
-import { Doc } from '@lara-node/router';
+import { Route, Doc } from '@lara-node/router';
 import { UserService } from '@app/Services/index';
 import User from '@app/Models/User/User';
 import Role from '@app/Models/User/Role';
 import {
   StoreUserRequest,
   UpdateUserRequest,
+  UpdateProfileRequest,
   SetPasswordRequest,
   AddRoleRequest,
 } from '@app/Http/Requests/index';
+import { Controller } from '../Controller';
 
-type UserWithRoles = User & { roles: () => { attach: (ids: (number | string)[]) => Promise<void>; detach: (ids: (number | string)[]) => Promise<void> } };
-
+@Route('/api/users', 'auth', 'must-be-active')
 @Injectable()
-export class UserController {
-  constructor(private readonly userService: UserService) {}
+export class UserController extends Controller {
+  constructor(private readonly userService: UserService) { super(); }
 
-  @Doc({ summary: 'List all users (paginated)', tags: ['Users'], auth: true, params: [{ name: 'page', in: 'query', type: 'integer', description: 'Page number' }, { name: 'per_page', in: 'query', type: 'integer', description: 'Items per page' }] })
+  @Route.get('/', 'can:view_users')
+  @Doc({ summary: 'List all users (paginated)', tags: ['Users'], auth: true, params: [{ name: 'page', in: 'query', type: 'integer', description: 'Page number' }] })
   async index(req: Request, res: Response): Promise<void> {
     const data = await this.userService.index(Number(req.query.page) || 1);
     res.json({ success: true, data });
   }
 
-  @Doc({
-    summary: 'Get a user by ID (route-model binding)',
-    description: 'The :user parameter is automatically resolved to a User model instance via ModelRegistry.',
-    tags: ['Users'],
-    auth: true,
-    params: [{ name: 'user', in: 'path', type: 'integer', description: 'User ID — auto-bound to User model' }],
-    responses: [{ status: 200, description: 'User with profile and roles' }, { status: 404, description: 'Not found' }],
-  })
+  @Route.get('/:user', 'can:view_users')
+  @Doc({ summary: 'Get a user by ID (route-model binding)', tags: ['Users'], auth: true, params: [{ name: 'user', in: 'path', type: 'integer', description: 'User ID' }], responses: [{ status: 200, description: 'User with profile and roles' }, { status: 404, description: 'Not found' }] })
   async show(_req: Request, res: Response, user: User): Promise<void> {
     res.json({ success: true, data: user });
   }
 
+  @Route.get('/:user/profile')
   @Doc({ summary: "Get a user's profile", tags: ['Users'], auth: true })
   async showProfile(_req: Request, res: Response, user: User): Promise<void> {
-    const full = await this.userService.find(user.getAttribute('id') as number | string) as (User & { profile?: unknown }) | null;
+    const full = await this.userService.find(user.id) as (User & { profile?: unknown }) | null;
     res.json({ success: true, data: full?.profile ?? null });
   }
 
+  @Route.post('/', 'can:create_users')
   @Doc({ summary: 'Create a new user', tags: ['Users'], auth: true, body: { name: { type: 'string' }, email: { type: 'string' }, password: { type: 'string' } } })
   async store(req: StoreUserRequest, res: Response): Promise<void> {
-    const data = req.validated();
-    const user = await this.userService.create(data);
+    const user = await this.userService.create(req.validated());
     res.status(201).json({ success: true, data: user });
   }
 
+  @Route.put('/:user', 'can:update_users')
   @Doc({ summary: 'Update a user', tags: ['Users'], auth: true })
   async update(req: UpdateUserRequest, res: Response, user: User): Promise<void> {
-    const data = req.validated();
-    await user.update({ ...data, updated_at: new Date() });
+    await user.update({ ...req.validated(), updated_at: new Date() });
     res.json({ success: true, data: user });
   }
 
+  @Route.put('/:user/profile')
   @Doc({ summary: "Update a user's profile", tags: ['Users'], auth: true })
-  async updateProfile(req: Request, res: Response, user: User): Promise<void> {
-    const profile = await this.userService.updateProfile(user.getAttribute('id') as number | string, req.body as Record<string, unknown>);
+  async updateProfile(req: UpdateProfileRequest, res: Response, user: User): Promise<void> {
+    const profile = await this.userService.updateProfile(user.id, req.validated());
     res.json({ success: true, data: profile });
   }
 
-  @Doc({ summary: 'Change user password', tags: ['Users'], auth: true, body: { password: { type: 'string', description: 'New password (min 8 chars)' } } })
+  @Route.post('/:user/password', 'can:update_users')
+  @Doc({ summary: 'Change user password', tags: ['Users'], auth: true })
   async setPassword(req: SetPasswordRequest, res: Response, user: User): Promise<void> {
     const { password } = req.validated();
-    const hashed = await bcrypt.hash(password, 12);
-    await user.update({ password: hashed, updated_at: new Date() });
+    await user.update({ password: await bcrypt.hash(password, 12), updated_at: new Date() });
     res.json({ success: true, message: 'Password updated' });
   }
 
+  @Route.post('/:user/password/reset')
   @Doc({ summary: 'Send password reset email', tags: ['Users'], auth: true })
   async resetPassword(_req: Request, res: Response): Promise<void> {
     res.json({ success: true, message: 'Password reset email sent' });
   }
 
+  @Route.post('/:user/roles', 'can:add_roles_to_users')
   @Doc({ summary: 'Assign a role to a user', tags: ['Users'], auth: true, body: { role_id: { type: 'integer', description: 'Role ID to assign' } } })
   async addRole(req: AddRoleRequest, res: Response, user: User): Promise<void> {
     const { role_id } = req.validated();
-    await (user as UserWithRoles).roles().attach([role_id]);
+    await user.roles().attach([role_id]);
     res.json({ success: true, data: user });
   }
 
+  @Route.delete('/:user/roles/:role', 'can:remove_roles_from_users')
   @Doc({ summary: 'Remove a role from a user', tags: ['Users'], auth: true })
   async removeRole(_req: Request, res: Response, user: User, role: Role): Promise<void> {
-    await (user as UserWithRoles).roles().detach([role.getAttribute('id') as number | string]);
+    await user.roles().detach([role.id]);
     res.json({ success: true, message: 'Role removed' });
   }
 
-  @Doc({ summary: 'Delete a user (soft delete)', tags: ['Users'], auth: true, responses: [{ status: 200, description: 'User deleted' }, { status: 404, description: 'Not found' }] })
+  @Route.delete('/:user', 'can:delete_users')
+  @Doc({ summary: 'Delete a user (soft delete)', tags: ['Users'], auth: true })
   async destroy(_req: Request, res: Response, user: User): Promise<void> {
     await user.delete();
     res.json({ success: true, message: 'User deleted' });
   }
 
+  @Route.patch('/:user/status', 'can:activate_and_deactivate_users')
   @Doc({ summary: 'Toggle user active/inactive status', tags: ['Users'], auth: true })
   async toggleStatus(_req: Request, res: Response, user: User): Promise<void> {
-    const current = user.getAttribute('status') as string | null;
-    const newStatus = current === 'active' ? 'inactive' : 'active';
-    await user.update({ status: newStatus, updated_at: new Date() });
+    const current = user.status;
+    await user.update({ status: current === 'active' ? 'inactive' : 'active', updated_at: new Date() });
     res.json({ success: true, data: user });
+  }
+}
+`,
+  );
+
+  w(
+    dir,
+    "src/app/Http/Controllers/User/ExportController.ts",
+    `import { Request, Response } from 'express';
+import { Injectable } from '@lara-node/core';
+import { Route, Doc } from '@lara-node/router';
+import { CSV } from '@lara-node/csv';
+import { Excel } from '@lara-node/excel';
+import { Pdf } from '@lara-node/pdf';
+import { Xml } from '@lara-node/xml';
+import User from '@app/Models/User/User';
+import { WithExportable } from '@app/Traits/WithExportable';
+import { Controller } from '../Controller';
+
+/*
+|--------------------------------------------------------------------------
+| ExportController
+|--------------------------------------------------------------------------
+|
+| Exports users in CSV, Excel, PDF and XML formats.
+| Delegates data retrieval to User.toExportable() (WithExportable trait).
+|
+*/
+@Route('/api/users/export', 'auth', 'must-be-active', 'can:view_users')
+@Injectable()
+export class ExportController extends Controller {
+  @Route.get('/csv')
+  @Doc({ summary: 'Export users as CSV', tags: ['Exports'], auth: true })
+  async csv(_req: Request, res: Response): Promise<void> {
+    const exp = (User as unknown as typeof WithExportable).toExportable();
+    await CSV.download(exp, 'users.csv', res);
+  }
+
+  @Route.get('/excel')
+  @Doc({ summary: 'Export users as Excel (.xlsx)', tags: ['Exports'], auth: true })
+  async excel(_req: Request, res: Response): Promise<void> {
+    const exp = (User as unknown as typeof WithExportable).toExportable();
+    await Excel.download(exp, 'users.xlsx', res);
+  }
+
+  @Route.get('/pdf')
+  @Doc({ summary: 'Export users as PDF', tags: ['Exports'], auth: true })
+  async pdf(_req: Request, res: Response): Promise<void> {
+    const exp = (User as unknown as typeof WithExportable).toExportable();
+    const rows = await exp.collection();
+    const headings = exp.headings();
+
+    const headerCells = headings.map((h) => \`<th>\${h}</th>\`).join('');
+    const bodyRows = rows.map((row) =>
+      \`<tr>\${exp.map(row).map((v) => \`<td>\${String(v ?? '')}</td>\`).join('')}</tr>\`,
+    ).join('');
+
+    const html = \`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Users Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
+    h1 { color: #4f46e5; margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #4f46e5; color: #fff; padding: 10px 12px; text-align: left; }
+    td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    .footer { margin-top: 24px; font-size: 11px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <h1>Users Report</h1>
+  <p>Generated: \${new Date().toISOString().slice(0, 10)}</p>
+  <table>
+    <thead><tr>\${headerCells}</tr></thead>
+    <tbody>\${bodyRows}</tbody>
+  </table>
+  <p class="footer">Total: \${rows.length} user(s)</p>
+</body>
+</html>\`;
+
+    await Pdf.loadHTML(html).download(res, 'users.pdf');
+  }
+
+  @Route.get('/xml')
+  @Doc({ summary: 'Export users as XML', tags: ['Exports'], auth: true })
+  async xml(_req: Request, res: Response): Promise<void> {
+    const exp = (User as unknown as typeof WithExportable).toExportable();
+    const rows = await exp.collection();
+    const headings = exp.headings();
+
+    const builder = Xml.create('users')
+      .att('count', String(rows.length))
+      .att('generated', new Date().toISOString());
+
+    for (const row of rows) {
+      const values = exp.map(row);
+      builder.ele('user');
+      headings.forEach((heading, i) => {
+        const key = heading.toLowerCase().replace(/\\s+/g, '_');
+        builder.ele(key).txt(String(values[i] ?? '')).up();
+      });
+      builder.up();
+    }
+
+    Xml.download(res, builder.end({ prettyPrint: true }), 'users.xml');
   }
 }
 `,
@@ -1693,71 +2335,54 @@ export class UserController {
     "src/app/Http/Controllers/User/RoleController.ts",
     `import { Request, Response } from 'express';
 import { Injectable } from '@lara-node/core';
-import { Doc } from '@lara-node/router';
+import { Route, Doc } from '@lara-node/router';
 import { RoleService } from '@app/Services/index';
 import Role from '@app/Models/User/Role';
 import { StoreRoleRequest, UpdateRoleRequest, SyncPermissionsRequest } from '@app/Http/Requests/index';
+import { Controller } from '../Controller';
 
-type RoleWithPermissions = Role & { permissions: () => { sync: (ids: number[]) => Promise<void> } };
-
+@Route('/api/roles', 'auth', 'must-be-active')
 @Injectable()
-export class RoleController {
-  constructor(private readonly roleService: RoleService) {}
+export class RoleController extends Controller {
+  constructor(private readonly roleService: RoleService) { super(); }
 
+  @Route.get('/', 'can:view_roles')
   @Doc({ summary: 'List all roles with permissions', tags: ['Roles'], auth: true })
   async index(_req: Request, res: Response): Promise<void> {
     res.json({ success: true, data: await this.roleService.index() });
   }
 
-  @Doc({
-    summary: 'Get a role by ID (route-model binding)',
-    description: 'The :role parameter is automatically resolved to a Role model instance via ModelRegistry.',
-    tags: ['Roles'],
-    auth: true,
-    params: [{ name: 'role', in: 'path', type: 'integer', description: 'Role ID — auto-bound to Role model' }],
-    responses: [{ status: 200, description: 'Role with permissions' }, { status: 404, description: 'Not found' }],
-  })
+  @Route.get('/:role', 'can:view_roles')
+  @Doc({ summary: 'Get a role by ID (route-model binding)', tags: ['Roles'], auth: true, params: [{ name: 'role', in: 'path', type: 'integer', description: 'Role ID' }], responses: [{ status: 200, description: 'Role with permissions' }, { status: 404, description: 'Not found' }] })
   async show(_req: Request, res: Response, role: Role): Promise<void> {
     res.json({ success: true, data: role });
   }
 
-  @Doc({
-    summary: 'Create a new role',
-    tags: ['Roles'],
-    auth: true,
-    body: {
-      name: { type: 'string', description: 'Display name' },
-      slug: { type: 'string', description: 'Unique slug (e.g. editor)' },
-      description: { type: 'string', required: false, description: 'Optional description' },
-    },
-  })
+  @Route.post('/', 'can:create_roles')
+  @Doc({ summary: 'Create a new role', tags: ['Roles'], auth: true, body: { name: { type: 'string' }, slug: { type: 'string' }, description: { type: 'string', required: false } } })
   async store(req: StoreRoleRequest, res: Response): Promise<void> {
-    const data = req.validated();
-    res.status(201).json({ success: true, data: await this.roleService.create(data) });
+    res.status(201).json({ success: true, data: await this.roleService.create(req.validated()) });
   }
 
+  @Route.put('/:role', 'can:update_roles')
   @Doc({ summary: 'Update a role', tags: ['Roles'], auth: true })
   async update(req: UpdateRoleRequest, res: Response, role: Role): Promise<void> {
-    const data = req.validated();
-    await role.update({ ...data, updated_at: new Date() });
+    await role.update({ ...req.validated(), updated_at: new Date() });
     res.json({ success: true, data: role });
   }
 
+  @Route.delete('/:role', 'can:delete_roles')
   @Doc({ summary: 'Delete a role (soft delete)', tags: ['Roles'], auth: true })
   async destroy(_req: Request, res: Response, role: Role): Promise<void> {
     await role.delete();
     res.json({ success: true, message: 'Role deleted' });
   }
 
-  @Doc({
-    summary: 'Sync permissions to a role',
-    tags: ['Roles'],
-    auth: true,
-    body: { permission_ids: { type: 'array', description: 'Array of permission IDs' } },
-  })
+  @Route.post('/:role/permissions', 'can:add_permissions_to_roles')
+  @Doc({ summary: 'Sync permissions to a role', tags: ['Roles'], auth: true, body: { permission_ids: { type: 'array', description: 'Array of permission IDs' } } })
   async syncPermissions(req: SyncPermissionsRequest, res: Response, role: Role): Promise<void> {
     const { permission_ids } = req.validated();
-    await (role as RoleWithPermissions).permissions().sync(permission_ids);
+    await role.permissions().sync(permission_ids);
     res.json({ success: true, data: role });
   }
 }
@@ -1769,27 +2394,24 @@ export class RoleController {
     "src/app/Http/Controllers/User/PermissionController.ts",
     `import { Request, Response } from 'express';
 import { Injectable } from '@lara-node/core';
-import { Doc } from '@lara-node/router';
+import { Route, Doc } from '@lara-node/router';
 import { PermissionService } from '@app/Services/index';
 import Permission from '@app/Models/User/Permission';
+import { Controller } from '../Controller';
 
+@Route('/api/permissions', 'auth', 'must-be-active')
 @Injectable()
-export class PermissionController {
-  constructor(private readonly permissionService: PermissionService) {}
+export class PermissionController extends Controller {
+  constructor(private readonly permissionService: PermissionService) { super(); }
 
+  @Route.get('/', 'can:view_permissions')
   @Doc({ summary: 'List all permissions', tags: ['Permissions'], auth: true })
   async index(_req: Request, res: Response): Promise<void> {
     res.json({ success: true, data: await this.permissionService.index() });
   }
 
-  @Doc({
-    summary: 'Get a permission by ID (route-model binding)',
-    description: 'The :permission parameter is automatically resolved to a Permission model instance.',
-    tags: ['Permissions'],
-    auth: true,
-    params: [{ name: 'permission', in: 'path', type: 'integer', description: 'Permission ID — auto-bound to Permission model' }],
-    responses: [{ status: 200, description: 'Permission' }, { status: 404, description: 'Not found' }],
-  })
+  @Route.get('/:permission', 'can:view_permissions')
+  @Doc({ summary: 'Get a permission by ID (route-model binding)', tags: ['Permissions'], auth: true, params: [{ name: 'permission', in: 'path', type: 'integer', description: 'Permission ID' }], responses: [{ status: 200, description: 'Permission' }, { status: 404, description: 'Not found' }] })
   async show(_req: Request, res: Response, permission: Permission): Promise<void> {
     res.json({ success: true, data: permission });
   }
@@ -1804,9 +2426,10 @@ export class PermissionController {
 import multer from 'multer';
 import path from 'path';
 import { Injectable } from '@lara-node/core';
-import { Doc } from '@lara-node/router';
+import { Route, Doc } from '@lara-node/router';
 import { FileService } from '@app/Services/index';
 import FileModel from '@app/Models/File/File';
+import { Controller } from '../Controller';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || 'uploads/files';
 
@@ -1820,44 +2443,47 @@ const storage = multer.diskStorage({
 
 export const multerUpload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
 
-@Injectable()
-export class FileController {
-  constructor(private readonly fileService: FileService) {}
+// Register multer as a named middleware alias in MiddlewareServiceProvider:
+//   this.middlewareAlias('file-upload', multerUpload.single('file'));
+// Then the store route becomes: @Route.post('/', 'file-upload', 'can:upload_files')
 
+@Route('/api/files', 'auth', 'must-be-active')
+@Injectable()
+export class FileController extends Controller {
+  constructor(private readonly fileService: FileService) { super(); }
+
+  @Route.get('/', 'can:view_files')
   @Doc({ summary: 'List all uploaded files', tags: ['Files'], auth: true })
   async index(_req: Request, res: Response): Promise<void> {
     res.json({ success: true, data: await this.fileService.index() });
   }
 
-  @Doc({
-    summary: 'Get file metadata by ID (route-model binding)',
-    description: 'The :file parameter is automatically resolved to a File model instance.',
-    tags: ['Files'],
-    auth: true,
-    params: [{ name: 'file', in: 'path', type: 'integer', description: 'File ID — auto-bound to File model' }],
-    responses: [{ status: 200, description: 'File metadata' }, { status: 404, description: 'Not found' }],
-  })
+  @Route.get('/:file', 'can:view_files')
+  @Doc({ summary: 'Get file metadata by ID (route-model binding)', tags: ['Files'], auth: true, params: [{ name: 'file', in: 'path', type: 'integer', description: 'File ID' }], responses: [{ status: 200, description: 'File metadata' }, { status: 404, description: 'Not found' }] })
   async show(_req: Request, res: Response, file: FileModel): Promise<void> {
     res.json({ success: true, data: file });
   }
 
+  @Route.post('/', 'file-upload', 'can:upload_files')
   @Doc({ summary: 'Upload a file (multipart/form-data, field: file)', tags: ['Files'], auth: true, responses: [{ status: 201, description: 'File uploaded' }] })
   async store(req: Request, res: Response): Promise<void> {
     if (!req.file) { res.status(400).json({ success: false, message: 'No file uploaded' }); return; }
     res.status(201).json({ success: true, data: await this.fileService.store(req.file, req.user!.id) });
   }
 
-  @Doc({ summary: 'Download a file by ID (route-model binding)', tags: ['Files'], auth: true })
+  @Route.get('/:file/download', 'can:view_files')
+  @Doc({ summary: 'Download a file by ID', tags: ['Files'], auth: true })
   async download(_req: Request, res: Response, file: FileModel): Promise<void> {
     res.download(
-      file.getAttribute('disk_path') as string,
-      file.getAttribute('original_name') as string,
+      file.disk_path,
+      file.original_name,
     );
   }
 
+  @Route.delete('/:file', 'can:delete_files')
   @Doc({ summary: 'Delete a file (soft delete + remove from disk)', tags: ['Files'], auth: true })
   async destroy(_req: Request, res: Response, file: FileModel): Promise<void> {
-    await this.fileService.destroy(file.getAttribute('id') as number | string);
+    await this.fileService.destroy(file.id);
     res.json({ success: true, message: 'File deleted' });
   }
 }
@@ -1884,11 +2510,6 @@ export class FileController {
   const appProviderImports: string[] = [
     `import { ServiceProvider, ServiceProviderClass } from '@lara-node/core';`,
     `import { AuthService, UserService, RoleService, PermissionService, FileService } from '@app/Services/index';`,
-    `import { AuthController } from '../Http/Controllers/User/AuthController';`,
-    `import { UserController } from '../Http/Controllers/User/UserController';`,
-    `import { RoleController } from '../Http/Controllers/User/RoleController';`,
-    `import { PermissionController } from '../Http/Controllers/User/PermissionController';`,
-    `import { FileController } from '../Http/Controllers/File/FileController';`,
     `import { ConfigServiceProvider } from './ConfigServiceProvider';`,
     `import { DatabaseServiceProvider } from '@lara-node/db';`,
     `import { CacheServiceProvider } from '@lara-node/cache';`,
@@ -1938,11 +2559,6 @@ export class AppServiceProvider extends ServiceProvider {
     this.singleton(RoleService);
     this.singleton(PermissionService);
     this.singleton(FileService);
-    this.singleton(AuthController);
-    this.singleton(UserController);
-    this.singleton(RoleController);
-    this.singleton(PermissionController);
-    this.singleton(FileController);
   }
 
   boot(): void {}
@@ -1955,62 +2571,44 @@ export class AppServiceProvider extends ServiceProvider {
     dir,
     "src/app/Providers/RouteServiceProvider.ts",
     `import { ServiceProvider } from '@lara-node/core';
-import RouterBuilder, { registerRouteBuilder } from '@lara-node/router';
+import RouterBuilder from '@lara-node/router';
 
 /*
 |--------------------------------------------------------------------------
 | RouteServiceProvider
 |--------------------------------------------------------------------------
 |
+| Routes are declared via @Route decorators on controllers. When the
+| controller modules are loaded (triggered by loading routes/api.ts),
+| their decorators register into the global controller registry.
+|
+| RouterBuilder.fromControllers() then scans that registry and
+| this.app.mountRoutes() mounts the resulting Express router.
+|
 | Route-model binding is handled automatically by modelRegistryMiddleware
 | in bootstrap/app.ts — every Model decorated with @Bind() is registered
 | when src/app/Models/ is first scanned on the initial request.
 |
 | To register additional models manually (e.g. from outside Models/):
-|
-|   register(): void {
-|     super.register();
-|     RouterBuilder.registerModel('product', Product);
-|   }
-|
-| boot() — lazily loads route files AFTER the HTTP Kernel has registered
-|          all named middleware aliases (auth, can, role, etc.).
-|
-| Route-model binding example:
-|   g.get('/:user', 'auth', [UserController, 'show']);
-|
-|   async show(req: Request, res: Response) {
-|     const user = req.params.user as unknown as User; // auto-loaded
-|     res.json({ success: true, data: user });
-|   }
+|   RouterBuilder.registerModel('product', Product);
 |
 */
 export class RouteServiceProvider extends ServiceProvider {
-  protected apiPrefix = '/api';
-
   register(): void {}
 
   boot(): void {
-    this.mapApiRoutes();
-    this.mapWebRoutes();
-    ${hasEvents ? `this.mapChannelRoutes();` : ""}
-  }
+    // Load route index — triggers @Route decorator registration on all controllers
+    require('../../routes/api');
 
-  protected mapApiRoutes(): void {
-    const { routesBuilder } = require('@routes/api');
-    // registerRouteBuilder scans routes for OpenAPI and mounts them in one call.
-    registerRouteBuilder(routesBuilder, 'api', this.apiPrefix, this.app);
-  }
-
-  protected mapWebRoutes(): void {
-    const { webRoutesBuilder } = require('@routes/web');
-    registerRouteBuilder(webRoutesBuilder, 'web', '/', this.app);
+    const router = RouterBuilder.fromControllers();
+    this.app.mountRoutes('/', router.build());
+    ${hasEvents ? `this.mountChannelRoutes();` : ""}
   }
   ${
     hasEvents
       ? `
-  protected mapChannelRoutes(): void {
-    const { channelRouter } = require('@routes/channels');
+  protected mountChannelRoutes(): void {
+    const { channelRouter } = require('../../routes/channels');
     this.app.mountRoutes('/broadcasting', channelRouter);
   }`
       : ""
@@ -2095,7 +2693,8 @@ export class LogUserLogin extends Listener<UserLoggedIn> {
 `,
     );
 
-    w(dir, "src/app/Listeners/index.ts", `export * from './UserListeners';\n`);
+    // No Listeners/index.ts barrel needed — EventServiceProvider auto-discovers
+    // all files in the Listeners/ directory via their @ListensTo decorators.
 
     // ── Subscribers ───────────────────────────────────────────────────────────────
     w(
@@ -2131,43 +2730,46 @@ export class UserEventSubscriber implements EventSubscriber {
 `,
     );
 
-    w(dir, "src/app/Subscribers/index.ts", `export * from './UserEventSubscriber';\n`);
+    // No Subscribers/index.ts barrel needed — EventServiceProvider auto-discovers
+    // all files in the Subscribers/ directory via their @Subscriber decorators.
 
     // ── EventServiceProvider ───────────────────────────────────────────────────
     w(
       dir,
       "src/app/Providers/EventServiceProvider.ts",
-      `import { ServiceProvider } from '@lara-node/core';
-import { getEventDispatcher, getRegisteredListeners, getRegisteredSubscribers } from '@lara-node/events';
+      `import path from 'path';
+import fs from 'fs';
+import { EventServiceProvider as BaseProvider } from '@lara-node/events';
 
-export class EventServiceProvider extends ServiceProvider {
-  protected shouldDiscoverEvents = true;
+/*
+|--------------------------------------------------------------------------
+| EventServiceProvider
+|--------------------------------------------------------------------------
+|
+| Extends the framework EventServiceProvider which handles listener/subscriber
+| registration and exposes event:list, event:dispatch, event:clear commands.
+|
+| Listeners/ and Subscribers/ directories are scanned via discoverListeners()
+| and discoverSubscribers(). Any class decorated with @ListensTo() or
+| @Subscriber() self-registers when its file is loaded — no barrel needed.
+|
+*/
+export class EventServiceProvider extends BaseProvider {
+  protected override async discoverListeners(): Promise<void> {
+    this.loadDir(path.join(__dirname, '../Listeners'));
+  }
 
-  register(): void {}
+  protected override async discoverSubscribers(): Promise<void> {
+    this.loadDir(path.join(__dirname, '../Subscribers'));
+  }
 
-  async boot(): Promise<void> {
-    const dispatcher = getEventDispatcher();
-
-    if (this.shouldDiscoverEvents) {
-      try { await import('../Listeners/index'); } catch { /* empty */ }
-      try { await import('../Subscribers/index'); } catch { /* empty */ }
-    }
-
-    for (const [ListenerClass, metadata] of getRegisteredListeners()) {
-      for (const eventName of metadata.events) {
-        dispatcher.listen(eventName, async (payload) => {
-          const listener = new ListenerClass();
-          if (listener.shouldHandle && !listener.shouldHandle(payload)) return;
-          await listener.handle(payload);
-        });
+  private loadDir(dir: string): void {
+    if (!fs.existsSync(dir)) return;
+    for (const file of fs.readdirSync(dir)) {
+      if (file.endsWith('.ts') || file.endsWith('.js')) {
+        try { require(path.join(dir, file)); } catch { /* skip */ }
       }
     }
-
-    for (const SubscriberClass of getRegisteredSubscribers()) {
-      dispatcher.subscribe(SubscriberClass);
-    }
-
-    console.log('[EventServiceProvider] Event listeners registered');
   }
 }
 `,
@@ -2177,13 +2779,21 @@ export class EventServiceProvider extends ServiceProvider {
     w(
       dir,
       "src/app/Providers/BroadcastServiceProvider.ts",
-      `import { ServiceProvider } from '@lara-node/core';
-import { Broadcast } from '@lara-node/events';
+      `import { BroadcastServiceProvider as BaseProvider, Broadcast } from '@lara-node/events';
 
-export class BroadcastServiceProvider extends ServiceProvider {
-  register(): void {}
-
-  async boot(): Promise<void> {
+/*
+|--------------------------------------------------------------------------
+| BroadcastServiceProvider
+|--------------------------------------------------------------------------
+|
+| Extends the framework BroadcastServiceProvider which registers the
+| BroadcastManager and exposes broadcast:* commands.
+|
+| Define channel authorization rules in channels().
+|
+*/
+export class BroadcastServiceProvider extends BaseProvider {
+  protected override channels(): void {
     Broadcast.private('notifications.{userId}', (user: Record<string, unknown> | null, userId: string) => {
       return !!user && String(user['id']) === userId;
     });
@@ -2340,47 +2950,41 @@ export * from './GenerateReportJob';
     w(
       dir,
       "src/app/Providers/QueueServiceProvider.ts",
-      `import { ServiceProvider } from '@lara-node/core';
-import { Queue, QueueManager, scheduler, Schedule } from '@lara-node/queue';
+      `import { QueueServiceProvider as BaseProvider } from '@lara-node/queue';
+import { scheduler } from '@lara-node/queue';
 import { CleanupJob } from '../Jobs/CleanupJob';
 import { GenerateReportJob } from '../Jobs/GenerateReportJob';
+import { PermissionsSyncCommand } from '../Console/Commands/PermissionCommands';
 
 /*
 |--------------------------------------------------------------------------
 | QueueServiceProvider
 |--------------------------------------------------------------------------
 |
-| Registers the queue manager and scheduler, then defines recurring tasks.
+| Extends the framework QueueServiceProvider which registers QueueManager,
+| scheduler, and all queue:* / schedule:* commands automatically.
+|
+| Use boot() to define app-specific scheduled tasks (call super.boot() first).
+| Add app-specific commands via commands() (merges with super.commands()).
 |
 | Schedule API:
-|   scheduler.command('permissions:sync').daily();          // every day at midnight
-|   scheduler.command('permissions:sync').hourly();         // every hour
-|   scheduler.job(CleanupJob).dailyAt('02:00');             // daily at 2 AM
-|   scheduler.job(GenerateReportJob).weekly();              // every Sunday at midnight
-|   scheduler.job(GenerateReportJob).monthly();             // 1st of month at midnight
-|   scheduler.call(() => console.log('tick')).everyMinute();
-|   scheduler.command('cache:clear').cron('0 * * * *');     // raw cron expression
+|   scheduler.command('permissions:sync').dailyAt('00:05');
+|   scheduler.job(CleanupJob).dailyAt('02:00');
+|   scheduler.call(() => {}).everyMinute();
+|   scheduler.command('cache:clear').cron('0 * * * *');
 |
 */
-export class QueueServiceProvider extends ServiceProvider {
-  register(): void {
-    this.container.singleton(QueueManager, () => Queue);
-    this.container.alias(QueueManager, 'queue');
-    this.container.singleton(Schedule, () => scheduler);
-    this.container.alias(Schedule, 'schedule');
+export class QueueServiceProvider extends BaseProvider {
+  override commands() {
+    return [...super.commands(), PermissionsSyncCommand];
   }
 
-  boot(): void {
-    // Sync permissions nightly
+  override boot(): void {
+    super.boot();
+
     scheduler.command('permissions:sync').dailyAt('00:05');
-
-    // Purge soft-deleted records every night at 2 AM
     scheduler.job(CleanupJob).dailyAt('02:00');
-
-    // Generate weekly usage report every Sunday at 8 AM
     scheduler.job(GenerateReportJob, { type: 'users', period: 'weekly' }).weekly();
-
-    // Generate monthly report on the 1st at 6 AM
     scheduler.job(GenerateReportJob, { type: 'activity', period: 'monthly' }).monthlyOn(1, '06:00');
   }
 }
@@ -2727,64 +3331,29 @@ export class PermissionsListCommand extends Command {
   w(
     dir,
     "src/routes/api.ts",
-    `import RouterBuilder from '@lara-node/router';
-import { AuthController } from '../app/Http/Controllers/User/AuthController';
-import { UserController } from '../app/Http/Controllers/User/UserController';
-import { RoleController } from '../app/Http/Controllers/User/RoleController';
-import { PermissionController } from '../app/Http/Controllers/User/PermissionController';
-import { FileController, multerUpload } from '../app/Http/Controllers/File/FileController';
+    `/*
+|--------------------------------------------------------------------------
+| API Route Registration
+|--------------------------------------------------------------------------
+|
+| Importing each controller module fires its @Route / @Route.get|post|...
+| decorators which register routes into RouterBuilder's global controller
+| registry. RouteServiceProvider then calls RouterBuilder.fromControllers()
+| to build and mount the full router automatically.
+|
+| Add new controllers here so their routes are discovered on boot.
+|
+*/
 
-export const routesBuilder = new RouterBuilder();
-const rb = routesBuilder;
+// User & Auth
+import '../app/Http/Controllers/User/AuthController';
+import '../app/Http/Controllers/User/UserController';
+import '../app/Http/Controllers/User/ExportController';
+import '../app/Http/Controllers/User/RoleController';
+import '../app/Http/Controllers/User/PermissionController';
 
-rb.prefix('/auth').group((g: RouterBuilder) => {
-  g.post('/register', [AuthController, 'register']);
-  g.post('/login', [AuthController, 'login']);
-  g.get('/me', 'auth', [AuthController, 'me']);
-});
-
-// :user — route-model binding auto-resolves to User model instance
-rb.prefix('/users').middleware(['auth', 'must-be-active']).group((g: RouterBuilder) => {
-  g.get('/', 'can:view_users', [UserController, 'index']);
-  g.get('/:user', 'can:view_users', [UserController, 'show']);
-  g.get('/:user/profile', [UserController, 'showProfile']);
-  g.post('/', 'can:create_users', [UserController, 'store']);
-  g.put('/:user', 'can:update_users', [UserController, 'update']);
-  g.put('/:user/profile', [UserController, 'updateProfile']);
-  g.post('/:user/password', 'can:update_users', [UserController, 'setPassword']);
-  g.post('/:user/password/reset', [UserController, 'resetPassword']);
-  g.post('/:user/roles', 'can:add_roles_to_users', [UserController, 'addRole']);
-  g.delete('/:user/roles/:role', 'can:remove_roles_from_users', [UserController, 'removeRole']);
-  g.delete('/:user', 'can:delete_users', [UserController, 'destroy']);
-  g.patch('/:user/status', 'can:activate_and_deactivate_users', [UserController, 'toggleStatus']);
-});
-
-// :role — route-model binding auto-resolves to Role model instance
-rb.prefix('/roles').middleware(['auth', 'must-be-active']).group((g: RouterBuilder) => {
-  g.get('/', 'can:view_roles', [RoleController, 'index']);
-  g.get('/:role', 'can:view_roles', [RoleController, 'show']);
-  g.post('/', 'can:create_roles', [RoleController, 'store']);
-  g.put('/:role', 'can:update_roles', [RoleController, 'update']);
-  g.delete('/:role', 'can:delete_roles', [RoleController, 'destroy']);
-  g.post('/:role/permissions', 'can:add_permissions_to_roles', [RoleController, 'syncPermissions']);
-});
-
-// :permission — route-model binding auto-resolves to Permission model instance
-rb.prefix('/permissions').middleware(['auth', 'must-be-active']).group((g: RouterBuilder) => {
-  g.get('/', 'can:view_permissions', [PermissionController, 'index']);
-  g.get('/:permission', 'can:view_permissions', [PermissionController, 'show']);
-});
-
-// :file — route-model binding auto-resolves to File model instance
-rb.prefix('/files').middleware(['auth', 'must-be-active']).group((g: RouterBuilder) => {
-  g.get('/', 'can:view_files', [FileController, 'index']);
-  g.get('/:file', 'can:view_files', [FileController, 'show']);
-  g.get('/:file/download', 'can:view_files', [FileController, 'download']);
-  g.post('/', multerUpload.single('file'), 'can:upload_files', [FileController, 'store']);
-  g.delete('/:file', 'can:delete_files', [FileController, 'destroy']);
-});
-
-export default rb;
+// Files
+import '../app/Http/Controllers/File/FileController';
 `,
   );
 
@@ -2971,14 +3540,41 @@ export class CreateUserProfilesTable {
     await schema.createTable('user_profiles', (table: TableBuilder) => {
       table.increments('id');
       table.integer('user_id').notNullable();
-      table.string('gender', 32).nullable();
+
+      // ── Common ───────────────────────────────────────────────────────────────
+      table.string('type', 32).nullable();         // admin | user | staff
+      table.string('gender', 32).nullable();       // male | female | other
+      table.datetime('date_of_birth').nullable();
       table.string('id_number', 64).nullable();
+      table.string('phone', 32).nullable();
+      table.string('nationality', 100).nullable();
       table.string('city', 191).nullable();
       table.string('country', 191).nullable();
       table.string('address', 500).nullable();
       table.string('zip_code', 32).nullable();
-      table.datetime('date_of_birth').nullable();
-      table.text('metadata').nullable();
+      table.text('bio').nullable();
+      table.string('avatar_url', 500).nullable();
+
+      // ── Extended — leave populated as the app grows ──────────────────────────
+      table.string('headline', 255).nullable();
+      table.text('skills').nullable();             // JSON array
+      table.string('experience_level', 32).nullable();
+      table.string('availability', 32).nullable();
+      table.string('preferred_job_type', 64).nullable();
+      table.string('resume_url', 500).nullable();
+
+      table.string('company_name', 191).nullable();
+      table.string('company_size', 32).nullable();
+      table.string('industry', 191).nullable();
+      table.string('company_type', 64).nullable();
+      table.string('company_email', 191).nullable();
+      table.string('company_phone', 32).nullable();
+      table.text('company_description').nullable();
+      table.string('company_logo', 500).nullable();
+
+      // ── Extra ─────────────────────────────────────────────────────────────────
+      table.text('metadata').nullable();           // JSON object for anything else
+
       table.timestamps();
       table.softDeletes();
     });
@@ -3047,31 +3643,26 @@ const PERMISSIONS = [
   { slug: 'delete_files', name: 'Delete Files' },
 ];
 
-type RoleModel = Role & { permissions: () => { sync: (ids: number[]) => Promise<void>; attach: (ids: number[]) => Promise<void> } };
-
 export class RolePermissionSeeder {
-  async run(): Promise<{ adminRole: RoleModel; userRole: RoleModel; permIds: number[] }> {
+  async run(): Promise<{ adminRole: Role; userRole: Role; staffRole: Role; permIds: number[] }> {
     const now = new Date();
     console.log('  Seeding roles...');
 
-    let adminRole = await Role.where('slug', 'admin').first() as RoleModel | null;
-    if (!adminRole) {
-      adminRole = await Role.create({ name: 'Admin', slug: 'admin', description: 'Administrator with full access', created_at: now, updated_at: now }) as RoleModel;
-    }
+    const adminRole = (await Role.where('slug', 'admin').first() as Role | null)
+      ?? await Role.create({ name: 'Admin', slug: 'admin', description: 'Administrator with full access', created_at: now, updated_at: now }) as Role;
 
-    let userRole = await Role.where('slug', 'user').first() as RoleModel | null;
-    if (!userRole) {
-      userRole = await Role.create({ name: 'User', slug: 'user', description: 'Regular user', created_at: now, updated_at: now }) as RoleModel;
-    }
+    const userRole = (await Role.where('slug', 'user').first() as Role | null)
+      ?? await Role.create({ name: 'User', slug: 'user', description: 'Regular user', created_at: now, updated_at: now }) as Role;
+
+    const staffRole = (await Role.where('slug', 'staff').first() as Role | null)
+      ?? await Role.create({ name: 'Staff', slug: 'staff', description: 'Staff member with elevated access', created_at: now, updated_at: now }) as Role;
 
     console.log('  Seeding permissions...');
     const permIds: number[] = [];
     for (const p of PERMISSIONS) {
-      let perm = await Permission.where('slug', p.slug).first() as Permission | null;
-      if (!perm) {
-        perm = await Permission.create({ name: p.name, slug: p.slug, created_at: now, updated_at: now }) as Permission;
-      }
-      const id = perm?.getAttribute('id') as number | undefined;
+      const perm = (await Permission.where('slug', p.slug).first() as Permission | null)
+        ?? await Permission.create({ name: p.name, slug: p.slug, created_at: now, updated_at: now }) as Permission;
+      const id = perm.id | undefined;
       if (id) permIds.push(id);
     }
 
@@ -3079,7 +3670,7 @@ export class RolePermissionSeeder {
     catch { await adminRole.permissions().attach(permIds); }
 
     console.log(\`  ✓ \${PERMISSIONS.length} permissions synced to admin role\`);
-    return { adminRole, userRole: userRole!, permIds };
+    return { adminRole, userRole, staffRole, permIds };
   }
 }
 `,
@@ -3092,44 +3683,39 @@ export class RolePermissionSeeder {
 import User from '../../app/Models/User/User';
 import UserProfile from '../../app/Models/User/UserProfile';
 
-type UserWithRoles = User & { roles: () => { sync: (ids: number[]) => Promise<void>; attach: (id: number) => Promise<void> } };
+const syncRole = async (user: User, roleId: number): Promise<void> => {
+  try { await user.roles().sync([roleId]); } catch { await user.roles().attach(roleId); }
+};
 
 export class UserSeeder {
-  async run(adminRoleId: number, userRoleId: number): Promise<void> {
+  async run(adminRoleId: number, userRoleId: number, staffRoleId: number): Promise<void> {
     const now = new Date();
     console.log('  Seeding users...');
 
-    let admin = await User.where('email', 'admin@example.com').first() as UserWithRoles | null;
-    if (!admin) {
-      admin = await User.create({
-        name: 'Admin',
-        email: 'admin@example.com',
+    const createUser = async (name: string, email: string, type: string): Promise<User> => {
+      const existing = await User.where('email', email).first() as User | null;
+      if (existing) return existing;
+      const user = await User.create({
+        name, email,
         password: await bcrypt.hash('password', 12),
         status: 'active',
-        created_at: now,
-        updated_at: now,
-      }) as UserWithRoles;
-      await UserProfile.create({ user_id: admin.getAttribute('id'), gender: 'other', created_at: now, updated_at: now });
-    }
+        created_at: now, updated_at: now,
+      }) as User;
+      await UserProfile.create({ user_id: user.id, type, created_at: now, updated_at: now });
+      return user;
+    };
 
-    let regularUser = await User.where('email', 'user@example.com').first() as UserWithRoles | null;
-    if (!regularUser) {
-      regularUser = await User.create({
-        name: 'User',
-        email: 'user@example.com',
-        password: await bcrypt.hash('password', 12),
-        status: 'active',
-        created_at: now,
-        updated_at: now,
-      }) as UserWithRoles;
-      await UserProfile.create({ user_id: regularUser.getAttribute('id'), gender: 'other', created_at: now, updated_at: now });
-    }
+    const admin = await createUser('Admin', 'admin@example.com', 'admin');
+    const staff = await createUser('Staff', 'staff@example.com', 'staff');
+    const regularUser = await createUser('User', 'user@example.com', 'user');
 
-    try { await admin.roles().sync([adminRoleId]); } catch { await admin.roles().attach(adminRoleId); }
-    try { await regularUser.roles().sync([userRoleId]); } catch { await regularUser.roles().attach(userRoleId); }
+    await syncRole(admin, adminRoleId);
+    await syncRole(staff, staffRoleId);
+    await syncRole(regularUser, userRoleId);
 
     console.log('  ✓ Users seeded:');
     console.log('    admin@example.com    (password: password) — Admin role');
+    console.log('    staff@example.com    (password: password) — Staff role');
     console.log('    user@example.com     (password: password) — User role');
   }
 }
@@ -3146,10 +3732,11 @@ export class DatabaseSeeder {
   async run(): Promise<void> {
     console.log('Running DatabaseSeeder...');
 
-    const { adminRole, userRole } = await new RolePermissionSeeder().run();
+    const { adminRole, userRole, staffRole } = await new RolePermissionSeeder().run();
     await new UserSeeder().run(
-      adminRole.getAttribute('id') as number,
-      userRole.getAttribute('id') as number,
+      adminRole.id,
+      userRole.id,
+      staffRole.id,
     );
 
     console.log('DatabaseSeeder complete');
@@ -3446,49 +4033,51 @@ pnpm dev                      # start dev server on http://localhost:3000
 \`\`\`
 src/
 ├── app/
+│   ├── Auth/
+│   │   └── Gate.ts             # Policy & ability registry (Gate.define / Gate.policy)
 │   ├── Console/
-│   │   ├── Commands/           # Artisan commands (auto-discovered)
-│   │   └── Kernel.ts           # ConsoleKernel — extends base Kernel
+│   │   ├── Commands/           # Artisan commands (auto-discovered + provider-declared)
+│   │   └── Kernel.ts           # ConsoleKernel — collects commands from service providers
 │   ├── Events/                 # Event classes
 │   ├── Http/
-│   │   ├── Controllers/        # Request handlers (IoC auto-wired)
-│   │   │   ├── User/           # Auth, User, Role, Permission controllers
+│   │   ├── Controllers/
+│   │   │   ├── Controller.ts   # Base controller with authorize() helper
+│   │   │   ├── User/           # Auth, User, Role, Permission controllers (@Route decorated)
 │   │   │   └── File/           # File upload controller
-│   │   └── Kernel.ts           # Global + named middleware registration
+│   │   ├── Kernel.ts           # Global middleware stack
+│   │   └── Requests/           # FormRequest validation classes
 │   ├── Jobs/                   # Queueable jobs
-│   ├── Listeners/              # Event listeners (@ListensTo decorator)
+│   ├── Listeners/              # @ListensTo decorated listeners (auto-discovered)
 │   ├── Mail/                   # Mailable classes
-│   │   ├── WelcomeEmail.ts
-│   │   ├── PasswordResetEmail.ts
-│   │   ├── AccountVerificationEmail.ts
-│   │   └── InvoiceEmail.ts
 │   ├── Middleware/             # Custom middleware classes
 │   ├── Models/                 # Eloquent-style ORM models
-│   │   ├── User/               # User, Role, Permission, UserProfile
+│   │   ├── User/               # User, Role, Permission, UserProfile, pivot models
 │   │   └── File/               # File model
-│   ├── Observers/              # Model observers
+│   ├── Observers/              # Model observers (@Observe decorated)
+│   ├── Policies/               # Policy classes (Gate.policy(Model, PolicyClass))
+│   │   └── UserPolicy.ts       # Example policy
 │   ├── Providers/              # Service providers
-│   │   ├── AppServiceProvider.ts
-│   │   ├── ConfigServiceProvider.ts
-│   │   ├── MiddlewareServiceProvider.ts
-│   │   ├── RouteServiceProvider.ts
-│   │   ├── EventServiceProvider.ts
-│   │   ├── BroadcastServiceProvider.ts
-│   │   └── QueueServiceProvider.ts
+│   │   ├── AppServiceProvider.ts       # Root provider — registers all sub-providers
+│   │   ├── ConfigServiceProvider.ts    # Loads config files first
+│   │   ├── MiddlewareServiceProvider.ts # Named middleware aliases (auth, can, role)
+│   │   ├── RouteServiceProvider.ts     # RouterBuilder.fromControllers() + mountRoutes
+│   │   ├── EventServiceProvider.ts     # Auto-discovers Listeners/ + Subscribers/
+│   │   ├── BroadcastServiceProvider.ts # Broadcasting channel auth
+│   │   └── QueueServiceProvider.ts     # Schedule definitions + app commands
 │   ├── Services/               # Business logic layer
-│   └── Subscribers/            # Event subscribers
+│   └── Subscribers/            # @Subscriber decorated subscribers (auto-discovered)
 ├── bootstrap/
-│   └── app.ts                  # Application boot sequence
+│   └── app.ts                  # Boot sequence + package auto-discovery (laraNode.providers)
 ├── config/                     # App and DB configuration
 ├── database/
 │   ├── migrations/             # Class-based migrations (001–007)
 │   └── seeders/                # RolePermission, User, Database seeders
 ├── routes/
-│   ├── api.ts                  # API routes (/api/*)
+│   ├── api.ts                  # Imports controllers so @Route decorators register
 │   ├── web.ts                  # Web routes (/)
 │   └── channels.ts             # Broadcasting channel auth
 ├── types/
-│   └── express.d.ts            # Express type augmentations (req.user, req.validate, res.jsonAsync)
+│   └── express.d.ts            # Express type augmentations
 ├── artisan.ts                  # CLI entry point
 ├── register.ts                 # reflect-metadata + dotenv bootstrap
 └── server.ts                   # HTTP server entry point
@@ -3535,6 +4124,7 @@ src/
 | Email | Password | Role |
 |-------|----------|------|
 | admin@example.com | password | Admin (all permissions) |
+| staff@example.com | password | Staff |
 | user@example.com | password | User |
 
 ## Validation
@@ -3604,6 +4194,54 @@ const dispatcher = getEventDispatcher();
 await dispatcher.dispatch(new UserRegistered(user.id, user.email, user.name));
 \`\`\`
 
+## Routing with @Route Decorators
+
+Routes are declared directly on controller classes:
+
+\`\`\`typescript
+import { Route, Doc } from '@lara-node/router';
+import { Injectable } from '@lara-node/core';
+import { Controller } from './Controller';
+
+@Route('/api/products', 'auth', 'must-be-active') // class-level middleware
+@Injectable()
+export class ProductController extends Controller {
+  @Route.get('/', 'can:view_products')
+  async index(_req: Request, res: Response): Promise<void> { ... }
+
+  @Route.post('/', 'can:create_products')
+  async store(req: Request, res: Response): Promise<void> { ... }
+
+  @Route.put('/:product')          // :product auto-resolves via @Bind() on Product model
+  async update(_req: Request, res: Response, product: Product): Promise<void> {
+    this.authorize('update', product);  // checks UserPolicy.update(authUser, product)
+    ...
+  }
+}
+\`\`\`
+
+Add the controller import to \`src/routes/api.ts\` for auto-registration:
+\`\`\`typescript
+import '../app/Http/Controllers/ProductController';
+\`\`\`
+
+## Authorization — Gate & Policies
+
+\`\`\`typescript
+// src/app/Policies/ProductPolicy.ts
+export class ProductPolicy {
+  update(user: AuthUser, product: Product): boolean {
+    return user.id === product.user_id || user.roles.includes('admin');
+  }
+}
+
+// Register in a ServiceProvider:
+Gate.policy(Product, ProductPolicy);
+
+// In a controller method:
+this.authorize('update', product);  // throws 403 if denied
+\`\`\`
+
 ## Custom Middleware
 
 \`\`\`typescript
@@ -3613,12 +4251,29 @@ export class ThrottleMiddleware {
   toHandler() { return (req, res, next) => this.handle(req, res, next); }
 }
 
-// Register in Http/Kernel.ts namedMiddleware:
-throttle: (...args) => new ThrottleMiddleware(Number(args[0]) || 60).toHandler(),
+// Register in MiddlewareServiceProvider:
+this.middlewareAlias('throttle', (...args) => new ThrottleMiddleware(Number(args[0]) || 60).toHandler());
 
-// Use on routes:
-g.post('/login', 'throttle:10', [AuthController, 'login']);
+// Use on route decorator:
+@Route.post('/login', 'throttle:10')
 \`\`\`
+
+## Package Auto-discovery
+
+Third-party packages can auto-register their service providers by adding a \`laraNode\` key to their \`package.json\`:
+
+\`\`\`json
+{
+  "laraNode": {
+    "providers": ["./dist/MyServiceProvider.js"],
+    "publish": [
+      { "tag": "config", "from": "config/my.config.ts", "to": "config/my.config.ts" }
+    ]
+  }
+}
+\`\`\`
+
+Providers are discovered at boot time — no manual registration needed. Run \`pnpm artisan vendor:publish\` to copy their publishable files.
 
 ## Environment Variables
 
