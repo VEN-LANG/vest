@@ -1,7 +1,8 @@
-import { ServiceProvider } from "@lara-node/core";
+import { ServiceProvider, type CommandClass } from "@lara-node/core";
 import { getEventDispatcher } from "./Events/EventDispatcher.js";
 import type { ListenerRegistration } from "./Events/EventDispatcher.js";
 import { getRegisteredListeners, getRegisteredSubscribers } from "./Events/EventDecorators.js";
+import { EventListCommand, EventDispatchCommand, EventClearCommand } from "./Commands.js";
 
 /**
  * Framework EventServiceProvider — auto-discovers and registers listeners/subscribers
@@ -33,6 +34,10 @@ export class EventServiceProvider extends ServiceProvider {
 
   register(): void {
     this.container.singleton("events", () => getEventDispatcher());
+  }
+
+  commands(): CommandClass[] {
+    return [EventListCommand, EventDispatchCommand, EventClearCommand];
   }
 
   async boot(): Promise<void> {
