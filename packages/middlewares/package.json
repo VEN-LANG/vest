@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/middlewares",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "Predefined class-based middleware for Lara-Node applications",
   "files": [
     "dist",
@@ -27,8 +27,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@lara-node/db": "^0.1.13",
-    "@lara-node/validator": "^0.1.6",
+    "@lara-node/db": ">=0.1.19",
+    "@lara-node/validator": ">=0.1.15",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
