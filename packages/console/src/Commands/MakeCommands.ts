@@ -49,32 +49,28 @@ export class MakeModelCommand extends Command {
 
     if (args.migration) {
       this.info("Creating migration...");
-      // Could trigger make:migration here
     }
 
     if (args.factory) {
       this.info("Creating factory...");
-      // Could trigger make:factory here
     }
 
     if (args.seeder) {
       this.info("Creating seeder...");
-      // Could trigger make:seeder here
     }
   }
 
   private getTemplate(name: string): string {
-    return `
-import { Model } from "@lara-node/orm";
+    return `import { Model, use } from '@lara-node/db';
+import { SoftDeletes, Timestamps } from '@lara-node/db';
 
-class ${name} extends Model {
-  protected table: string = "${name.toLowerCase()}s";
-  
-  protected fillable: string[] = [];
-  
-  protected hidden: string[] = [];
-  
-  protected casts: Record<string, string> = {};
+@use(SoftDeletes, Timestamps)
+export class ${name} extends Model {
+  static fillable: string[] = [];
+  static hidden: string[] = [];
+  static casts: Record<string, string> = {
+    created_at: 'datetime', updated_at: 'datetime', deleted_at: 'datetime',
+  };
 }
 
 export default ${name};
@@ -122,17 +118,13 @@ export class MakeMiddlewareCommand extends Command {
   }
 
   private getTemplate(name: string): string {
-    return `
-import { Request, Response, NextFunction } from "express";
+    return `import { Request, Response, NextFunction } from 'express';
 
-class ${name} {
-  async handle(req: Request, res: Response, next: NextFunction): Promise<void> {
-    // Add your middleware logic here
+export class ${name} {
+  handle(req: Request, res: Response, next: NextFunction): void {
     next();
   }
 }
-
-export default ${name};
 `;
   }
 }
@@ -154,7 +146,7 @@ export class MakeProviderCommand extends Command {
     let name = String(args.name);
 
     if (!name.toLowerCase().endsWith("provider")) {
-      name = name.charAt(0).toUpperCase() + name.slice(1) + "Provider";
+      name = name.charAt(0).toUpperCase() + name.slice(1) + "ServiceProvider";
     }
 
     const fileName = `${name}.ts`;
@@ -177,20 +169,17 @@ export class MakeProviderCommand extends Command {
   }
 
   private getTemplate(name: string): string {
-    return `
-import { ServiceProvider } from "@lara-node/core";
+    return `import { ServiceProvider } from '@lara-node/core';
 
-class ${name} extends ServiceProvider {
-  async register(): Promise<void> {
-    // Register bindings here
+export class ${name} extends ServiceProvider {
+  register(): void {
+    // Register container bindings here
   }
 
-  async boot(): Promise<void> {
+  boot(): void | Promise<void> {
     // Bootstrap services here
   }
 }
-
-export default ${name};
 `;
   }
 }
@@ -233,51 +222,38 @@ export class MakePolicyCommand extends Command {
       process.exit(1);
     }
 
-    const template = this.getTemplate(name);
+    const modelArg = args.model ? String(args.model) : undefined;
+    const template = this.getTemplate(name, modelArg);
     fs.writeFileSync(filePath, template);
     this.success(`Created policy: ${fileName}`);
   }
 
-  private getTemplate(name: string): string {
-    return `
-class ${name} {
-  /**
-   * Determine if the user can view any models.
-   */
-  viewAny(): boolean {
+  private getTemplate(name: string, model?: string): string {
+    const modelName = model ?? 'Model';
+    const modelVar = modelName.charAt(0).toLowerCase() + modelName.slice(1);
+    return `import type { AuthUser } from '@lara-node/auth';
+
+export class ${name} {
+  viewAny(_user: AuthUser): boolean {
     return true;
   }
 
-  /**
-   * Determine if the user can view the model.
-   */
-  view(): boolean {
+  view(_user: AuthUser, _${modelVar}: unknown): boolean {
     return true;
   }
 
-  /**
-   * Determine if the user can create models.
-   */
-  create(): boolean {
+  create(_user: AuthUser): boolean {
     return true;
   }
 
-  /**
-   * Determine if the user can update the model.
-   */
-  update(): boolean {
+  update(_user: AuthUser, _${modelVar}: unknown): boolean {
     return true;
   }
 
-  /**
-   * Determine if the user can delete the model.
-   */
-  delete(): boolean {
+  delete(_user: AuthUser, _${modelVar}: unknown): boolean {
     return true;
   }
 }
-
-export default ${name};
 `;
   }
 }
@@ -322,28 +298,19 @@ export class MakeRequestCommand extends Command {
   }
 
   private getTemplate(name: string): string {
-    return `
-import { FormRequest } from "@lara-node/validation";
+    return `import { FormRequest } from '@lara-node/core';
 
-class ${name} extends FormRequest {
-  /**
-   * Determine if the user is authorized to make this request.
-   */
+export class ${name} extends FormRequest<Record<string, unknown>> {
   authorize(): boolean {
     return true;
   }
 
-  /**
-   * Get the validation rules that apply to the request.
-   */
   rules(): Record<string, string> {
     return {
       // Add your validation rules here
     };
   }
 }
-
-export default ${name};
 `;
   }
 }
@@ -392,19 +359,13 @@ export class MakeJobCommand extends Command {
   }
 
   private getTemplate(name: string): string {
-    return `
-import { Job } from "@lara-node/queue";
+    return `import { Job } from '@lara-node/queue';
 
-class ${name} extends Job {
-  /**
-   * Execute the job.
-   */
+export class ${name} extends Job {
   async handle(): Promise<void> {
-    // Add your job logic here
+    // Job logic here
   }
 }
-
-export default ${name};
 `;
   }
 }
@@ -449,23 +410,17 @@ export class MakeEventCommand extends Command {
   }
 
   private getTemplate(name: string): string {
-    return `
-import { Event } from "@lara-node/events";
+    return `import { Event } from '@lara-node/events';
 
-class ${name} extends Event {
-  constructor(public data: any) {
+export class ${name} extends Event {
+  constructor(public readonly payload: Record<string, unknown>) {
     super();
   }
 
-  /**
-   * Get the channels the event should broadcast on.
-   */
-  broadcastOn(): string | string[] {
-    return [];
+  eventName(): string {
+    return '${name.replace(/Event$/, '').toLowerCase()}';
   }
 }
-
-export default ${name};
 `;
   }
 }
@@ -514,19 +469,13 @@ export class MakeListenerCommand extends Command {
   }
 
   private getTemplate(name: string): string {
-    return `
-import { Listener } from "@lara-node/events";
+    return `import { Listener } from '@lara-node/events';
 
-class ${name} extends Listener {
-  /**
-   * Handle the event.
-   */
-  async handle(event: any): Promise<void> {
-    // Add your listener logic here
+export class ${name} extends Listener<Record<string, unknown>> {
+  async handle(payload: Record<string, unknown>): Promise<void> {
+    // Listener logic here
   }
 }
-
-export default ${name};
 `;
   }
 }
@@ -571,37 +520,24 @@ export class MakeNotificationCommand extends Command {
   }
 
   private getTemplate(name: string): string {
-    return `
-import { Notification } from "@lara-node/notifications";
+    return `import { Notification } from '@lara-node/notifications';
 
-class ${name} extends Notification {
-  /**
-   * Get the notification's delivery channels.
-   */
-  via(notifiable: any): string[] {
-    return ["mail"];
+export class ${name} extends Notification {
+  via(_notifiable: unknown): string[] {
+    return ['mail'];
   }
 
-  /**
-   * Get the mail representation of the notification.
-   */
-  toMail(notifiable: any): any {
+  toMail(_notifiable: unknown): Record<string, unknown> {
     return {
-      // Add your mail configuration here
+      subject: 'Notification',
+      body: 'Hello!',
     };
   }
 
-  /**
-   * Get the array representation of the notification.
-   */
-  toArray(notifiable: any): Record<string, any> {
-    return {
-      // Add your array data here
-    };
+  toArray(_notifiable: unknown): Record<string, unknown> {
+    return {};
   }
 }
-
-export default ${name};
 `;
   }
 }
@@ -622,8 +558,8 @@ export class MakeMailCommand extends Command {
   async handle(args: ArgumentsCamelCase): Promise<void> {
     let name = String(args.name);
 
-    if (!name.toLowerCase().endsWith("mail")) {
-      name = name.charAt(0).toUpperCase() + name.slice(1) + "Mail";
+    if (!name.toLowerCase().endsWith("email") && !name.toLowerCase().endsWith("mail")) {
+      name = name.charAt(0).toUpperCase() + name.slice(1) + "Email";
     }
 
     const fileName = `${name}.ts`;
@@ -646,21 +582,20 @@ export class MakeMailCommand extends Command {
   }
 
   private getTemplate(name: string): string {
-    return `
-import { Mailable } from "@lara-node/mail";
+    return `import { Mailable } from '@lara-node/mail';
 
-class ${name} extends Mailable {
-  /**
-   * Build the message.
-   */
+export class ${name} extends Mailable {
+  constructor(private readonly recipientEmail: string) {
+    super();
+  }
+
   build(): this {
     return this
-      .subject("Email Subject")
-      .view("emails.template");
+      .to(this.recipientEmail)
+      .subject('${name}')
+      .html('<p>Hello!</p>');
   }
 }
-
-export default ${name};
 `;
   }
 }
@@ -705,27 +640,16 @@ export class MakeRuleCommand extends Command {
   }
 
   private getTemplate(name: string): string {
-    return `
-import { Rule } from "@lara-node/validation";
-
-class ${name} extends Rule {
-  /**
-   * Determine if the validation rule passes.
-   */
-  passes(attribute: string, value: any): boolean {
-    // Add your validation logic here
+    return `export class ${name} {
+  passes(_attribute: string, _value: unknown): boolean {
+    // Validation logic here
     return true;
   }
 
-  /**
-   * Get the validation error message.
-   */
   message(): string {
-    return "The validation error message.";
+    return 'The :attribute is invalid.';
   }
 }
-
-export default ${name};
 `;
   }
 }
@@ -774,21 +698,19 @@ export class MakeResourceCommand extends Command {
   }
 
   private getTemplate(name: string): string {
-    return `
-import { Resource } from "@lara-node/http";
+    return `export class ${name} {
+  constructor(private readonly resource: Record<string, unknown>) {}
 
-class ${name} extends Resource {
-  /**
-   * Transform the resource into an array.
-   */
-  toArray(): Record<string, any> {
+  toArray(): Record<string, unknown> {
     return {
-      // Add your resource transformation here
+      ...this.resource,
     };
   }
-}
 
-export default ${name};
+  toJSON(): Record<string, unknown> {
+    return this.toArray();
+  }
+}
 `;
   }
 }
@@ -837,21 +759,17 @@ export class MakeFactoryCommand extends Command {
   }
 
   private getTemplate(name: string): string {
-    return `
-import { Factory } from "@lara-node/faker";
-
-class ${name} extends Factory {
-  /**
-   * Define the model's default state.
-   */
-  definition(): Record<string, any> {
+    return `export class ${name} {
+  definition(): Record<string, unknown> {
     return {
-      // Add your factory definitions here
+      // Define factory attributes here
     };
   }
-}
 
-export default ${name};
+  make(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+    return { ...this.definition(), ...overrides };
+  }
+}
 `;
   }
 }
@@ -902,11 +820,10 @@ export class MakeTestCommand extends Command {
   }
 
   private getTemplate(name: string, isUnit: boolean): string {
-    return `
-import { describe, it, expect } from "vitest";
+    return `import { describe, it, expect } from 'vitest';
 
-describe("${name}", () => {
-  it("${isUnit ? "unit test" : "feature test"} example", () => {
+describe('${name}', () => {
+  it('${isUnit ? "unit test" : "feature test"} example', () => {
     expect(true).toBe(true);
   });
 });
