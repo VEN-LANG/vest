@@ -77,6 +77,11 @@ export class Application {
     await provider.boot();
   }
 
+  /** Return all registered service provider instances. */
+  getBootedProviders(): ServiceProvider[] {
+    return [...this.providers];
+  }
+
   /**
    * Register all service providers decorated with @Provider() in the order
    * their modules were first loaded (i.e. import order in bootstrap).
