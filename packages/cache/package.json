@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/cache",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "Lara-Node cache manager — file, database, and Redis drivers",
   "files": [
     "dist",
@@ -28,9 +28,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@lara-node/db": "^0.1.13",
+    "@lara-node/db": ">=0.1.19",
     "redis": "^5.10.0",
-    "@lara-node/console": "0.1.16"
+    "@lara-node/console": ">=0.1.18"
   },
   "devDependencies": {
     "@lara-node/core": ">=0.1.13",
