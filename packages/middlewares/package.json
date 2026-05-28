@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/middlewares",
-  "version": "0.1.17",
+  "version": "0.1.19",
   "description": "Predefined class-based middleware for Lara-Node applications",
   "files": [
     "dist",
