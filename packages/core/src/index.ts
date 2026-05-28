@@ -3,7 +3,7 @@ export { FormRequest } from "./Request.js";
 export type { Constructor, Abstract } from "./Container.js";
 export { Application } from "./Application.js";
 export { ServiceProvider } from "./ServiceProvider.js";
-export type { ServiceProviderClass } from "./ServiceProvider.js";
+export type { ServiceProviderClass, CommandClass } from "./ServiceProvider.js";
 export { MiddlewareServiceProvider } from "./MiddlewareServiceProvider.js";
 export { MiddlewareStack, middlewareStack } from "./MiddlewareStack.js";
 export type {
@@ -19,6 +19,6 @@ export {
   hasMiddleware,
   getMiddlewareStack,
 } from "./middleware.js";
-export { config, setConfig, hasConfig, allConfig } from "./Config.js";
+export { config, setConfig, mergeConfig, hasConfig, allConfig } from "./Config.js";
 export { Provider, getRegisteredProviders } from "./decorators.js";
 export { dd, clone } from "./helpers.js";
