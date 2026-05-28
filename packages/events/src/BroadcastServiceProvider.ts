@@ -1,5 +1,9 @@
-import { ServiceProvider } from "@lara-node/core";
+import { ServiceProvider, type CommandClass } from "@lara-node/core";
 import { getBroadcastManager, BroadcastManager } from "./Broadcasting/BroadcastManager.js";
+import {
+  BroadcastConnectionsCommand, BroadcastChannelsCommand,
+  BroadcastTerminateCommand, BroadcastSendCommand,
+} from "./Commands.js";
 
 /**
  * Framework BroadcastServiceProvider — registers the BroadcastManager singleton.
@@ -23,6 +27,10 @@ export class BroadcastServiceProvider extends ServiceProvider {
   register(): void {
     this.container.singleton(BroadcastManager, () => getBroadcastManager());
     this.container.alias(BroadcastManager, "broadcast");
+  }
+
+  commands(): CommandClass[] {
+    return [BroadcastConnectionsCommand, BroadcastChannelsCommand, BroadcastTerminateCommand, BroadcastSendCommand];
   }
 
   async boot(): Promise<void> {
