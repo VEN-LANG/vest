@@ -1,10 +1,23 @@
-import { ServiceProvider } from "@lara-node/core";
+import { ServiceProvider, type CommandClass } from "@lara-node/core";
 import { initDatabase, query, getDbType } from "./connection.js";
+import {
+  MigrateCommand, MigrateFreshCommand, MigrateRollbackCommand,
+  MigrateStatusCommand, MakeMigrationCommand,
+  DbSeedCommand, DbWipeCommand, MakeSeederCommand,
+} from "./Commands.js";
 
 export class DatabaseServiceProvider extends ServiceProvider {
   register(): void {
     this.container.singleton("db", () => ({ query, getDbType }));
     this.container.alias("db", "database");
+  }
+
+  commands(): CommandClass[] {
+    return [
+      MigrateCommand, MigrateFreshCommand, MigrateRollbackCommand,
+      MigrateStatusCommand, MakeMigrationCommand,
+      DbSeedCommand, DbWipeCommand, MakeSeederCommand,
+    ];
   }
 
   async boot(): Promise<void> {
