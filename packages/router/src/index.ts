@@ -30,3 +30,5 @@ export { autoRegisterModels, modelRegistryMiddleware } from "./ModelAutoRegistry
 export { Bind, Middleware } from "./decorators.js";
 export { Route, getRegisteredControllers } from "./ControllerDecorators.js";
 export type { MethodRoute, ControllerMeta } from "./ControllerDecorators.js";
+
+export * from "./Commands.js";
