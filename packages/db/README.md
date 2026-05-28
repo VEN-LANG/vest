@@ -453,13 +453,38 @@ export async function down(schema: MigrationSchema, query: QueryFn) {
 | `uuid()`                          | `CHAR(36)`                          |
 | `morphs(name)`                    | `{name}_type` + `{name}_id` + index |
 
-### Indexes and foreign keys
+### Indexes, foreign keys, and constraints
 
 ```ts
+// Named indexes
 table.index(["tenant_id", "status"], "tenant_status_idx");
 table.uniqueIndex(["email", "tenant_id"]);
+table.fullText(["title", "body"]);
+table.compositeUnique(["user_id", "role_id"]);
+table.compositePrimary(["user_id", "tenant_id"]);
+
+// Foreign keys (fluent builder)
 table.foreign("user_id").references("id").inTable("users").onDelete("CASCADE");
+// Shorthand
+table.foreign("user_id").references("id").inTable("users").cascadeOnDelete();
+table.foreign("deleted_by").references("id").inTable("users").nullOnDelete();
+
+// foreignIdFor — one-liner for common FK patterns
+table.foreignIdFor("users");                  // → user_id BIGINT UNSIGNED
+table.foreignIdFor("users").constrained();    // + FK constraint user_id → users.id
+table.foreignIdFor("roles")
+     .constrained({ onDelete: "CASCADE" });   // + CASCADE
 ```
+
+### Constraint shorthand helpers
+
+| Helper | Equivalent |
+|---|---|
+| `.cascadeOnDelete()` | `.onDelete("CASCADE")` |
+| `.cascadeOnUpdate()` | `.onUpdate("CASCADE")` |
+| `.nullOnDelete()` | `.onDelete("SET NULL")` |
+| `.restrictOnDelete()` | `.onDelete("RESTRICT")` |
+| `.noActionOnDelete()` | `.onDelete("NO ACTION")` |
 
 ### MongoDB migration
 
