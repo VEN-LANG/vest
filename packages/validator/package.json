@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/validator",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "Laravel-inspired validation engine for Lara-Node",
   "files": [
     "dist",
@@ -27,7 +27,7 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@lara-node/db": ">=0.1.13"
+    "@lara-node/db": ">=0.1.19"
   },
   "peerDependenciesMeta": {
     "@lara-node/db": {
