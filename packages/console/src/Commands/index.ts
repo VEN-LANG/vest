@@ -1,98 +1,33 @@
 /*
 |--------------------------------------------------------------------------
-| Eloquent System Commands Index
+| Console System Commands
 |--------------------------------------------------------------------------
 |
-| These are the core framework commands that come with the eloquent package.
-| They are registered automatically by the Kernel.
+| These are the core console commands that are always available regardless
+| of which optional packages are installed.
+|
+| Feature-specific commands live in their own packages and are registered
+| via the ServiceProvider.commands() mechanism:
+|
+|   @lara-node/db       → MigrateCommand, DbSeedCommand, MakeMigrationCommand, etc.
+|   @lara-node/cache    → CacheClearCommand, CacheListCommand, etc.
+|   @lara-node/queue    → QueueWorkCommand, ScheduleRunCommand, etc.
+|   @lara-node/events   → EventListCommand, BroadcastChannelsCommand, etc.
+|   @lara-node/horizon  → HorizonWorkCommand, HorizonStatusCommand, etc.
+|   @lara-node/router   → RouteListCommand, DocsGenerateCommand, etc.
 |
 */
 
-// Cache Commands
-export {
-  CacheClearCommand,
-  CacheListCommand,
-  CacheGetCommand,
-  CacheSetCommand,
-  CacheForgetCommand,
-  CacheHasCommand,
-  CacheKeyCommand,
-  CacheDriverCommand,
-} from "./CacheCommands.js";
-
-// Key Commands
+// Key management
 export { KeyGenerateCommand } from "./KeyGenerateCommand.js";
 
-// Migration Commands
-export {
-  MigrateCommand,
-  MigrateFreshCommand,
-  MigrateRollbackCommand,
-  MigrateStatusCommand,
-  MakeMigrationCommand,
-} from "./MigrationCommands.js";
-
-// Database Commands
-export { DbSeedCommand, DbWipeCommand, MakeSeederCommand } from "./DatabaseCommands.js";
-
-// Route Commands
-export { RouteListCommand } from "./RouteCommands.js";
-
-// Queue Commands
-export {
-  QueueWorkCommand,
-  QueueListenCommand,
-  QueueRestartCommand,
-  QueueRetryCommand,
-  QueueForgetCommand,
-  QueueFlushCommand,
-  QueueFailedCommand,
-  QueueClearCommand,
-  QueueStatusCommand,
-  QueueJobsCommand,
-  ScheduleRunCommand,
-  ScheduleWorkCommand,
-  ScheduleListCommand,
-} from "./QueueCommands.js";
-
-// Event Commands
-export {
-  EventListCommand,
-  EventDispatchCommand,
-  EventClearCommand,
-  EventGenerateCommand,
-  ListenerGenerateCommand,
-  SubscriberGenerateCommand,
-} from "./EventCommands.js";
-
-// Broadcast Commands
-export {
-  BroadcastConnectionsCommand,
-  BroadcastChannelsCommand,
-  BroadcastTerminateCommand,
-  BroadcastSendCommand,
-} from "./BroadcastCommands.js";
-
-// Documentation Commands
-export { DocsGenerateCommand, DocsListCommand } from "./DocsCommands.js";
-
-// Horizon Commands
-export {
-  HorizonWorkCommand,
-  HorizonPauseCommand,
-  HorizonContinueCommand,
-  HorizonTerminateCommand,
-  HorizonStatusCommand,
-  HorizonListCommand,
-} from "./HorizonCommands.js";
-
-// Serve Command
+// Dev server
 export { ServeCommand } from "./ServeCommand.js";
 
-// Vendor Publish
+// Vendor publish
 export { VendorPublishCommand } from "./VendorPublishCommand.js";
 
-// Make Commands
+// Make generators (always available — scaffold tooling)
 export {
   MakeModelCommand,
   MakeMiddlewareCommand,
