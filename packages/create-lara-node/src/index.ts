@@ -8,7 +8,7 @@
  */
 
 import { existsSync, mkdirSync, writeFileSync } from "fs";
-import { join, resolve } from "path";
+import { join, resolve, dirname } from "path";
 import pc from "picocolors";
 import prompts from "prompts";
 
@@ -135,7 +135,11 @@ async function main() {
   console.log(`    ${pc.cyan("pnpm dev")}\n`);
 }
 
-const w = (dir: string, file: string, content: string) => writeFileSync(join(dir, file), content);
+const w = (dir: string, file: string, content: string) => {
+  const full = join(dir, file);
+  mkdirSync(dirname(full), { recursive: true });
+  writeFileSync(full, content);
+};
 const d = (dir: string, path: string) => mkdirSync(join(dir, path), { recursive: true });
 
 function scaffold(dir: string, name: string, opts: { database: string; packages: string[] }): void {
