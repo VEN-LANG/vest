@@ -34,7 +34,7 @@ export class QueueServiceProvider extends BaseProvider {
     // App-specific scheduled tasks
     scheduler.command('permissions:sync').dailyAt('00:05');
     scheduler.job(CleanupJob).dailyAt('02:00');
-    scheduler.job(GenerateReportJob, { type: 'users', period: 'weekly' }).weekly();
-    scheduler.job(GenerateReportJob, { type: 'activity', period: 'monthly' }).monthlyOn(1, '06:00');
+    scheduler.job(GenerateReportJob).weekly();
+    scheduler.job(GenerateReportJob).monthlyOn(1, '06:00');
   }
 }

@@ -274,22 +274,105 @@ class HorizonManagerClass {
     |--------------------------------------------------------------------------
     */
 
-  async getSchedulerTasks(): Promise<SchedulerTaskInfo[]> {
-    const local = scheduler.getTasks().map((t) => ({
+  private schedulerEventsRegistered = false;
+
+  /**
+   * Wire scheduler task lifecycle events into Horizon. Mirrors the worker
+   * event pattern: each event (1) persists runtime state to the shared cache
+   * for cross-process dashboard visibility, and (2) is re-published on the
+   * application EventDispatcher for in-process listeners. Idempotent, so it is
+   * safe to call from every process that boots Horizon — it only does useful
+   * work in the process actually running the scheduler (`schedule:work`).
+   */
+  registerSchedulerEvents(): void {
+    if (this.schedulerEventsRegistered) return;
+    this.schedulerEventsRegistered = true;
+
+    const dispatcher = getEventDispatcher();
+    const runTimes = new Map<string, number>();
+
+    // Seed task definitions so the dashboard has rows before the first run.
+    const defs = scheduler.getTasks().map((t) => ({
       name: t.name,
       expression: t.expression,
       description: t.description,
       isRunning: t.isRunning,
-      lastRun: t.lastRun,
-      nextRun: t.nextRun,
+      lastRun: t.lastRun ?? null,
+      nextRun: t.nextRun ?? null,
     }));
-    if (local.length > 0) {
-      // Refresh cache so the dashboard process can see current task state
-      horizonMetrics.writeSchedulerTasks(local).catch(() => {});
-      return local;
-    }
-    // Cross-process: HTTP server has no local scheduler — read from cache
-    return horizonMetrics.readSchedulerTasks();
+    if (defs.length > 0) horizonMetrics.writeSchedulerTasks(defs).catch(() => {});
+
+    scheduler.on("task:start", (task) => {
+      runTimes.set(task.name, Date.now());
+      horizonMetrics
+        .updateSchedulerTask(task.name, { isRunning: true, nextRun: task.nextRun })
+        .catch(() => {});
+      dispatcher.dispatchNow("horizon:schedule.task.start", { task });
+    });
+
+    scheduler.on("task:success", (task) => {
+      const started = runTimes.get(task.name);
+      const durationMs = started ? Date.now() - started : undefined;
+      runTimes.delete(task.name);
+      horizonMetrics
+        .updateSchedulerTask(task.name, {
+          isRunning: false,
+          lastRun: task.lastRun,
+          nextRun: task.nextRun,
+        })
+        .catch(() => {});
+      dispatcher.dispatchNow("horizon:schedule.task.success", { task, durationMs });
+    });
+
+    scheduler.on("task:failed", (task, error) => {
+      const started = runTimes.get(task.name);
+      const durationMs = started ? Date.now() - started : undefined;
+      runTimes.delete(task.name);
+      horizonMetrics
+        .updateSchedulerTask(task.name, {
+          isRunning: false,
+          lastRun: task.lastRun,
+          nextRun: task.nextRun,
+        })
+        .catch(() => {});
+      dispatcher.dispatchNow("horizon:schedule.task.failed", {
+        task,
+        durationMs,
+        error: error?.message ?? String(error),
+      });
+    });
+  }
+
+  async getSchedulerTasks(): Promise<SchedulerTaskInfo[]> {
+    const persisted = await horizonMetrics.readSchedulerTasks();
+    const local = scheduler.getTasks();
+
+    // Dashboard process without a local scheduler — cache is the only source.
+    if (local.length === 0) return persisted;
+
+    // This process owns the task definitions; overlay the event-driven runtime
+    // state (isRunning/lastRun/nextRun) persisted by the listener, which may
+    // run in another process (schedule:work).
+    const byName = new Map(persisted.map((t) => [t.name, t]));
+    return local.map((t) => {
+      const p = byName.get(t.name);
+      return {
+        name: t.name,
+        expression: t.expression,
+        description: t.description,
+        isRunning: p?.isRunning ?? t.isRunning,
+        lastRun: this.latestDate(t.lastRun, p?.lastRun),
+        nextRun: t.nextRun ?? p?.nextRun ?? null,
+      };
+    });
+  }
+
+  /** Return the more recent of two optional dates (cache values may be ISO strings). */
+  private latestDate(a?: Date | null, b?: Date | null): Date | null {
+    const ta = a ? new Date(a).getTime() : Number.NEGATIVE_INFINITY;
+    const tb = b ? new Date(b).getTime() : Number.NEGATIVE_INFINITY;
+    if (ta === Number.NEGATIVE_INFINITY && tb === Number.NEGATIVE_INFINITY) return null;
+    return new Date(Math.max(ta, tb));
   }
 
   /*

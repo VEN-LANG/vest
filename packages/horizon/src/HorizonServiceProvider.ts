@@ -34,6 +34,11 @@ export class HorizonServiceProvider extends ServiceProvider {
   async boot(): Promise<void> {
     if (!this.isEnabled()) return;
 
+    // Persist scheduler task state to the shared cache on each run and
+    // re-publish lifecycle events. Effective in whichever process executes
+    // the scheduler (schedule:work); idempotent and harmless elsewhere.
+    HorizonManager.registerSchedulerEvents();
+
     const { path: basePath, token } = horizonConfig;
     const expressApp = this.app.getExpressApp();
     const router = Router();
