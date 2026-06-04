@@ -1,0 +1,149 @@
+# LaraNode
+
+> LaraNode is a Laravel-inspired Node.js framework built on top of Express.js. It brings the elegant developer experience of Laravel to the Node.js ecosystem with a TypeScript-first, modular design — featuring an IoC container, service providers, Eloquent-style ORM, expressive routing, JWT auth, validation, caching, queues, events, mail, an Artisan CLI, plus Horizon and Telescope dashboards.
+
+LaraNode is organized as a monorepo of 16+ focused `@lara-node/*` packages you can use independently or together. It targets Node.js 20+ with TypeScript 5+, uses decorators and reflect-metadata, and supports both MySQL and MongoDB.
+
+**Key conventions:**
+- Service providers register and boot services in a defined order (`ConfigServiceProvider` → `MiddlewareServiceProvider` → `RouteServiceProvider`)
+- Configuration uses dot-notation `config('mail.default')` accessor
+- Middleware aliases (`auth`, `can:perm`, `role:admin`) are registered centrally in `MiddlewareServiceProvider`
+- The `pnpm create lara-node my-api` CLI scaffolds a complete application
+
+## Getting Started
+
+- [Introduction](/guide/introduction): Why LaraNode, philosophy, core concepts overview, package ecosystem
+- [Getting Started](/guide/getting-started): Quick start using `create-laranode`, manual setup walkthrough, CLI basics
+- [Installation](/guide/installation): Install packages individually, peer dependencies, TypeScript and environment setup
+- [Project Structure](/guide/project-structure): Standard `src/app`, `src/bootstrap`, `src/config`, `src/database`, `src/routes` layout
+- [Configuration](/guide/configuration): File-based configs in `src/config/`, env vars, `config()`/`setConfig()`/`hasConfig()` helpers
+
+## Fundamentals
+
+- [Service Providers](/guide/service-providers): `register()` vs `boot()`, `MiddlewareServiceProvider`, `@Provider()` auto-discovery, lifecycle hooks
+- [Dependency Injection](/guide/dependency-injection): IoC container, `bind`/`singleton`/`instance`/`alias`, `@Injectable()`, automatic resolution, contextual bindings
+- [Middleware](/guide/middleware): Creating middleware classes, global/group/route middleware, priority, terminable middleware, parameters (`throttle:60,1`)
+- [Facades](/guide/facades): Static-like access (`Cache`, `DB`, `Mail`, `Broadcast`, `RateLimiter`), how they proxy container resolutions
+
+## Core Package — `@lara-node/core`
+
+- [Overview](/packages/core): IoC container, Application bootstrap, service providers, middleware stack, configuration system
+- [Container](/packages/core/container): `Container` class, `bind()`/`singleton()`/`instance()`/`alias()`/`make()`/`app()`/`resolving()`
+- [Application](/packages/core/application): Express wrapper, registering providers, `boot()`, `listen()`, global middleware, lifecycle hooks
+- [Service Providers](/packages/core/service-providers): `ServiceProvider` base class, `this.app`, `MiddlewareServiceProvider`, registration helpers
+- [Configuration](/packages/core/config): `config()`/`setConfig()`/`hasConfig()`/`allConfig()`, dot notation, loading from files
+- [Form Request](/packages/core/request): `FormRequest` class, auto-validation via TypeScript metadata, `validated()`/`safe()`/`errors()`, authorization, custom messages
+
+## Database — `@lara-node/db`
+
+- [Overview](/packages/db): Eloquent-inspired ORM, MySQL & MongoDB, relationships, query builder, migrations, traits, observers
+- [Models](/packages/db/models): Defining models, fillable/guarded/hidden, accessors/mutators, casts, CRUD operations
+- [Query Builder](/packages/db/query-builder): `where`, `orWhere`, `whereIn`, joins, ordering, pagination, chunking, cursor, `whereHas`, soft delete scopes
+- [Relationships](/packages/db/relationships): `hasOne`, `hasMany`, `belongsTo`, `belongsToMany`, `hasOneThrough`, `hasManyThrough`, eager loading, pivot data
+- [Migrations](/packages/db/migrations): Schema builder, column types, modifiers, foreign keys, `make:migration`, `migrate:fresh`/`migrate:rollback`
+- [Seeders](/packages/db/seeders): Writing seeders, model factories, `db:seed`, `DatabaseSeeder` orchestrator, `db:wipe`
+- [Traits](/packages/db/traits): `SoftDeletes`, `Timestamps`, `Sluggable`, `Sortable`, `Searchable`, `Cacheable` — applied via `@use()`
+- [Observers](/packages/db/observers): Model lifecycle events (`creating`, `created`, `updated`, `deleted`, `restored`, `retrieved`), `@Observe()` decorator
+- [DB Facade](/packages/db/facade): Raw `select`/`insert`/`update`/`delete`, fluent table queries, transactions, MongoDB collections
+
+## Router — `@lara-node/router`
+
+- [Overview](/packages/router): Fluent route builder, controller decorators, route groups, model binding, resource routing, OpenAPI
+- [Basic Routing](/packages/router/basic): HTTP verbs, parameters, named routes, constraints, redirects, fallback
+- [Route Groups](/packages/router/groups): Shared prefix, middleware, naming, nesting, `withoutMiddleware`
+- [Controllers](/packages/router/controllers): `@Route()` class decorator, method decorators, middleware on classes/methods, registering controllers
+- [Middleware](/packages/router/middleware): Route-level middleware, parameters, group middleware, registering aliases via `MiddlewareServiceProvider`
+- [Route Model Binding](/packages/router/model-binding): `@Bind()` decorator, automatic model resolution, custom resolution callbacks
+- [Resource Routes](/packages/router/resource): `Route.resource()` and `Route.apiResource()` — RESTful route generation
+- [OpenAPI Generation](/packages/router/openapi): `@Doc()` decorator, `OpenApiGenerator`, `RouteScanner`, serving the spec
+
+## Auth — `@lara-node/auth`
+
+- [Overview](/packages/auth): JWT generation/verification, bcrypt password hashing, auth middleware, AES-256-GCM token encryption
+- [Token Generation](/packages/auth/tokens): `generateToken(payload, ttl)`, `verifyToken(token)`, integration with login flow
+- [Password Hashing](/packages/auth/passwords): `hashPassword()`, `comparePassword()`, hashing automatically via observers
+- [Auth Middleware](/packages/auth/middleware): `authMiddleware`, `req.user` injection, `userLoader` option
+- [Token Encryption](/packages/auth/encryption): `encryptToken()`/`decryptToken()` using `APP_KEY` — reset tokens, email verification
+
+## Validator — `@lara-node/validator`
+
+- [Overview](/packages/validator): `validate()` function, `ValidationError`, 50+ rules, type coercion, dot-notation, wildcards
+- [Basic Usage](/packages/validator/basic): Pipe-separated rules, parameters, array/nested validation, `nullable`/`sometimes`, error handling
+- [Validation Rules](/packages/validator/rules): String, numeric, type, format, date comparison, value, database (`unique`/`exists`), conditional, file rules
+- [Custom Rules](/packages/validator/custom-rules): Custom rule functions, `requiredIf`/`requiredUnless`, file/phone/credit-card/nested rules
+- [Error Messages](/packages/validator/messages): Default messages, custom field/rule messages, `ValidationError` structure, Express integration
+
+## Cache — `@lara-node/cache`
+
+- [Overview](/packages/cache): `Cache` facade — `set`/`get`/`del`/`has`/`remember`, rate limiting, Telescope integration
+- [Cache Drivers](/packages/cache/drivers): `file`, `database`, `redis` drivers via `CACHE_DRIVER`, `generateCacheKey`, `cacheDelPrefix`
+- [Rate Limiting](/packages/cache/rate-limiting): `RateLimiter.tooManyAttempts`/`hit`/`attempt`/`clear`, named limiters, throttle middleware
+
+## Queue — `@lara-node/queue`
+
+- [Overview](/packages/queue): Jobs, workers, scheduler, `sync`/`database`/`redis` drivers, failed job tracking
+- [Jobs](/packages/queue/jobs): `@Queueable()`, `dispatch().onQueue().withDelay().withTries()`, lifecycle (`handle`, `failed`, `middleware`, `tags`), unique/encrypted jobs
+- [Workers](/packages/queue/workers): `queue:work` command, options (`--delay`/`--memory`/`--timeout`/`--sleep`/`--tries`), worker events, programmatic control
+- [Scheduler](/packages/queue/scheduler): `scheduler.command()`/`.job()`/`.call()`/`.exec()`, frequencies, constraints (weekdays, between, when), `onOneServer`
+- [Failed Jobs](/packages/queue/failed-jobs): `queue:retry`/`queue:forget`/`queue:flush-failed`, `failed()` callback, `retryUntil()`
+
+## Events — `@lara-node/events`
+
+- [Overview](/packages/events): Event dispatcher, listeners, subscribers, queueable listeners, transaction-aware events, WebSocket broadcasting
+- [Listeners](/packages/events/listeners): `@ListensTo()` decorator, multiple listeners, manual `on`/`once`/`off`, `@EventName()`
+- [Subscribers](/packages/events/subscribers): `@Subscriber()` decorator, `on<EventName>` method naming, grouping related listeners
+- [Queueable Listeners](/packages/events/queueable): `@ShouldQueue()` for async, queue/connection/tries/timeout options, `@AfterCommit()`
+- [Broadcasting](/packages/events/broadcasting): `PublicChannel`/`PrivateChannel`/`PresenceChannel`, `@ShouldBroadcast()`, `@BroadcastAs()`, `Broadcast` facade
+
+## Mail — `@lara-node/mail`
+
+- [Overview](/packages/mail): `Mail` facade, `MailManager`, `Mailable` classes, SMTP/log/array/failover drivers, queue support
+- [Mailables](/packages/mail/mailables): Building emails with fluent `.to()`/`.cc()`/`.subject()`/`.html()`/`.view()`/`.attach()`, `TextMailable`/`HtmlMailable`
+- [Mail Drivers](/packages/mail/drivers): SMTP via Nodemailer, log driver for development, array driver for testing, failover chains
+- [Queued Mail](/packages/mail/queued): `queueMail()`, `Mail.later()`, queue/delay properties on Mailables
+
+## Middlewares — `@lara-node/middlewares`
+
+- [Overview](/packages/middlewares): Pre-built middleware for auth, logging, validation, error handling, response extension, async context
+- [Built-in Middleware](/packages/middlewares/built-in): `AuthMiddleware`, `RequestLoggerMiddleware`, `ValidatorMiddleware`, `ResponseExtenderMiddleware`, `ErrorHandlerMiddleware`, `AsyncContextMiddleware`
+- [Auth & Authorization](/packages/middlewares/auth): `AuthMiddleware`, `AuthorizeByStatusMiddleware`, `authorizeRoles(...)`, `authorizePermissions(...)`
+
+## Carbon — `@lara-node/carbon`
+
+- [Overview](/packages/carbon): Laravel Carbon-inspired date library, immutable by default, fluent API, zero dependencies
+- [Creating Dates](/packages/carbon/creating): `Carbon.current()`, `from(string)`, `fromTimestamp`, `fromFormat`, `min`/`max`, `today`/`tomorrow`/`yesterday`
+- [Manipulation](/packages/carbon/manipulation): Accessors, `startOf*`/`endOf*`, `addDays`/`subMonths`, navigation
+- [Formatting](/packages/carbon/formatting): Format tokens (`YYYY-MM-DD HH:mm:ss`), human-readable `diffForHumans()`
+- [Comparison](/packages/carbon/comparison): `isPast`/`isFuture`/`isToday`/`isWeekend`/`isLeapYear`/`isBetween`, `diffInDays`/`diffInHours`
+- [Intervals & Periods](/packages/carbon/intervals): `CarbonInterval` for durations, `CarbonPeriod` for iterating date ranges
+
+## Console — `@lara-node/console`
+
+- [Overview](/packages/console): Laravel Artisan-style CLI kernel, 40+ built-in commands, custom commands, scheduler integration
+- [Writing Commands](/packages/console/commands): `Command` base class, signature, arguments/options, output methods, tables, interactive prompts
+- [Built-in Commands](/packages/console/built-in): `serve`, `migrate*`, `db:*`, `cache:*`, `queue:*`, `horizon:*`, `event:*`, `route:list`, `key:generate`, `vendor:publish`
+
+## Horizon — `@lara-node/horizon`
+
+- [Overview](/packages/horizon): Queue monitoring dashboard at `/horizon`, worker management, metrics, failed jobs, scheduler tasks
+- [Configuration](/packages/horizon/configuration): Per-environment supervisor settings, worker definitions (connection, queue, tries, timeout)
+- [Dashboard](/packages/horizon/dashboard): `HorizonManager` API to start/pause/resume/stop workers, queue and failed job management
+
+## Telescope — `@lara-node/telescope`
+
+- [Overview](/packages/telescope): Debug dashboard at `/telescope` for requests, queries, exceptions, cache, jobs, schedule, logs
+- [Configuration](/packages/telescope/configuration): `path`, `enabled`, `maxEntries`, `pruneHours`, disabling in production
+- [Watchers](/packages/telescope/watchers): `QueryWatcher`, `CacheWatcher`, entry types, `TelescopeStore.record()`/`getEntries()`, metric buckets
+
+## Exports — `@lara-node/exports`
+
+- [Overview](/packages/exports): PDF/Excel/CSV generation — `toPDF()`, `toPDFFromTemplate()`, `toExcel()`, `toCSV()`, custom template delimiters
+
+## CLI Tools
+
+- [create-laranode](/cli/create-laranode): `pnpm create lara-node my-app` scaffold — generates models, controllers, services, providers, sample middleware
+
+## Optional
+
+- [GitHub Repository](https://github.com/venomous-maker/vest): Source code, issues, and contributions
+- [README](https://github.com/venomous-maker/vest/blob/main/README.md): Top-level project overview with extended examples (HTTP Kernel, runtime config, Singleton Registry internals)
