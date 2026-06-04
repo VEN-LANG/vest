@@ -1,11 +1,5 @@
 import { ServiceProvider, ServiceProviderClass } from '@lara-node/core';
 import { AuthService, UserService, RoleService, PermissionService, FileService } from '@app/Services/index';
-import { AuthController } from '../Http/Controllers/User/AuthController';
-import { UserController } from '../Http/Controllers/User/UserController';
-import { RoleController } from '../Http/Controllers/User/RoleController';
-import { PermissionController } from '../Http/Controllers/User/PermissionController';
-import { FileController } from '../Http/Controllers/File/FileController';
-import { PermissionsSyncCommand, PermissionsListCommand } from '../Console/Commands/PermissionCommands';
 import { ConfigServiceProvider } from './ConfigServiceProvider';
 import { DatabaseServiceProvider } from '@lara-node/db';
 import { CacheServiceProvider } from '@lara-node/cache';
@@ -15,6 +9,8 @@ import { DocServiceProvider } from '@lara-node/router';
 import { EventServiceProvider } from './EventServiceProvider';
 import { BroadcastServiceProvider } from './BroadcastServiceProvider';
 import { QueueServiceProvider } from './QueueServiceProvider';
+import { HorizonServiceProvider } from '@lara-node/horizon';
+import { TelescopeServiceProvider } from '@lara-node/telescope';
 
 export class AppServiceProvider extends ServiceProvider {
   /*
@@ -38,6 +34,8 @@ export class AppServiceProvider extends ServiceProvider {
     EventServiceProvider,
     BroadcastServiceProvider,
     QueueServiceProvider,
+    HorizonServiceProvider,
+    TelescopeServiceProvider,
   ];
 
   register(): void {
@@ -48,13 +46,6 @@ export class AppServiceProvider extends ServiceProvider {
     this.singleton(RoleService);
     this.singleton(PermissionService);
     this.singleton(FileService);
-    this.singleton(AuthController);
-    this.singleton(UserController);
-    this.singleton(RoleController);
-    this.singleton(PermissionController);
-    this.singleton(FileController);
-    this.singleton(PermissionsSyncCommand);
-    this.singleton(PermissionsListCommand);
   }
 
   boot(): void {}

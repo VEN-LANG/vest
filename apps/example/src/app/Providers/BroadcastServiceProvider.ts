@@ -1,10 +1,17 @@
-import { ServiceProvider } from '@lara-node/core';
+import { BroadcastServiceProvider as BaseProvider } from '@lara-node/events';
 import { Broadcast } from '@lara-node/events';
 
-export class BroadcastServiceProvider extends ServiceProvider {
-  register(): void {}
-
-  async boot(): Promise<void> {
+/*
+|--------------------------------------------------------------------------
+| BroadcastServiceProvider
+|--------------------------------------------------------------------------
+|
+| Extends the framework BroadcastServiceProvider.
+| Define your channel authorization rules here.
+|
+*/
+export class BroadcastServiceProvider extends BaseProvider {
+  protected override channels(): void {
     Broadcast.private('notifications.{userId}', (user: Record<string, unknown> | null, userId: string) => {
       return !!user && String(user['id']) === userId;
     });

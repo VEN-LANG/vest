@@ -4,6 +4,7 @@ import path from 'path';
 import { Injectable } from '@lara-node/core';
 import { Doc } from '@lara-node/router';
 import { FileService } from '@app/Services/index';
+import FileModel from '@app/Models/File/File';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || 'uploads/files';
 
@@ -26,10 +27,15 @@ export class FileController {
     res.json({ success: true, data: await this.fileService.index() });
   }
 
-  @Doc({ summary: 'Get file metadata by ID', tags: ['Files'], auth: true, params: [{ name: 'id', in: 'path', type: 'integer' }] })
-  async show(req: Request, res: Response): Promise<void> {
-    const file = await this.fileService.find(req.params.id);
-    if (!file) { res.status(404).json({ success: false, message: 'Not found' }); return; }
+  @Doc({
+    summary: 'Get file metadata by ID (route-model binding)',
+    description: 'The :file parameter is automatically resolved to a File model instance.',
+    tags: ['Files'],
+    auth: true,
+    params: [{ name: 'file', in: 'path', type: 'integer', description: 'File ID — auto-bound to File model' }],
+    responses: [{ status: 200, description: 'File metadata' }, { status: 404, description: 'Not found' }],
+  })
+  async show(_req: Request, res: Response, file: FileModel): Promise<void> {
     res.json({ success: true, data: file });
   }
 
@@ -39,19 +45,17 @@ export class FileController {
     res.status(201).json({ success: true, data: await this.fileService.store(req.file, req.user!.id) });
   }
 
-  @Doc({ summary: 'Download a file by ID', tags: ['Files'], auth: true })
-  async download(req: Request, res: Response): Promise<void> {
-    const file = await this.fileService.find(req.params.id);
-    if (!file) { res.status(404).json({ success: false, message: 'Not found' }); return; }
+  @Doc({ summary: 'Download a file by ID (route-model binding)', tags: ['Files'], auth: true })
+  async download(_req: Request, res: Response, file: FileModel): Promise<void> {
     res.download(
-      file.getAttribute('disk_path') as string,
-      file.getAttribute('original_name') as string,
+      file.disk_path,
+      file.original_name,
     );
   }
 
   @Doc({ summary: 'Delete a file (soft delete + remove from disk)', tags: ['Files'], auth: true })
-  async destroy(req: Request, res: Response): Promise<void> {
-    await this.fileService.destroy(req.params.id);
+  async destroy(_req: Request, res: Response, file: FileModel): Promise<void> {
+    await this.fileService.destroy(file.id);
     res.json({ success: true, message: 'File deleted' });
   }
 }

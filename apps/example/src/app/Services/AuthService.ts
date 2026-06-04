@@ -17,12 +17,12 @@ export class AuthService {
     const user = await User.where('email', email).first() as User | null;
     if (!user) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
 
-    const ok = await bcrypt.compare(password, user.getAttribute('password') as string);
+    const ok = await bcrypt.compare(password, user.password);
     if (!ok) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
 
     const secret = process.env.JWT_SECRET ?? 'dev-secret-change';
     const expiresIn = (process.env.JWT_EXPIRES_IN ?? '7d') as jwt.SignOptions['expiresIn'];
-    const token = jwt.sign({ sub: user.getAttribute('id') }, secret, { expiresIn });
+    const token = jwt.sign({ sub: user.id }, secret, { expiresIn });
 
     await user.update({ last_login: new Date(), last_seen_at: new Date() });
     return { token, user };

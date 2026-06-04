@@ -46,6 +46,49 @@ export function hasConfig(key: string): boolean {
 }
 
 /**
+ * Deep-merge a config object into an existing namespace. Package defaults
+ * should call this first; app-level setConfig() still wins because it
+ * overwrites the entire namespace.
+ *
+ * @example
+ * // In a package ServiceProvider (sets defaults):
+ * mergeConfig('mail', { default: 'smtp', mailers: { smtp: { ... } } });
+ * // In ConfigServiceProvider (app wins):
+ * setConfig('mail', appMailConfig);
+ */
+export function mergeConfig(key: string, value: Record<string, unknown>): void {
+  const existing = store[key];
+  if (existing == null || typeof existing !== "object" || Array.isArray(existing)) {
+    store[key] = value;
+    return;
+  }
+  store[key] = deepMerge(existing as Record<string, unknown>, value);
+}
+
+function deepMerge(
+  target: Record<string, unknown>,
+  source: Record<string, unknown>,
+): Record<string, unknown> {
+  const output = { ...target };
+  for (const [k, v] of Object.entries(source)) {
+    if (
+      v != null &&
+      typeof v === "object" &&
+      !Array.isArray(v) &&
+      k in output &&
+      output[k] != null &&
+      typeof output[k] === "object" &&
+      !Array.isArray(output[k])
+    ) {
+      output[k] = deepMerge(output[k] as Record<string, unknown>, v as Record<string, unknown>);
+    } else {
+      output[k] = v;
+    }
+  }
+  return output;
+}
+
+/**
  * Return a snapshot of all registered config.
  */
 export function allConfig(): Record<string, ConfigValue> {

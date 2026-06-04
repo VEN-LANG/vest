@@ -13,11 +13,11 @@ import User from '../Models/User/User';
 @Observe(User)
 export class UserObserver extends Observer<User> {
   creating(user: User): void {
-    if (!user.getAttribute('status')) user.setAttribute('status', 'active');
+    if (!user.status) user.setAttribute('status', 'active');
   }
 
   created(user: User): void {
-    console.log(`[UserObserver] User created: ${user.getAttribute('email') as string}`);
+    console.log(`[UserObserver] User created: ${user.email}`);
   }
 
   updating(user: User): void {
@@ -25,6 +25,6 @@ export class UserObserver extends Observer<User> {
   }
 
   deleting(user: User): void {
-    console.log(`[UserObserver] User soft-deleted: ${user.getAttribute('id') as number}`);
+    console.log(`[UserObserver] User soft-deleted: ${user.id}`);
   }
 }

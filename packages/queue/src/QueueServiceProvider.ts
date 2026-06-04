@@ -1,5 +1,11 @@
-import { ServiceProvider } from "@lara-node/core";
+import { ServiceProvider, type CommandClass } from "@lara-node/core";
 import { Queue, QueueManager, scheduler, Schedule } from "./index.js";
+import {
+  QueueWorkCommand, QueueListenCommand, QueueRestartCommand, QueueRetryCommand,
+  QueueForgetCommand, QueueFlushCommand, QueueFailedCommand, QueueClearCommand,
+  QueueStatusCommand, QueueJobsCommand,
+  ScheduleRunCommand, ScheduleWorkCommand, ScheduleListCommand,
+} from "./Commands.js";
 
 /**
  * Framework QueueServiceProvider.
@@ -29,6 +35,15 @@ export class QueueServiceProvider extends ServiceProvider {
 
   boot(): void {
     this.schedule();
+  }
+
+  commands(): CommandClass[] {
+    return [
+      QueueWorkCommand, QueueListenCommand, QueueRestartCommand, QueueRetryCommand,
+      QueueForgetCommand, QueueFlushCommand, QueueFailedCommand, QueueClearCommand,
+      QueueStatusCommand, QueueJobsCommand,
+      ScheduleRunCommand, ScheduleWorkCommand, ScheduleListCommand,
+    ];
   }
 
   /** Override to define scheduled tasks. */

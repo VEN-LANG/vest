@@ -1,3 +1,21 @@
+import { createRequire } from "node:module";
+
+// Resolve @lara-node/db relative to the consuming app's root so we always get
+// the same module instance the host already loaded and initialized.
+// Using require() (via createRequire) is intentional: when the host app runs
+// under @swc-node/register it loads packages via require() (CJS). A dynamic
+// import() in CJS code resolves to the ESM twin — a fresh instance with its
+// own uninitialized connection state. require() shares the same CJS instance.
+const _appRequire = createRequire(process.cwd() + "/package.json");
+
+function _loadDb(): { Model: typeof import("@lara-node/db").Model } | null {
+  try {
+    return _appRequire("@lara-node/db") as { Model: typeof import("@lara-node/db").Model };
+  } catch {
+    return null;
+  }
+}
+
 export class ValidationError extends Error {
   errors: Record<string, string[]>;
   messages: Record<string, string[]>;
@@ -1169,54 +1187,50 @@ export async function validate<T extends Record<string, unknown>>(
   }
 
   async function handleExistsRule(field: string, val: unknown, rule: string) {
-    try {
-      const { Model } = await import("@lara-node/db");
-      const spec = rule.split(":")[1];
-      let [table, column] = spec.split(",");
-      table = (table || "").trim();
-      column = (column || "id").trim();
-      class VM extends Model {
-        static table = table;
-        static primaryKey = "id";
-        static fillable = [column];
-      }
-      const exists = await VM.query().where(column, "=", val).exists();
-      if (!exists) pushError(field, "exists", { value: val, table, column });
-    } catch {
-      pushError(field, "exists", { value: val });
+    const db = _loadDb();
+    if (!db) return; // @lara-node/db is an optional peer dep — skip rule if not installed
+    const { Model } = db;
+    const spec = rule.split(":")[1];
+    let [table, column] = spec.split(",");
+    table = (table || "").trim();
+    column = (column || "id").trim();
+    class VM extends Model {
+      static table = table;
+      static primaryKey = "id";
+      static fillable = [column];
     }
+    const exists = await VM.query().where(column, "=", val).exists();
+    if (!exists) pushError(field, "exists", { value: val, table, column });
   }
 
   async function handleUniqueRule(field: string, val: unknown, rule: string) {
-    try {
-      const { Model } = await import("@lara-node/db");
-      const spec = rule.split(":")[1];
-      const partsSpec = spec.split(",").map((s) => s.trim());
-      const table = partsSpec[0];
-      const column = partsSpec[1] || "id";
-      const exceptArg = partsSpec[2];
-      const exceptArg2 = partsSpec[3];
-      class VM extends Model {
-        static table = table;
-        static primaryKey = "id";
-        static fillable = [column];
-      }
-      let exceptColumn = VM.primaryKey,
-        exceptValue = exceptArg;
-      if (exceptArg2 !== undefined) {
-        exceptColumn = exceptArg;
-        exceptValue = exceptArg2;
-      }
-      let q = VM.query().where(column, "=", val);
-      if (exceptValue !== undefined && exceptValue !== null && String(exceptValue) !== "") {
-        q = q.where(function (query: unknown) {
-          (query as { where: (a: string, b: string, c: string) => void }).where(exceptColumn, "!=", exceptValue as string);
-        });
-      }
-      if (await q.exists()) pushError(field, "unique", { value: val, table, column });
-    } catch {
-      pushError(field, "unique", { value: val });
+    const db = _loadDb();
+    if (!db) return; // @lara-node/db is an optional peer dep — skip rule if not installed
+    const { Model } = db;
+    const spec = rule.split(":")[1];
+    const partsSpec = spec.split(",").map((s) => s.trim());
+    const table = partsSpec[0];
+    const column = partsSpec[1] || "id";
+    const exceptArg = partsSpec[2];
+    const exceptArg2 = partsSpec[3];
+    class VM extends Model {
+      static table = table;
+      static primaryKey = "id";
+      static fillable = [column];
     }
+    let exceptColumn = VM.primaryKey,
+      exceptValue = exceptArg;
+    if (exceptArg2 !== undefined) {
+      exceptColumn = exceptArg;
+      exceptValue = exceptArg2;
+    }
+    let q = VM.query().where(column, "=", val);
+    if (exceptValue !== undefined && exceptValue !== null && String(exceptValue) !== "") {
+      q = q.where(function (query: unknown) {
+        (query as { where: (a: string, b: string, c: string) => void }).where(exceptColumn, "!=", exceptValue as string);
+      });
+    }
+    if (await q.exists()) pushError(field, "unique", { value: val, table, column });
   }
 
   async function handleRegexRule(field: string, val: unknown, rule: string, negate: boolean) {

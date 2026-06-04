@@ -4,6 +4,7 @@ import type { Middleware } from '@lara-node/core';
 import {
   AsyncContextMiddleware,
   RequestLoggerMiddleware,
+  RequestExtenderMiddleware,
   ValidatorMiddleware,
   ResponseExtenderMiddleware,
   ErrorHandlerMiddleware,
@@ -27,6 +28,7 @@ export class Kernel extends BaseKernel {
   protected override middleware: RequestHandler[] = middlewareStack.resolveMiddlewareStack([
     AsyncContextMiddleware,
     RequestLoggerMiddleware,
+    RequestExtenderMiddleware,
     ValidatorMiddleware,
     ResponseExtenderMiddleware,
   ] as Middleware[]);

@@ -31,7 +31,7 @@ export {
   Searchable,
   Cacheable,
 } from "./Traits/built-ins.js";
-export { applyTraits } from "./Traits/traits.js";
+export { applyTraits, trait, registerTrait, registerClassTrait, getTrait, getTraitByClass } from "./Traits/traits.js";
 export type { ModelAttributes, QueryResult, RelationshipConfig, Casts } from "./types.js";
 export { run as runMigrations } from "./Database/MigrationRunner.js";
 export { rollbackMigrations, makeMigration } from "./Database/index.js";
@@ -45,3 +45,5 @@ export {
   TELESCOPE_QUERY_CACHE_KEY,
 } from "./QueryInstrumentation.js";
 export { DatabaseServiceProvider } from "./DatabaseServiceProvider.js";
+
+export * from "./Commands.js";

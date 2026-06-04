@@ -1,33 +1,34 @@
-import { ServiceProvider } from '@lara-node/core';
-import { getEventDispatcher, getRegisteredListeners, getRegisteredSubscribers } from '@lara-node/events';
+import path from 'path';
+import { EventServiceProvider as BaseProvider } from '@lara-node/events';
 
-export class EventServiceProvider extends ServiceProvider {
-  protected shouldDiscoverEvents = true;
+/*
+|--------------------------------------------------------------------------
+| EventServiceProvider
+|--------------------------------------------------------------------------
+|
+| Extends the framework EventServiceProvider.
+| Listeners/ and Subscribers/ directories are scanned automatically —
+| no index.ts barrel needed. Any class decorated with @ListensTo() or
+| @Subscriber() is registered when its file is loaded.
+|
+*/
+export class EventServiceProvider extends BaseProvider {
+  protected override async discoverListeners(): Promise<void> {
+    this.loadDir(path.join(__dirname, '../Listeners'));
+  }
 
-  register(): void {}
+  protected override async discoverSubscribers(): Promise<void> {
+    this.loadDir(path.join(__dirname, '../Subscribers'));
+  }
 
-  async boot(): Promise<void> {
-    const dispatcher = getEventDispatcher();
-
-    if (this.shouldDiscoverEvents) {
-      try { await import('../Listeners/index'); } catch { /* empty */ }
-      try { await import('../Subscribers/index'); } catch { /* empty */ }
-    }
-
-    for (const [ListenerClass, metadata] of getRegisteredListeners()) {
-      for (const eventName of metadata.events) {
-        dispatcher.listen(eventName, async (payload) => {
-          const listener = new ListenerClass();
-          if (listener.shouldHandle && !listener.shouldHandle(payload)) return;
-          await listener.handle(payload);
-        });
+  private loadDir(dir: string): void {
+    const fs = require('fs') as typeof import('fs');
+    const pathMod = require('path') as typeof import('path');
+    if (!fs.existsSync(dir)) return;
+    for (const file of fs.readdirSync(dir)) {
+      if (file.endsWith('.ts') || file.endsWith('.js')) {
+        try { require(pathMod.join(dir, file)); } catch { /* skip */ }
       }
     }
-
-    for (const SubscriberClass of getRegisteredSubscribers()) {
-      dispatcher.subscribe(SubscriberClass);
-    }
-
-    console.log('[EventServiceProvider] Event listeners registered');
   }
 }

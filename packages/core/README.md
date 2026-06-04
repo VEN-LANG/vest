@@ -230,6 +230,82 @@ import "./app/Providers/RouteServiceProvider";
 app.discoverProviders();
 ```
 
+### `this.make<T>(abstract)` — resolve from container
+
+```ts
+export class AppServiceProvider extends ServiceProvider {
+  boot(): void {
+    const mailer = this.make(MailService);   // resolved from IoC container
+    mailer.setDefault("smtp");
+  }
+}
+```
+
+### `commands()` — register CLI commands
+
+Providers can expose console commands so they live next to the feature that owns them instead of being hard-coded in the console module.
+
+```ts
+export class QueueServiceProvider extends ServiceProvider {
+  commands(): Array<new () => unknown> {
+    return [QueueWorkCommand, ScheduleRunCommand];
+  }
+}
+```
+
+The ConsoleKernel calls `provider.commands()` on every booted provider automatically.
+
+### `static publishes()` — declare publishable files
+
+Packages can expose files for consumers to copy via `pnpm artisan vendor:publish`.
+
+```ts
+export class MailServiceProvider extends ServiceProvider {
+  static publishes(): Array<{ tag: string; from: string; to: string }> {
+    return [
+      { tag: "config",     from: "config/mail.config.ts",     to: "config/mail.config.ts" },
+      { tag: "migrations", from: "migrations/001_mails.ts",   to: "database/migrations/001_mails.ts" },
+    ];
+  }
+}
+```
+
+Any package (not just `@lara-node/*`) can declare publishable files this way.
+
+### `loadMigrationsFrom(path)` — register migration directory
+
+```ts
+export class BlogServiceProvider extends ServiceProvider {
+  register(): void {
+    this.loadMigrationsFrom(path.join(__dirname, "../migrations"));
+  }
+}
+```
+
+### `mergeConfigFrom(path, namespace)` — set package defaults
+
+Called in package providers to supply defaults that the application can override with `setConfig()`.
+
+```ts
+export class MailServiceProvider extends ServiceProvider {
+  register(): void {
+    this.mergeConfigFrom(path.join(__dirname, "../config/mail.defaults.js"), "mail");
+  }
+}
+```
+
+### `callAfterResolving(abstract, callback)` — post-resolution hook
+
+```ts
+export class LogServiceProvider extends ServiceProvider {
+  register(): void {
+    this.callAfterResolving(MailService, (instance) => {
+      (instance as MailService).setLogger(this.make(Logger));
+    });
+  }
+}
+```
+
 ### Deferred providers
 
 A provider is deferred if `provides()` returns a non-empty array. It will only be booted when one of those services is first resolved.
@@ -238,6 +314,10 @@ A provider is deferred if `provides()` returns a non-empty array. It will only b
 export class MailServiceProvider extends ServiceProvider {
   provides(): string[] {
     return ["mailer"];
+  }
+
+  when(): string[] {
+    return ["mailer"];   // only boot when MailService is first resolved
   }
 
   register(): void {
@@ -488,7 +568,7 @@ req.getRequest()    // underlying Express Request
 Dot-notation key-value store. Namespaces are typically registered in service providers.
 
 ```ts
-import { config, setConfig, hasConfig, allConfig } from "@lara-node/core";
+import { config, setConfig, mergeConfig, hasConfig, allConfig } from "@lara-node/core";
 
 // Register a namespace
 setConfig("app", {
@@ -507,6 +587,9 @@ const driver = config("db.default", "mysql");
 
 // Check existence
 if (hasConfig("mail.host")) { /* ... */ }
+
+// Deep-merge package defaults (app setConfig() still wins)
+mergeConfig("mail", { default: "smtp", from: { address: "noreply@example.com" } });
 
 // Dump everything
 const all = allConfig();

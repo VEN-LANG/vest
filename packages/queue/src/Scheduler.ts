@@ -177,6 +177,26 @@ export class Schedule {
     return this.tasks;
   }
 
+  /**
+   * Return the registered tasks with `lastRun` refreshed from the shared
+   * cache. The scheduler loop runs in a separate process (`schedule:work`)
+   * from the one serving the dashboard, so in-memory task objects elsewhere
+   * never see the `lastRun` written by the worker. Reading the persisted
+   * per-task state keeps consumers accurate without a process restart.
+   */
+  async getTasksWithPersistedState(): Promise<ScheduledTask[]> {
+    await Promise.all(
+      this.tasks.map(async (task) => {
+        const state = (await Cache.get(this.taskCacheKey(task.name)).catch(() => null)) as any;
+        if (state?.lastRun) {
+          const persisted = new Date(state.lastRun);
+          if (!task.lastRun || persisted > task.lastRun) task.lastRun = persisted;
+        }
+      }),
+    );
+    return this.tasks;
+  }
+
   /** Run a registered task by name immediately, bypassing its cron schedule. */
   async runNow(taskName: string): Promise<boolean> {
     const task = this.tasks.find((t) => t.name === taskName);
@@ -318,6 +338,9 @@ export class Schedule {
     console.log(`[Scheduler] Running task: ${task.name}`);
     this.events.emit("task:start", task);
 
+    // Terminal events are emitted from inside finalize() — after lastRun is
+    // set — so listeners (Horizon/Telescope) observe the current run's
+    // timestamp rather than the previous run's.
     const finalize = async (error?: Error) => {
       task.isRunning = false;
       task.lastRun = new Date();
@@ -327,8 +350,10 @@ export class Schedule {
       }
       if (error) {
         task.onFailureHook?.(task, error);
+        this.events.emit("task:failed", task, error);
       } else {
         task.onSuccessHook?.(task);
+        this.events.emit("task:success", task);
       }
     };
 
@@ -337,23 +362,19 @@ export class Schedule {
         setImmediate(async () => {
           try {
             await task.callback();
-            this.events.emit("task:success", task);
             await finalize();
           } catch (error) {
             console.error(`[Scheduler] Task failed: ${task.name}`, error);
-            this.events.emit("task:failed", task, error);
             await finalize(error as Error);
           }
         });
         // For background tasks, don't hold isRunning — the setImmediate owns it
       } else {
         await task.callback();
-        this.events.emit("task:success", task);
         await finalize();
       }
     } catch (error) {
       console.error(`[Scheduler] Task failed: ${task.name}`, error);
-      this.events.emit("task:failed", task, error);
       await finalize(error as Error);
     }
   }
@@ -369,12 +390,7 @@ export class Schedule {
 
     // Restore lastRun from cache for all registered tasks so the dashboard
     // shows accurate history after a process restart.
-    await Promise.all(
-      this.tasks.map(async (task) => {
-        const state = (await Cache.get(this.taskCacheKey(task.name)).catch(() => null)) as any;
-        if (state?.lastRun) task.lastRun = new Date(state.lastRun);
-      }),
-    );
+    await this.getTasksWithPersistedState();
 
     await this.runDueTasks();
 

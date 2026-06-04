@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/auth",
-  "version": "0.1.8",
+  "version": "0.1.11",
   "description": "Lara-Node JWT authentication helpers",
   "files": [
     "dist",
@@ -28,7 +28,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@lara-node/router": "^0.2.7",
+    "@lara-node/router": "workspace:^",
     "bcrypt": "^6.0.0",
     "jsonwebtoken": "^9.0.3"
   },
@@ -37,14 +37,14 @@
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^24.12.2",
-    "rimraf": "^6.0.1",
+    "@types/node": "^24.12.4",
+    "rimraf": "^6.1.3",
     "tsdown": "^0.12.9",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.3"
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "@lara-node/core": "^0.1.5",
-    "@lara-node/middlewares": "*"
+    "@lara-node/core": "workspace:^",
+    "@lara-node/middlewares": "workspace:^"
   }
 }

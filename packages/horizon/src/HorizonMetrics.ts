@@ -232,6 +232,23 @@ class HorizonMetricsStore {
     }
   }
 
+  /**
+   * Patch a single scheduler task's runtime state in the shared cache.
+   * Called from the scheduler process (via Horizon's event listener) so the
+   * dashboard — which may live in another process — sees fresh isRunning /
+   * lastRun / nextRun without a restart. Creates the row if it doesn't exist.
+   */
+  async updateSchedulerTask(name: string, patch: Partial<SchedulerTaskInfo>): Promise<void> {
+    const tasks = await this.readSchedulerTasks();
+    const idx = tasks.findIndex((t) => t.name === name);
+    if (idx === -1) {
+      tasks.push({ name, expression: "", isRunning: false, lastRun: null, nextRun: null, ...patch });
+    } else {
+      tasks[idx] = { ...tasks[idx], ...patch };
+    }
+    await Cache.set(K.scheduler, tasks, SCHEDULER_TTL).catch(() => {});
+  }
+
   /*
   |--------------------------------------------------------------------------
   | Worker definitions — persisted so dashboard can list/restart workers

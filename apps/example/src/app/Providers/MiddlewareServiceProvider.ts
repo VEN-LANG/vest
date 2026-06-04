@@ -37,7 +37,7 @@ export class MiddlewareServiceProvider extends BaseProvider {
           const roles = user.roles ?? [];
           const perms = roles.flatMap((r) => r.permissions ?? []);
           return {
-            id: user.getAttribute('id') as number,
+            id: user.id,
             roles: roles.map((r) => r.slug),
             permissions: perms.map((p) => p.slug),
             model: user,

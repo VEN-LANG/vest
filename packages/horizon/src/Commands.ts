@@ -1,7 +1,7 @@
-import { Command } from "../Command.js";
+import { Command } from "@lara-node/console";
 import { ArgumentsCamelCase } from "yargs";
-import { HorizonManager, horizonMetrics, horizonConfig } from "@lara-node/horizon";
-import type { HorizonSupervisor } from "@lara-node/horizon";
+import { HorizonManager, horizonMetrics, horizonConfig } from "./index.js";
+import type { HorizonSupervisor } from "./index.js";
 
 export class HorizonWorkCommand extends Command {
   protected signature = "horizon:work";
@@ -9,16 +9,8 @@ export class HorizonWorkCommand extends Command {
   protected keepAlive = true;
 
   protected options = {
-    env: {
-      type: "string" as const,
-      description: "Environment to load supervisor config from",
-      alias: "e",
-    },
-    supervisor: {
-      type: "string" as const,
-      description: "Name of a single supervisor to start (default: all)",
-      alias: "s",
-    },
+    env: { type: "string" as const, description: "Environment to load supervisor config from", alias: "e" },
+    supervisor: { type: "string" as const, description: "Name of a single supervisor to start (default: all)", alias: "s" },
   };
 
   async handle(args: ArgumentsCamelCase): Promise<void> {
@@ -27,7 +19,6 @@ export class HorizonWorkCommand extends Command {
 
     if (!envConfig?.supervisor?.length) {
       this.error(`No supervisor configuration found for environment [${env}].`);
-      this.line(`Define supervisors in horizon.config.ts → environments.${env}`);
       return;
     }
 
@@ -43,14 +34,9 @@ export class HorizonWorkCommand extends Command {
 
     this.printBanner(env, supervisors);
 
-    for (const sup of supervisors) {
-      await this.startSupervisor(sup);
-    }
+    for (const sup of supervisors) await this.startSupervisor(sup);
 
-    const graceful = () => {
-      this.warn("\n[Horizon] Shutting down…");
-      process.exit(0);
-    };
+    const graceful = () => { this.warn("\n[Horizon] Shutting down…"); process.exit(0); };
     process.once("SIGINT", graceful);
     process.once("SIGTERM", graceful);
 
@@ -63,40 +49,21 @@ export class HorizonWorkCommand extends Command {
 
     for (let i = 0; i < count; i++) {
       const id = count > 1 ? `${sup.name}-${i + 1}` : sup.name;
-
-      HorizonManager.startWorker({
-        id,
-        connection: sup.connection,
-        queues: sup.queue,
-        options: {
-          memory: sup.memory,
-          timeout: sup.timeout,
-          sleep: sup.sleep,
-          maxTries: sup.tries,
-          maxJobs: sup.maxJobs,
-          maxTime: sup.maxTime,
-        },
-      });
-
-      this.info(
-        `[${id}] started — queues: ${queues.join(", ")} | tries: ${sup.tries} | memory: ${sup.memory}MB`,
-      );
+      HorizonManager.startWorker({ id, connection: sup.connection, queues: sup.queue, options: { memory: sup.memory, timeout: sup.timeout, sleep: sup.sleep, maxTries: sup.tries, maxJobs: sup.maxJobs, maxTime: sup.maxTime } });
+      this.info(`[${id}] started — queues: ${queues.join(", ")} | tries: ${sup.tries} | memory: ${sup.memory}MB`);
     }
   }
 
   private printBanner(env: string, supervisors: HorizonSupervisor[]): void {
     const totalWorkers = supervisors.reduce((n, s) => n + (s.processes ?? 1), 0);
-    const dash = horizonConfig.path;
-    this.line("");
     this.line("╔══════════════════════════════════════════════════════════════╗");
     this.line("║                    Horizon Queue Manager                      ║");
     this.line("╠══════════════════════════════════════════════════════════════╣");
     this.line(`║ Environment : ${env.padEnd(46)}║`);
     this.line(`║ Supervisors : ${String(supervisors.length).padEnd(46)}║`);
     this.line(`║ Workers     : ${String(totalWorkers).padEnd(46)}║`);
-    this.line(`║ Dashboard   : ${dash.padEnd(46)}║`);
-    this.line("╚══════════════════════════════════════════════════════════════╝");
-    this.line("");
+    this.line(`║ Dashboard   : ${horizonConfig.path.padEnd(46)}║`);
+    this.line("╚══════════════════════════════════════════════════════════════╝\n");
   }
 }
 
@@ -107,9 +74,7 @@ export class HorizonPauseCommand extends Command {
   async handle(_args: ArgumentsCamelCase): Promise<void> {
     const workers = await horizonMetrics.getWorkers();
     let count = 0;
-    for (const w of workers) {
-      if (HorizonManager.pauseWorker(w.id)) count++;
-    }
+    for (const w of workers) if (HorizonManager.pauseWorker(w.id)) count++;
     this.info(`Paused ${count} worker(s).`);
   }
 }
@@ -121,9 +86,7 @@ export class HorizonContinueCommand extends Command {
   async handle(_args: ArgumentsCamelCase): Promise<void> {
     const workers = await horizonMetrics.getWorkers();
     let count = 0;
-    for (const w of workers) {
-      if (HorizonManager.resumeWorker(w.id)) count++;
-    }
+    for (const w of workers) if (HorizonManager.resumeWorker(w.id)) count++;
     this.info(`Resumed ${count} worker(s).`);
   }
 }
@@ -135,9 +98,7 @@ export class HorizonTerminateCommand extends Command {
   async handle(_args: ArgumentsCamelCase): Promise<void> {
     const workers = await horizonMetrics.getWorkers();
     let count = 0;
-    for (const w of workers) {
-      if (HorizonManager.stopWorker(w.id)) count++;
-    }
+    for (const w of workers) if (HorizonManager.stopWorker(w.id)) count++;
     this.info(`Stopped ${count} worker(s).`);
   }
 }
@@ -147,12 +108,8 @@ export class HorizonStatusCommand extends Command {
   protected description = "Show current Horizon worker status and metrics";
 
   async handle(_args: ArgumentsCamelCase): Promise<void> {
-    const [summary, workers] = await Promise.all([
-      horizonMetrics.summary(),
-      horizonMetrics.getWorkers(),
-    ]);
+    const [summary, workers] = await Promise.all([horizonMetrics.summary(), horizonMetrics.getWorkers()]);
 
-    this.line("");
     this.line("╔══════════════════════════════════════════════════════════════╗");
     this.line("║                      Horizon Status                           ║");
     this.line("╠══════════════════════════════════════════════════════════════╣");
@@ -169,14 +126,7 @@ export class HorizonStatusCommand extends Command {
       this.line("");
       this.table(
         ["ID", "Status", "Queues", "Processed", "Memory", "Runtime"],
-        workers.map((w) => [
-          w.id,
-          w.status,
-          Array.isArray(w.queues) ? w.queues.join(", ") : String(w.queues),
-          String(w.jobsProcessed),
-          `${Math.round(w.memoryMb)}MB`,
-          `${Math.round(w.runtimeSeconds)}s`,
-        ]),
+        workers.map((w) => [w.id, w.status, Array.isArray(w.queues) ? w.queues.join(", ") : String(w.queues), String(w.jobsProcessed), `${Math.round(w.memoryMb)}MB`, `${Math.round(w.runtimeSeconds)}s`]),
       );
     } else {
       this.warn("No workers registered. Run `artisan horizon:work` to start workers.");
@@ -189,11 +139,7 @@ export class HorizonListCommand extends Command {
   protected description = "List configured Horizon supervisors";
 
   protected options = {
-    env: {
-      type: "string" as const,
-      description: "Environment to inspect",
-      alias: "e",
-    },
+    env: { type: "string" as const, description: "Environment to inspect", alias: "e" },
   };
 
   async handle(args: ArgumentsCamelCase): Promise<void> {
@@ -208,15 +154,7 @@ export class HorizonListCommand extends Command {
     this.line(`\nSupervisors for [${env}]:\n`);
     this.table(
       ["Name", "Connection", "Queues", "Processes", "Memory", "Timeout", "Tries"],
-      envConfig.supervisor.map((s) => [
-        s.name,
-        s.connection ?? process.env.QUEUE_CONNECTION ?? "default",
-        Array.isArray(s.queue) ? s.queue.join(", ") : s.queue,
-        String(s.processes ?? 1),
-        `${s.memory}MB`,
-        `${s.timeout}s`,
-        String(s.tries),
-      ]),
+      envConfig.supervisor.map((s) => [s.name, s.connection ?? process.env.QUEUE_CONNECTION ?? "default", Array.isArray(s.queue) ? s.queue.join(", ") : s.queue, String(s.processes ?? 1), `${s.memory}MB`, `${s.timeout}s`, String(s.tries)]),
     );
   }
 }

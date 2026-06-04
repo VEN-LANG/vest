@@ -1,4 +1,5 @@
-import { ServiceProvider } from "@lara-node/core";
+import { ServiceProvider, type CommandClass } from "@lara-node/core";
+import { DocsGenerateCommand, DocsListCommand, RouteListCommand } from "./Commands.js";
 import { DocsUI } from "./DocsUI.js";
 
 /**
@@ -10,6 +11,10 @@ import { DocsUI } from "./DocsUI.js";
  */
 export class DocServiceProvider extends ServiceProvider {
   register(): void {}
+
+  commands(): CommandClass[] {
+    return [DocsGenerateCommand, DocsListCommand, RouteListCommand];
+  }
 
   boot(): void {
     if (!this.isEnabled()) return;

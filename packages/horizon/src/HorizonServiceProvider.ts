@@ -1,5 +1,9 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { ServiceProvider } from "@lara-node/core";
+import { ServiceProvider, type CommandClass } from "@lara-node/core";
+import {
+  HorizonWorkCommand, HorizonPauseCommand, HorizonContinueCommand,
+  HorizonTerminateCommand, HorizonStatusCommand, HorizonListCommand,
+} from "./Commands.js";
 import { horizonMetrics } from "./HorizonMetrics.js";
 import { HorizonManager } from "./HorizonManager.js";
 import { renderHorizonDashboard } from "./HorizonDashboard.js";
@@ -23,8 +27,17 @@ import horizonConfig from "./horizon.config.js";
 export class HorizonServiceProvider extends ServiceProvider {
   register(): void {}
 
+  commands(): CommandClass[] {
+    return [HorizonWorkCommand, HorizonPauseCommand, HorizonContinueCommand, HorizonTerminateCommand, HorizonStatusCommand, HorizonListCommand];
+  }
+
   async boot(): Promise<void> {
     if (!this.isEnabled()) return;
+
+    // Persist scheduler task state to the shared cache on each run and
+    // re-publish lifecycle events. Effective in whichever process executes
+    // the scheduler (schedule:work); idempotent and harmless elsewhere.
+    HorizonManager.registerSchedulerEvents();
 
     const { path: basePath, token } = horizonConfig;
     const expressApp = this.app.getExpressApp();

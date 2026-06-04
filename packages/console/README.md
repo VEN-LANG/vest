@@ -171,18 +171,31 @@ export class SendNewsletterCommand extends Command {
 
 Import the file somewhere in your bootstrap path so the decorator fires before artisan boots.
 
-### ConsoleKernel
+### Commands declared in Service Providers
 
-The scaffolded `ConsoleKernel` wires both mechanisms together:
+Any service provider can expose commands via `commands()`. The Kernel collects them automatically — no manual registration needed, and commands live next to the feature that owns them.
+
+```ts
+// src/app/Providers/QueueServiceProvider.ts
+export class QueueServiceProvider extends ServiceProvider {
+  commands(): Array<new () => unknown> {
+    return [SyncPermissionsCommand, ImportDataCommand];
+  }
+}
+```
+
+Wire providers to the Kernel in `ConsoleKernel.boot()`:
 
 ```ts
 // src/app/Console/Kernel.ts
 import path from 'path';
 import { Kernel as BaseKernel } from '@lara-node/console';
+import { app } from '../bootstrap/app';
 
 export class ConsoleKernel extends BaseKernel {
   async boot(): Promise<void> {
     this.discoverCommands(path.join(__dirname, 'Commands'));
+    this.setProviders(app.getBootedProviders?.() ?? []);
     await super.boot();
   }
 }

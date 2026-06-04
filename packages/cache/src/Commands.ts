@@ -1,4 +1,4 @@
-import { Command } from "../Command.js";
+import { Command } from "@lara-node/console";
 import { ArgumentsCamelCase } from "yargs";
 import {
   cacheGet,
@@ -8,7 +8,7 @@ import {
   cacheClear,
   cacheKeys,
   generateCacheKey,
-} from "@lara-node/cache";
+} from "./CacheManager.js";
 
 export class CacheClearCommand extends Command {
   protected signature = "cache:clear";
@@ -26,7 +26,6 @@ export class CacheListCommand extends Command {
 
   async handle(_args: ArgumentsCamelCase): Promise<void> {
     const keys = await cacheKeys();
-
     if (!keys.length) {
       this.line("(no keys)");
     } else {
@@ -47,7 +46,6 @@ export class CacheGetCommand extends Command {
 
   async handle(args: ArgumentsCamelCase): Promise<void> {
     const val = await cacheGet(String(args.key));
-
     if (val === null) {
       this.line("(null)");
     } else {
@@ -79,15 +77,11 @@ export class CacheSetCommand extends Command {
     this.info("OK");
   }
 
-  private parseMaybeJson(input: string): any {
+  private parseMaybeJson(input: string): unknown {
     if (!input) return input;
     const first = input.trim()[0];
     if (first === "{" || first === "[") {
-      try {
-        return JSON.parse(input);
-      } catch {
-        return input;
-      }
+      try { return JSON.parse(input); } catch { return input; }
     }
     return input;
   }
@@ -103,7 +97,6 @@ export class CacheForgetCommand extends Command {
 
   async handle(args: ArgumentsCamelCase): Promise<void> {
     const deleted = await cacheDel(String(args.key));
-
     if (deleted) {
       this.info("The key has been removed from cache.");
     } else {
@@ -136,8 +129,7 @@ export class CacheKeyCommand extends Command {
 
   async handle(args: ArgumentsCamelCase): Promise<void> {
     const parts = args.parts as string[];
-    const key = generateCacheKey(...parts);
-    this.line(key);
+    this.line(generateCacheKey(...parts));
   }
 }
 
@@ -146,15 +138,12 @@ export class CacheDriverCommand extends Command {
   protected description = "Show cache driver information";
 
   async handle(_args: ArgumentsCamelCase): Promise<void> {
-    const driver = (process.env.CACHE_DRIVER || "file").toLowerCase();
-    const prefix = process.env.CACHE_PREFIX || "(none)";
-
     this.info("Cache Driver Information:");
     this.table(
       ["Setting", "Value"],
       [
-        ["Driver", driver],
-        ["Prefix", prefix],
+        ["Driver", (process.env.CACHE_DRIVER || "file").toLowerCase()],
+        ["Prefix", process.env.CACHE_PREFIX || "(none)"],
       ],
     );
   }

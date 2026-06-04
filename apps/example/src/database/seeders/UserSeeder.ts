@@ -19,7 +19,7 @@ export class UserSeeder {
         created_at: now,
         updated_at: now,
       }) as UserWithRoles;
-      await UserProfile.create({ user_id: admin.getAttribute('id'), gender: 'other', created_at: now, updated_at: now });
+      await UserProfile.create({ user_id: admin.id, gender: 'other', created_at: now, updated_at: now });
     }
 
     let regularUser = await User.where('email', 'user@example.com').first() as UserWithRoles | null;
@@ -32,7 +32,7 @@ export class UserSeeder {
         created_at: now,
         updated_at: now,
       }) as UserWithRoles;
-      await UserProfile.create({ user_id: regularUser.getAttribute('id'), gender: 'other', created_at: now, updated_at: now });
+      await UserProfile.create({ user_id: regularUser.id, gender: 'other', created_at: now, updated_at: now });
     }
 
     try { await admin.roles().sync([adminRoleId]); } catch { await admin.roles().attach(adminRoleId); }

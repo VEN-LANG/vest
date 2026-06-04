@@ -1,12 +1,12 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { Kernel } from '@lara-node/console';
+import { ConsoleKernel } from './app/Console/Kernel';
 import { app, bootForConsole } from './bootstrap/app';
 
 async function main() {
   await bootForConsole();
 
-  const kernel = new Kernel(app);
+  const kernel = new ConsoleKernel(app);
   await kernel.boot();
 
   let cli = yargs(hideBin(process.argv))

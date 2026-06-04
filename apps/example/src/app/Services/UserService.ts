@@ -45,7 +45,7 @@ export class UserService {
   async toggleStatus(userId: number | string) {
     const user = await User.find(userId) as User | null;
     if (!user) throw Object.assign(new Error('User not found'), { status: 404 });
-    const current = user.getAttribute('status') as string | null;
+    const current = user.status;
     const newStatus = current === 'active' ? 'inactive' : 'active';
     await user.update({ status: newStatus, updated_at: new Date() });
     return user;
