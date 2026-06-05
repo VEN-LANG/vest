@@ -445,4 +445,5 @@ export const MailService = {
   queue: (mailable: MailableInterface, queue?: string) => Mail().queue(mailable, queue),
   later: (mailable: MailableInterface, delay: number, queue?: string) =>
     Mail().later(mailable, delay, queue),
+  registerSendMailJob,
 };

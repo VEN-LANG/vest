@@ -31,5 +31,7 @@ export {
   queueMail,
   mail,
   MailService,
+  registerSendMailJob,
 } from "./MailService.js";
 export { MailServiceProvider } from "./MailServiceProvider.js";
+export { SendMailJob } from "./SendMailJob.js";

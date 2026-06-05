@@ -13,19 +13,19 @@ import pc from "picocolors";
 import prompts from "prompts";
 
 const VERSIONS: Record<string, string> = {
-  "@lara-node/core": "0.1.17",
-  "@lara-node/router": "0.2.12",
-  "@lara-node/db": "0.1.17",
-  "@lara-node/auth": "0.1.8",
-  "@lara-node/console": "0.1.22",
-  "@lara-node/validator": "0.1.15",
-  "@lara-node/middlewares": "0.1.15",
-  "@lara-node/events": "0.1.14",
-  "@lara-node/queue": "0.1.22",
-  "@lara-node/mail": "0.1.13",
-  "@lara-node/horizon": "0.1.23",
-  "@lara-node/telescope": "0.1.20",
-  "@lara-node/cache": "0.1.16",
+  "@lara-node/core": "0.1.18",
+  "@lara-node/router": "0.2.18",
+  "@lara-node/db": "0.1.23",
+  "@lara-node/auth": "0.1.12",
+  "@lara-node/console": "0.1.23",
+  "@lara-node/validator": "0.1.21",
+  "@lara-node/middlewares": "0.1.20",
+  "@lara-node/events": "0.1.16",
+  "@lara-node/queue": "0.1.23",
+  "@lara-node/mail": "0.1.14",
+  "@lara-node/horizon": "0.1.27",
+  "@lara-node/telescope": "0.1.25",
+  "@lara-node/cache": "0.1.17",
 };
 
 async function main() {
@@ -2459,6 +2459,7 @@ export class FileController extends Controller {
     additionalProviders.push(`BroadcastServiceProvider`);
   }
   if (hasQueue) additionalProviders.push(`QueueServiceProvider`);
+  if (hasMail) additionalProviders.push(`MailServiceProvider`);
   if (hasHorizon) additionalProviders.push(`HorizonServiceProvider`);
   if (hasTelescope) additionalProviders.push(`TelescopeServiceProvider`);
 
@@ -2480,6 +2481,8 @@ export class FileController extends Controller {
   }
   if (hasQueue)
     appProviderImports.push(`import { QueueServiceProvider } from './QueueServiceProvider';`);
+  if (hasMail)
+    appProviderImports.push(`import { MailServiceProvider } from '@lara-node/mail';`);
   if (hasHorizon)
     appProviderImports.push(`import { HorizonServiceProvider } from '@lara-node/horizon';`);
   if (hasTelescope)
@@ -2787,24 +2790,29 @@ export class BroadcastServiceProvider extends BaseProvider {
   if (hasQueue) {
     w(
       dir,
-      "src/app/Jobs/SendMailJob.ts",
+      "src/app/Jobs/ExampleEmailJob.ts",
       `import { Job, Queueable } from '@lara-node/queue';
 
 /*
 |--------------------------------------------------------------------------
-| SendMailJob
+| ExampleEmailJob
 |--------------------------------------------------------------------------
+|
+| An example custom queue job. To send mail you usually do NOT need this —
+| @lara-node/mail ships its own SendMailJob (registered by MailServiceProvider),
+| so 'Mail().to(...).queue(mailable)' just works. Use a job like this only
+| when you want custom background work around an email.
 |
 | @Queueable sets the default queue and retry count for every dispatch.
 | Override per-dispatch with fluent methods:
-|   SendMailJob.dispatch().onQueue('urgent').tries(5).dispatch();
+|   ExampleEmailJob.dispatch().onQueue('urgent').tries(5).dispatch();
 |
 | Conditional dispatch via shouldQueue():
 |   shouldQueue() { return !this.payload.suppressEmail; }
 |
 */
 @Queueable({ queue: 'emails', tries: 3 })
-export class SendMailJob extends Job {
+export class ExampleEmailJob extends Job {
   constructor(
     private readonly payload: {
       to: string;
@@ -2816,14 +2824,14 @@ export class SendMailJob extends Job {
   ) { super(); }
 
   async handle(): Promise<void> {
-    console.log(\`[SendMailJob] Sending to \${this.payload.to}: \${this.payload.subject}\`);
-    // Inject MailService or use @lara-node/mail directly:
+    console.log(\`[ExampleEmailJob] Sending to \${this.payload.to}: \${this.payload.subject}\`);
+    // Use @lara-node/mail directly:
     // const { Mail } = await import('@lara-node/mail');
-    // await Mail.send(new WelcomeEmail(this.payload.to));
+    // await Mail().to(this.payload.to).send(new WelcomeEmail(this.payload));
   }
 
   async failed(error: Error): Promise<void> {
-    console.error(\`[SendMailJob] Failed for \${this.payload.to}: \${error.message}\`);
+    console.error(\`[ExampleEmailJob] Failed for \${this.payload.to}: \${error.message}\`);
   }
 }
 `,
@@ -2901,7 +2909,7 @@ export class GenerateReportJob extends Job {
     // const data = await this.collectData();
     // await this.generatePdf(data);
     // if (this.config.email) {
-    //   await Queue.push(new SendMailJob({ to: this.config.email, subject: 'Your report is ready', body: '...' }));
+    //   await Mail().to(this.config.email).send(new ReportReadyEmail());
     // }
 
     console.log(\`[GenerateReportJob] \${period} \${type} report complete\`);
@@ -2913,7 +2921,7 @@ export class GenerateReportJob extends Job {
     w(
       dir,
       "src/app/Jobs/index.ts",
-      `export * from './SendMailJob';
+      `export * from './ExampleEmailJob';
 export * from './CleanupJob';
 export * from './GenerateReportJob';
 `,
@@ -4179,13 +4187,13 @@ Available mailables:
 
 \`\`\`typescript
 import { Queue } from '@lara-node/queue';
-import { SendMailJob } from '@app/Jobs/SendMailJob';
+import { ExampleEmailJob } from '@app/Jobs/ExampleEmailJob';
 
 // Dispatch a job
-await Queue.push(new SendMailJob({ to: 'user@example.com', subject: 'Hello', body: 'World' }));
+await Queue.push(new ExampleEmailJob({ to: 'user@example.com', subject: 'Hello', body: 'World' }));
 
 // Dispatch with delay (seconds)
-await Queue.later(300, new SendMailJob({ ... }));
+await Queue.later(300, new ExampleEmailJob({ to: 'user@example.com', subject: 'Hello', body: 'World' }));
 \`\`\`
 
 Scheduled jobs (configured in \`QueueServiceProvider\`):

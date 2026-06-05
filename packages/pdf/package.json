@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/pdf",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Laravel-inspired class-based PDF generation for Lara-Node using Puppeteer",
   "files": [
     "dist",

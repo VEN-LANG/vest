@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/db",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "description": "Lara-Node ORM — Eloquent-style models, migrations, schema builder",
   "files": [
     "dist",

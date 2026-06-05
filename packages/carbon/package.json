@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/carbon",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Laravel Carbon-inspired date/time library for Node.js — immutable, fluent, zero-dependency",
   "keywords": [
     "carbon",

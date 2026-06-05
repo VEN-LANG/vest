@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/excel",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Laravel-inspired class-based Excel export/import for Lara-Node using ExcelJS",
   "files": [
     "dist",
