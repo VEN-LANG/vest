@@ -38,6 +38,14 @@ export class WebSocketBroadcaster implements BroadcasterDriver {
   private pingInterval: NodeJS.Timeout | null = null;
   private authenticateUser: ((token: string) => Promise<any>) | null = null;
 
+  // ── Metrics (for the WebSocket dashboard) ──────────────────────────────────
+  private readonly startedAt = Date.now();
+  private messagesSent = 0;
+  private messagesReceived = 0;
+  private totalConnections = 0;
+  /** Epoch-ms of recently sent messages, pruned to the last 60s for throughput. */
+  private sendTimestamps: number[] = [];
+
   constructor(
     private options: {
       path?: string;
@@ -104,6 +112,7 @@ export class WebSocketBroadcaster implements BroadcasterDriver {
     };
 
     this.connections.set(connectionId, connection);
+    this.totalConnections++;
 
     // Send connection acknowledgment
     this.send(ws, {
@@ -114,6 +123,7 @@ export class WebSocketBroadcaster implements BroadcasterDriver {
     // Handle messages
     ws.on("message", async (data: Buffer | string) => {
       connection.lastActivityAt = new Date();
+      this.messagesReceived++;
       await this.handleMessage(connection, data.toString());
     });
 
@@ -478,10 +488,51 @@ export class WebSocketBroadcaster implements BroadcasterDriver {
       const ws = socket as WebSocket;
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify(message));
+        this.messagesSent++;
+        this.sendTimestamps.push(Date.now());
       }
     } catch (error) {
       console.error("[Broadcasting] Error sending message:", error);
     }
+  }
+
+  /**
+   * Snapshot of live WebSocket metrics for the broadcasting dashboard.
+   */
+  getStats(): {
+    connections: number;
+    totalConnections: number;
+    channels: Array<{ name: string; subscribers: number; presenceMembers: number }>;
+    messagesSent: number;
+    messagesReceived: number;
+    throughputPerMinute: number;
+    uptimeSeconds: number;
+  } {
+    // Tally subscribers per channel across all live connections.
+    const subs = new Map<string, number>();
+    for (const conn of this.connections.values()) {
+      for (const ch of conn.channels) subs.set(ch, (subs.get(ch) ?? 0) + 1);
+    }
+    const channels = Array.from(subs.entries())
+      .map(([name, subscribers]) => ({
+        name,
+        subscribers,
+        presenceMembers: this.channelMembers.get(name)?.size ?? 0,
+      }))
+      .sort((a, b) => b.subscribers - a.subscribers);
+
+    const cutoff = Date.now() - 60_000;
+    this.sendTimestamps = this.sendTimestamps.filter((t) => t > cutoff);
+
+    return {
+      connections: this.connections.size,
+      totalConnections: this.totalConnections,
+      channels,
+      messagesSent: this.messagesSent,
+      messagesReceived: this.messagesReceived,
+      throughputPerMinute: this.sendTimestamps.length,
+      uptimeSeconds: Math.round((Date.now() - this.startedAt) / 1000),
+    };
   }
 
   /**

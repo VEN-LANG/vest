@@ -1,3 +1,5 @@
+import { config } from "@lara-node/core";
+
 export interface QueueConnectionConfig {
   driver: "sync" | "database" | "redis";
   table?: string;
@@ -31,3 +33,13 @@ const queueConfig: QueueConfig = {
 
 export const QUEUE_CONNECTION = queueConfig.default;
 export default queueConfig;
+
+/**
+ * Resolve the effective queue config. Reads the application override
+ * registered via `setConfig('queue', …)` (e.g. by the app's
+ * ConfigServiceProvider), falling back to this package's bundled default.
+ * Always call this instead of importing the constant so app config wins.
+ */
+export function getQueueConfig(): QueueConfig {
+  return config<QueueConfig>("queue", queueConfig);
+}

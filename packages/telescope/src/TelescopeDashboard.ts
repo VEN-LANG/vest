@@ -1,4 +1,8 @@
-export function renderTelescopeDashboard(basePath: string, token?: string): string {
+export function renderTelescopeDashboard(
+  basePath: string,
+  token?: string,
+  wsPath: string = "/ws",
+): string {
   const appUrl = process.env.APP_URL || "";
   return `<!DOCTYPE html>
 <html lang="en">
@@ -102,6 +106,7 @@ pre{background:var(--bg3);border:1px solid var(--border);border-radius:6px;paddi
   <div class="nav">
     <div class="nav-grp">Views</div>
     <div class="nav-it" id="nav-charts" onclick="showCharts(this)">Charts <span class="cnt">↗</span></div>
+    <div class="nav-it" id="nav-ws" onclick="showWebSocket(this)">WebSocket <span class="cnt">⚡</span></div>
     <div class="nav-grp">Watchers</div>
     <div class="nav-it active" id="nav-all" onclick="setType(null,this)">All <span class="cnt" id="c-all">0</span></div>
     <div class="nav-it" id="nav-request" onclick="setType('request',this)">Requests <span class="cnt" id="c-request">0</span></div>
@@ -154,9 +159,11 @@ const COPTS={responsive:true,maintainAspectRatio:false,animation:false,
 const ICONS={request:'→',exception:'!',job:'⚙',schedule:'⏰',query:'⬡',log:'▪',cache:'◈'};
 let curType=null,selId=null,entries=[],chartsActive=false;
 let chartReq=null,chartQuery=null;
+let wsActive=false,wsTimer=null;
 
 /* ── Sidebar: Charts view ─────────────────────────────────────────── */
 function showCharts(el){
+  exitWebSocket();
   chartsActive=true;selId=null;
   document.querySelectorAll('.nav-it').forEach(e=>e.classList.remove('active'));
   el.classList.add('active');
@@ -172,8 +179,49 @@ function exitCharts(){
   chartReq=null; chartQuery=null;
 }
 
+/* ── Sidebar: WebSocket metrics view ──────────────────────────────── */
+function showWebSocket(el){
+  exitCharts();
+  wsActive=true;selId=null;
+  document.querySelectorAll('.nav-it').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('list-panel').style.display='none';
+  document.getElementById('detail-panel').innerHTML='<div id="ws-view" style="padding:16px;color:var(--muted)">Loading WebSocket metrics…</div>';
+  loadWsStats();
+  wsTimer=setInterval(loadWsStats,3000);
+}
+
+function exitWebSocket(){
+  wsActive=false;
+  if(wsTimer){clearInterval(wsTimer);wsTimer=null;}
+  document.getElementById('list-panel').style.display='';
+}
+
+async function loadWsStats(){
+  if(!wsActive)return;
+  let s;
+  try{ s=await fetch(API_BASE+'/api/websocket',{headers:HDR}).then(r=>r.json()); }catch(e){ return; }
+  const v=document.getElementById('ws-view'); if(!v||!wsActive)return;
+  if(!s){ v.innerHTML='<div style="color:var(--muted)">WebSocket broadcasting is not enabled (set BROADCAST_DRIVER=websocket).</div>'; return; }
+  const card=(label,val)=>'<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;min-width:120px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">'+label+'</div><div style="font-size:22px;font-weight:600;margin-top:4px">'+val+'</div></div>';
+  const up=s.uptimeSeconds||0,upStr=up<60?up+'s':up<3600?Math.floor(up/60)+'m':Math.floor(up/3600)+'h '+Math.floor((up%3600)/60)+'m';
+  let html='<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">'
+    +card('Connections',s.connections)+card('Total (lifetime)',s.totalConnections)
+    +card('Msgs / min',s.throughputPerMinute)+card('Sent',s.messagesSent)
+    +card('Received',s.messagesReceived)+card('Uptime',upStr)+'</div>';
+  html+='<div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:8px 0">Channels</div>';
+  if(!s.channels||!s.channels.length){ html+='<div style="color:var(--muted)">No active channel subscriptions.</div>'; }
+  else{
+    html+='<table class="slow-table"><thead><tr><th>Channel</th><th>Subscribers</th><th>Presence</th></tr></thead><tbody>';
+    s.channels.forEach(c=>{ html+='<tr><td>'+c.name+'</td><td>'+c.subscribers+'</td><td>'+(c.presenceMembers||0)+'</td></tr>'; });
+    html+='</tbody></table>';
+  }
+  v.innerHTML=html;
+}
+
 function setType(t,el){
   exitCharts();
+  exitWebSocket();
   curType=t;selId=null;
   document.querySelectorAll('.nav-it').forEach(e=>e.classList.remove('active'));
   el.classList.add('active');
@@ -420,7 +468,7 @@ function renderDetail(e){
 let _busy=false,_timer;
 async function refresh(){
   clearTimeout(_timer);
-  if(_busy){_timer=setTimeout(refresh,5000);return;}
+  if(_busy){_timer=setTimeout(refresh,POLL_MS);return;}
   _busy=true;
   try{
     if(chartsActive){await loadCharts();return;}
@@ -432,7 +480,7 @@ async function refresh(){
     for(const[t,n]of Object.entries(stats)){const el=document.getElementById('c-'+t);if(el)el.textContent=n;total+=n;}
     document.getElementById('c-all').textContent=total;
   }catch(e){console.warn('Telescope refresh error',e);}
-  finally{_busy=false;_timer=setTimeout(refresh,5000);}
+  finally{_busy=false;_timer=setTimeout(refresh,POLL_MS);}
 }
 
 async function clearAll(){
@@ -443,7 +491,40 @@ async function clearAll(){
   document.getElementById('detail-panel').innerHTML='<div class="dp-empty">↑ Select an entry to inspect</div>';
 }
 
+/* ── Live updates over WebSocket (falls back to slow polling) ── */
+const POLL_MS=15000;
+const WS_PATH='${wsPath}';
+let wsConn=null;
+function bumpCount(type){
+  const el=document.getElementById('c-'+type); if(el)el.textContent=(parseInt(el.textContent,10)||0)+1;
+  const all=document.getElementById('c-all'); if(all)all.textContent=(parseInt(all.textContent,10)||0)+1;
+}
+function onLiveEntry(entry){
+  if(!entry||!entry.type)return;
+  bumpCount(entry.type);
+  if(chartsActive||wsActive)return;
+  if(curType!==null&&curType!==entry.type)return;
+  entries.unshift(entry);
+  if(entries.length>500)entries.pop();
+  renderList();
+}
+function connectWS(){
+  try{
+    const base=APP_URL&&APP_URL.trim()
+      ? APP_URL.replace(new RegExp('/+$'),'').replace(/^http/,'ws')
+      : (location.protocol==='https:'?'wss://':'ws://')+location.host;
+    wsConn=new WebSocket(base+WS_PATH);
+    wsConn.onopen=function(){ wsConn.send(JSON.stringify({type:'subscribe',channel:'telescope'})); };
+    wsConn.onmessage=function(ev){
+      try{ const m=JSON.parse(ev.data); if(m.type==='event'&&m.channel==='telescope'&&m.event==='entry') onLiveEntry(m.data); }catch(e){}
+    };
+    wsConn.onclose=function(){ wsConn=null; setTimeout(connectWS,5000); };
+    wsConn.onerror=function(){ try{wsConn.close();}catch(e){} };
+  }catch(e){}
+}
+
 refresh();
+connectWS();
 </script>
 </body>
 </html>`;

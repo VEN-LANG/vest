@@ -27,6 +27,9 @@ export { ServeCommand } from "./ServeCommand.js";
 // Vendor publish
 export { VendorPublishCommand } from "./VendorPublishCommand.js";
 
+// Config cache management
+export { ConfigCacheCommand, ConfigClearCommand, ConfigShowCommand } from "./ConfigCommands.js";
+
 // Make generators (always available — scaffold tooling)
 export {
   MakeModelCommand,

@@ -1,4 +1,8 @@
-export function renderHorizonDashboard(basePath: string, token?: string): string {
+export function renderHorizonDashboard(
+  basePath: string,
+  token?: string,
+  wsPath: string = "/ws",
+): string {
   const appUrl = process.env.APP_URL || "";
   return `<!DOCTYPE html>
 <html lang="en">
@@ -475,7 +479,19 @@ async function refresh(){
       api('/api/jobs/recent?limit=200'),api('/api/jobs/failed'),api('/api/scheduler'),
       api('/api/metrics'),
     ]);
+    applyData({sum,workers,queues,jobs,failed,sched,metrics});
+  }catch(e){
+    document.getElementById('dot').className='dot err';
+    document.getElementById('ts').textContent='Error: '+e.message;
+  }finally{
+    _busy=false;
+    _timer=setTimeout(refresh,POLL_MS);
+  }
+}
 
+/* Render from a data snapshot — fed by either a fetch (refresh) or a WS push. */
+function applyData(d){
+  const sum=d.sum,workers=d.workers||[],queues=d.queues||{},jobs=d.jobs,failed=d.failed,sched=d.sched||[],metrics=d.metrics;
     document.getElementById('s-aw').textContent=sum.activeWorkers;
     document.getElementById('s-pw').textContent=sum.pausedWorkers;
     document.getElementById('s-tp').textContent=sum.throughputPerMinute;
@@ -558,18 +574,37 @@ async function refresh(){
     /* Failed Jobs */
     allFailed=Array.isArray(failed)?failed:[];
     renderFailed();
+}
 
-  }catch(e){
-    document.getElementById('dot').className='dot err';
-    document.getElementById('ts').textContent='Error: '+e.message;
-  }finally{
-    _busy=false;
-    _timer=setTimeout(refresh,5000);
-  }
+/* ── Live updates over WebSocket (falls back to slow polling) ── */
+const POLL_MS=15000;
+const WS_PATH='${wsPath}';
+let wsConn=null;
+function connectWS(){
+  try{
+    const base=APP_URL&&APP_URL.trim()
+      ? APP_URL.replace(new RegExp('/+$'),'').replace(/^http/,'ws')
+      : (location.protocol==='https:'?'wss://':'ws://')+location.host;
+    wsConn=new WebSocket(base+WS_PATH);
+    wsConn.onopen=function(){ wsConn.send(JSON.stringify({type:'subscribe',channel:'horizon'})); };
+    wsConn.onmessage=function(ev){
+      try{
+        const m=JSON.parse(ev.data);
+        if(m.type==='event'&&m.channel==='horizon'&&m.event==='metrics'){
+          applyData(m.data);
+          document.getElementById('dot').className='dot';
+          document.getElementById('ts').textContent='Updated '+new Date().toLocaleTimeString()+' · live';
+        }
+      }catch(e){}
+    };
+    wsConn.onclose=function(){ wsConn=null; setTimeout(connectWS,5000); };
+    wsConn.onerror=function(){ try{wsConn.close();}catch(e){} };
+  }catch(e){}
 }
 
 initCharts();
 refresh();
+connectWS();
 </script>
 </body>
 </html>`;

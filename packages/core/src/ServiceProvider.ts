@@ -8,7 +8,12 @@ import type {
   Middleware,
   MiddlewareStack as IMiddlewareStack,
 } from "./MiddlewareStack.js";
-import { config as globalConfig, setConfig, mergeConfig } from "./Config.js";
+import {
+  config as globalConfig,
+  setConfig,
+  mergeConfig,
+  cacheConfig as cacheConfigSnapshot,
+} from "./Config.js";
 
 export type ServiceProviderClass = new (app: Application) => ServiceProvider;
 
@@ -282,6 +287,42 @@ export abstract class ServiceProvider {
     } catch {
       /* skip if file not found during development */
     }
+  }
+
+  /**
+   * Crawl an application config directory and register every `*.config.{ts,js}`
+   * file as a config namespace (filename minus the `.config` suffix). Whatever a
+   * file default-exports becomes `config('<name>')`, overriding package defaults.
+   *
+   * Application ConfigServiceProviders call this instead of importing and
+   * `setConfig`-ing each file by hand. Package providers should keep their own
+   * bundled defaults as the `config('<key>', packageDefault)` fallback.
+   *
+   * When `persist` is true (default) the resolved snapshot is written to the
+   * config cache backend (if one is wired) for faster cross-process retrieval.
+   *
+   * @example
+   * this.loadConfigDir(path.join(__dirname, "../../config"));
+   */
+  protected loadConfigDir(dir: string, persist: boolean = true): void {
+    if (!fs.existsSync(dir)) return;
+    const seen = new Set<string>();
+    for (const file of fs.readdirSync(dir)) {
+      const match = file.match(/^(.+?)\.config\.(?:ts|js|cjs|mjs)$/);
+      if (!match) continue;
+      const key = match[1];
+      if (seen.has(key)) continue; // prefer the first (e.g. .ts in dev, .js in dist)
+      seen.add(key);
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const loaded: unknown = require(path.join(dir, file));
+        const value = (loaded as { default?: unknown }).default ?? loaded;
+        this.setConfig(key, value as Record<string, unknown>);
+      } catch {
+        /* skip files that fail to load */
+      }
+    }
+    if (persist) void cacheConfigSnapshot();
   }
 
   /*

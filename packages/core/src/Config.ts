@@ -4,6 +4,33 @@ type ConfigValue = Record<string, unknown> | unknown[] | Primitive;
 const store: Record<string, ConfigValue> = {};
 
 /**
+ * Pluggable cache backend for persisting the resolved config snapshot.
+ *
+ * Core cannot import `@lara-node/cache` (that package depends on core), so the
+ * cache driver is injected at boot. `CacheServiceProvider` calls
+ * `setConfigCacheBackend()` wiring the application cache; until then config
+ * caching is a no-op and `config()` simply uses the in-memory store.
+ */
+export interface ConfigCacheBackend {
+  get(key: string): Promise<unknown>;
+  set(key: string, value: unknown): Promise<void>;
+  forget(key: string): Promise<void>;
+}
+
+const CONFIG_CACHE_KEY = "__lara_node_config__";
+let configCacheBackend: ConfigCacheBackend | null = null;
+
+/** Wire the cache backend used to persist/restore the config snapshot. */
+export function setConfigCacheBackend(backend: ConfigCacheBackend | null): void {
+  configCacheBackend = backend;
+}
+
+/** True once a cache backend has been wired (CacheServiceProvider booted). */
+export function hasConfigCacheBackend(): boolean {
+  return configCacheBackend != null;
+}
+
+/**
  * Register a config namespace. Later calls overwrite earlier ones,
  * so app configs registered in ConfigServiceProvider override package defaults.
  */
@@ -93,4 +120,45 @@ function deepMerge(
  */
 export function allConfig(): Record<string, ConfigValue> {
   return { ...store };
+}
+
+/**
+ * Replace the entire in-memory config store (used when restoring a cached
+ * snapshot). Existing namespaces are cleared first.
+ */
+export function hydrateConfig(snapshot: Record<string, ConfigValue>): void {
+  for (const k of Object.keys(store)) delete store[k];
+  for (const [k, v] of Object.entries(snapshot)) store[k] = v;
+}
+
+/**
+ * Persist the current resolved config snapshot to the cache backend.
+ * No-op when no backend is wired. Mirrors Laravel's `config:cache`.
+ */
+export async function cacheConfig(): Promise<boolean> {
+  if (!configCacheBackend) return false;
+  await configCacheBackend.set(CONFIG_CACHE_KEY, allConfig());
+  return true;
+}
+
+/**
+ * Load a previously cached config snapshot into the in-memory store.
+ * Returns true when a snapshot was found and hydrated.
+ */
+export async function restoreConfigFromCache(): Promise<boolean> {
+  if (!configCacheBackend) return false;
+  const snapshot = (await configCacheBackend.get(CONFIG_CACHE_KEY)) as
+    | Record<string, ConfigValue>
+    | null
+    | undefined;
+  if (!snapshot || typeof snapshot !== "object") return false;
+  hydrateConfig(snapshot);
+  return true;
+}
+
+/** Remove the cached config snapshot. Mirrors Laravel's `config:clear`. */
+export async function clearConfigCache(): Promise<boolean> {
+  if (!configCacheBackend) return false;
+  await configCacheBackend.forget(CONFIG_CACHE_KEY);
+  return true;
 }

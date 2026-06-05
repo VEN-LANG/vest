@@ -1,7 +1,7 @@
 import { Queue } from "./Queue.js";
 import { Job } from "./Job.js";
 import { SerializedJob, WorkerOptions } from "./types.js";
-import queueConfig from "./queue.config.js";
+import { getQueueConfig } from "./queue.config.js";
 import { Cache } from "@lara-node/cache";
 import { EventEmitter } from "events";
 
@@ -46,7 +46,7 @@ export class Worker extends EventEmitter {
   ) {
     super();
 
-    this.connectionName = connectionName || queueConfig.default;
+    this.connectionName = connectionName || getQueueConfig().default;
     this.queues = Array.isArray(queues) ? queues : [queues];
     this.restartKey = `${process.env.APP_NAME || "app"}:queue:restart`;
     this.horizonCtrlPrefix = `${process.env.APP_NAME || "app"}:horizon:ctrl`;
@@ -57,9 +57,9 @@ export class Worker extends EventEmitter {
       queue: queues,
       delay: options.delay ?? 0,
       memory: options.memory ?? 128,
-      timeout: options.timeout ?? queueConfig.defaults.timeout,
+      timeout: options.timeout ?? getQueueConfig().defaults.timeout,
       sleep: options.sleep ?? 3,
-      maxTries: options.maxTries ?? queueConfig.defaults.tries,
+      maxTries: options.maxTries ?? getQueueConfig().defaults.tries,
       maxJobs: options.maxJobs ?? 0,
       maxTime: options.maxTime ?? 0,
       force: options.force ?? false,
@@ -305,7 +305,7 @@ export class Worker extends EventEmitter {
     job.exceptionCount = (job.exceptionCount ?? 0) + 1;
 
     const maxTries = job.maxTries || this.options.maxTries;
-    const maxExceptions = job.maxExceptions ?? queueConfig.defaults.maxExceptions;
+    const maxExceptions = job.maxExceptions ?? getQueueConfig().defaults.maxExceptions;
     const retryUntilExpired = job.retryUntil != null && Date.now() > job.retryUntil;
 
     const shouldFailPermanently =
@@ -351,7 +351,7 @@ export class Worker extends EventEmitter {
   }
 
   private calculateBackoff(job: SerializedJob): number {
-    const backoff = job.backoff || queueConfig.defaults.backoff;
+    const backoff = job.backoff || getQueueConfig().defaults.backoff;
 
     if (typeof backoff === "number") return backoff;
 

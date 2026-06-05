@@ -1,5 +1,5 @@
 import { MailDriverInterface, MailMessage, SendMailResult, MailAddress } from "../types.js";
-import mailConfig from "../mail.config.js";
+import { getMailConfig } from "../mail.config.js";
 import crypto from "crypto";
 
 /*
@@ -19,7 +19,7 @@ export class LogDriver implements MailDriverInterface {
   private channel: string;
 
   constructor(channel?: string) {
-    this.channel = channel || mailConfig.mailers.log?.channel || "default";
+    this.channel = channel || getMailConfig().mailers.log?.channel || "default";
   }
 
   getName(): string {
@@ -38,7 +38,7 @@ export class LogDriver implements MailDriverInterface {
     console.log(`Message ID: ${messageId}`);
     console.log(`Channel: ${this.channel}`);
     console.log("-".repeat(60));
-    console.log(`From: ${this.formatAddress(message.from || mailConfig.from)}`);
+    console.log(`From: ${this.formatAddress(message.from || getMailConfig().from)}`);
     console.log(`To: ${toAddresses.join(", ")}`);
     if (message.cc) {
       console.log(`CC: ${this.extractAddresses(message.cc).join(", ")}`);
@@ -82,7 +82,7 @@ export class LogDriver implements MailDriverInterface {
       accepted: toAddresses,
       rejected: [],
       envelope: {
-        from: this.formatAddress(message.from || mailConfig.from),
+        from: this.formatAddress(message.from || getMailConfig().from),
         to: toAddresses,
       },
       response: "Message logged successfully",

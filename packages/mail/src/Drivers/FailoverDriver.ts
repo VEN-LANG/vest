@@ -1,6 +1,6 @@
 import { MailDriverInterface, MailMessage, SendMailResult } from "../types.js";
 
-import mailConfig, { MailerConfig } from "../mail.config.js";
+import { getMailConfig, type MailerConfig } from "../mail.config.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -17,7 +17,7 @@ export class FailoverDriver implements MailDriverInterface {
   private config: MailerConfig;
 
   constructor(config?: MailerConfig, driverFactory?: (name: string) => MailDriverInterface | null) {
-    this.config = config || mailConfig.mailers.failover;
+    this.config = config || getMailConfig().mailers.failover;
 
     if (driverFactory && this.config?.mailers?.length) {
       for (const mailerName of this.config.mailers) {

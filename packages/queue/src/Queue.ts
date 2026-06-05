@@ -1,7 +1,7 @@
 import { QueueDriverInterface, FailedJobsInterface, SerializedJob } from "./types.js";
 import { SyncDriver, DatabaseDriver, RedisDriver } from "./Drivers/index.js";
 import { Job } from "./Job.js";
-import queueConfig from "./queue.config.js";
+import { getQueueConfig } from "./queue.config.js";
 import { Cache } from "@lara-node/cache";
 
 /*
@@ -16,10 +16,17 @@ import { Cache } from "@lara-node/cache";
 
 class QueueManager {
   private connections: Map<string, QueueDriverInterface> = new Map();
-  private defaultConnection: string;
 
-  constructor() {
-    this.defaultConnection = queueConfig.default;
+  /** Explicit override set via setDefaultDriver(); otherwise resolved from config. */
+  private _defaultConnection?: string;
+
+  /** Resolved lazily so application config overrides (setConfig('queue')) win. */
+  private get defaultConnection(): string {
+    return this._defaultConnection ?? getQueueConfig().default;
+  }
+
+  private set defaultConnection(name: string) {
+    this._defaultConnection = name;
   }
 
   /*
@@ -37,7 +44,7 @@ class QueueManager {
     const connectionName = name || this.defaultConnection;
 
     if (!this.connections.has(connectionName)) {
-      const config = queueConfig.connections[connectionName];
+      const config = getQueueConfig().connections[connectionName];
       if (!config) {
         throw new Error(`Queue connection [${connectionName}] is not defined.`);
       }
@@ -51,7 +58,7 @@ class QueueManager {
    * Resolve a queue connection instance.
    */
   private resolve(name: string): QueueDriverInterface {
-    const config = queueConfig.connections[name];
+    const config = getQueueConfig().connections[name];
 
     if (!config) {
       throw new Error(`Queue connection [${name}] is not defined.`);

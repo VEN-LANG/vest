@@ -1,5 +1,5 @@
 import { TelescopeStore } from "../TelescopeStore.js";
-import telescopeConfig from "../telescope.config.js";
+import { getTelescopeConfig } from "../telescope.config.js";
 
 export interface CacheRecord {
   type: "get" | "set" | "del" | "has" | "clear" | "remember";
@@ -29,7 +29,7 @@ const IGNORED_PREFIXES = ["telescope:", "horizon:"];
 
 export const CacheWatcher = {
   record(data: CacheRecord): void {
-    if (!telescopeConfig.watchers.cache) return;
+    if (!getTelescopeConfig().watchers.cache) return;
     if (IGNORED_PREFIXES.some((p) => data.key.startsWith(p))) return;
 
     const tags: string[] = [];

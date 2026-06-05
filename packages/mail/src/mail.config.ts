@@ -1,3 +1,5 @@
+import { config } from "@lara-node/core";
+
 export interface MailAddress {
   name?: string;
   address: string;
@@ -59,3 +61,12 @@ const mailConfig: MailConfig = {
 };
 
 export default mailConfig;
+
+/**
+ * Resolve the effective mail config. Reads the application override registered
+ * via `setConfig('mail', …)`, falling back to this package's bundled default.
+ * Always call this so app config wins.
+ */
+export function getMailConfig(): MailConfig {
+  return config<MailConfig>("mail", mailConfig);
+}
