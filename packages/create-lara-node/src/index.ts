@@ -15,7 +15,7 @@ import prompts from "prompts";
 const VERSIONS: Record<string, string> = {
   "@lara-node/core": "0.1.18",
   "@lara-node/router": "0.2.18",
-  "@lara-node/db": "0.1.23",
+  "@lara-node/db": "0.1.24",
   "@lara-node/auth": "0.1.12",
   "@lara-node/console": "0.1.23",
   "@lara-node/validator": "0.1.21",

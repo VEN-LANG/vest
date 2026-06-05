@@ -1,7 +1,13 @@
 {
-  "name": "@lara-node/db",
-  "version": "0.1.24",
-  "description": "Lara-Node ORM — Eloquent-style models, migrations, schema builder",
+  "name": "@lara-node/example",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Skeleton for a new @lara-node package — copy this directory, rename, and remove \"private\".",
+  "keywords": [
+    "lara-node",
+    "laravel"
+  ],
+  "license": "MIT",
   "files": [
     "dist",
     "README.md"
@@ -27,11 +33,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
-  "dependencies": {
-    "@lara-node/console": "workspace:^",
-    "mongodb": "^7.2.0",
-    "mysql2": "^3.22.4",
-    "reflect-metadata": "^0.2.2"
+  "peerDependencies": {
+    "@lara-node/core": "workspace:^"
   },
   "devDependencies": {
     "@lara-node/core": "workspace:^",
@@ -40,8 +43,5 @@
     "tsdown": "^0.12.9",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
-  },
-  "peerDependencies": {
-    "@lara-node/core": "workspace:^"
   }
 }
