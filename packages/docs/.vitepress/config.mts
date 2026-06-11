@@ -1,4 +1,7 @@
 import { defineConfig } from "vitepress";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 export default defineConfig({
   title: "LaraNode",
@@ -255,5 +258,30 @@ export default defineConfig({
   markdown: {
     lineNumbers: true,
     languages: ["dotenv", "typescript", "js", "json", "jsonc", "ts"],
+  },
+
+  vite: {
+    plugins: [
+      {
+        name: "llms-routes",
+        configureServer(server) {
+          const dir = path.resolve(
+            fileURLToPath(new URL(".", import.meta.url)),
+            "../public",
+          );
+
+          for (const file of ["llms.txt", "llms-full.txt"]) {
+            const filePath = path.join(dir, file);
+            if (!fs.existsSync(filePath)) continue;
+
+            server.middlewares.use(`/${file}`, (_req, res) => {
+              const content = fs.readFileSync(filePath, "utf-8");
+              res.setHeader("Content-Type", "text/plain; charset=utf-8");
+              res.end(content);
+            });
+          }
+        },
+      },
+    ],
   },
 });
