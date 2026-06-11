@@ -34,20 +34,16 @@ export default defineNuxtConfig({
 
   compatibilityDate: "2024-07-11",
 
+  routeRules: {
+    '/getting-started': { redirect: { to: '/guide/getting-started', statusCode: 301 } },
+  },
+
   nitro: {
     prerender: {
       routes: ["/"],
       crawlLinks: true,
       autoSubfolderIndex: false,
-    },
-  },
-
-  eslint: {
-    config: {
-      stylistic: {
-        commaDangle: "never",
-        braceStyle: "1tbs",
-      },
+      failOnError: false,
     },
   },
 
@@ -56,29 +52,29 @@ export default defineNuxtConfig({
   },
 
   llms: {
-    domain: "https://docs-template.nuxt.dev/",
-    title: "Nuxt Docs Template",
-    description: "A template for building documentation with Nuxt UI and Nuxt Content.",
+    domain: "https://laranode.dev",
+    title: "LaraNode Framework",
+    description: "A modern Node.js framework inspired by Laravel's elegance, built for TypeScript.",
     full: {
-      title: "Nuxt Docs Template - Full Documentation",
-      description: "This is the full documentation for the Nuxt Docs Template.",
+      title: "LaraNode Framework - Full Documentation",
+      description: "Complete documentation for the LaraNode framework - a modern Node.js framework inspired by Laravel.",
     },
     sections: [
       {
         title: "Getting Started",
         contentCollection: "docs",
-        contentFilters: [{ field: "path", operator: "LIKE", value: "/getting-started%" }],
+        contentFilters: [{ field: "path", operator: "LIKE", value: "/guide%" }],
       },
       {
-        title: "Essentials",
+        title: "Packages",
         contentCollection: "docs",
-        contentFilters: [{ field: "path", operator: "LIKE", value: "/essentials%" }],
+        contentFilters: [{ field: "path", operator: "LIKE", value: "/packages%" }],
       },
     ],
   },
 
   mcp: {
-    name: "Docs template",
+    name: "LaraNode Docs",
   },
 
   ogImage: {

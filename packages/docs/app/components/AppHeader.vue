@@ -8,41 +8,20 @@ const { header } = useAppConfig()
 
 <template>
   <UHeader
-    :ui="{ center: 'flex-1' }"
     :to="header?.to || '/'"
   >
-    <UContentSearchButton
-      v-if="header?.search"
-      :collapsed="false"
-      class="w-full"
-    />
+    <template #left>
+      <div class="flex items-center gap-4 flex-1">
+        <NuxtLink :to="header?.to || '/'">
+          <AppLogo class="shrink-0" />
+        </NuxtLink>
 
-    <template
-      v-if="header?.logo?.dark || header?.logo?.light || header?.title"
-      #title
-    >
-      <UColorModeImage
-        v-if="header?.logo?.dark || header?.logo?.light"
-        :light="header?.logo?.light!"
-        :dark="header?.logo?.dark!"
-        :alt="header?.logo?.alt"
-        class="h-6 w-auto shrink-0"
-      />
-
-      <span v-else-if="header?.title">
-        {{ header.title }}
-      </span>
-    </template>
-
-    <template
-      v-else
-      #left
-    >
-      <NuxtLink :to="header?.to || '/'">
-        <AppLogo class="w-auto h-6 shrink-0" />
-      </NuxtLink>
-
-      <TemplateMenu />
+        <UContentSearchButton
+          v-if="header?.search"
+          :collapsed="false"
+          class="w-full max-w-md hidden lg:flex"
+        />
+      </div>
     </template>
 
     <template #right>

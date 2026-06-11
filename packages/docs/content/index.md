@@ -1,53 +1,69 @@
-# Documentation Index
+---
+title: LaraNode Framework
+navigation: false
+---
 
-Welcome to the LaraNode Framework documentation.
+::section{.text-center.py-24}
+
+# LaraNode Framework
+
+**A modern Node.js framework inspired by Laravel's elegance, built for TypeScript.**
+
+Get started in minutes and build expressive, scalable applications with an intuitive API.
+
+::
+
+::section
 
 ## Getting Started
 
-- [Introduction](/guide/introduction) -- Learn about LaraNode
-- [Getting Started](/guide/getting-started) -- Create your first app
-- [Installation](/guide/installation) -- Install LaraNode
-- [Project Structure](/guide/project-structure) -- Directory layout
-- [Configuration](/guide/configuration) -- Configure your app
+[Installation](/guide/installation) &mdash; Install LaraNode in your project
+[Project Structure](/guide/project-structure) &mdash; Understand the directory layout
+[Configuration](/guide/configuration) &mdash; Configure your application
 
 ## Core Concepts
 
-- [Service Providers](/guide/service-providers) -- Modular configuration
-- [Dependency Injection](/guide/dependency-injection) -- IoC container
-- [Middleware](/guide/middleware) -- Request filtering
-- [Facades](/guide/facades) -- Static-like interfaces
+[Service Providers](/guide/service-providers) &mdash; Modular configuration system
+[Dependency Injection](/guide/dependency-injection) &mdash; IoC container
+[Middleware](/guide/middleware) &mdash; HTTP request filtering
+[Facades](/guide/facades) &mdash; Static-like interfaces
+
+::
+
+::section
 
 ## Packages
 
 ### Foundation
-
-- [@lara-node/core](/packages/core) -- IoC container, Application, Providers
-- [@lara-node/db](/packages/db) -- Eloquent ORM with MySQL & MongoDB
-- [@lara-node/router](/packages/router) -- Expressive routing
-- [@lara-node/validator](/packages/validator) -- 50+ validation rules
+- [@lara-node/core](/packages/core) &mdash; IoC container, Application, Service Providers
+- [@lara-node/db](/packages/db) &mdash; Eloquent ORM with MySQL & MongoDB support
+- [@lara-node/router](/packages/router) &mdash; Expressive routing with controllers & middleware
+- [@lara-node/validator](/packages/validator) &mdash; 50+ validation rules
 
 ### Security
-
-- [@lara-node/auth](/packages/auth) -- JWT authentication
-- [@lara-node/middlewares](/packages/middlewares) -- Pre-built middleware
+- [@lara-node/auth](/packages/auth) &mdash; JWT authentication & authorization
+- [@lara-node/middlewares](/packages/middlewares) &mdash; Pre-built HTTP middleware
 
 ### Data & Async
-
-- [@lara-node/cache](/packages/cache) -- Multi-driver caching
-- [@lara-node/queue](/packages/queue) -- Job queues & workers
-- [@lara-node/events](/packages/events) -- Event dispatcher
-- [@lara-node/mail](/packages/mail) -- Email system
+- [@lara-node/cache](/packages/cache) &mdash; Multi-driver caching (Redis, in-memory)
+- [@lara-node/queue](/packages/queue) &mdash; Job queues & workers
+- [@lara-node/events](/packages/events) &mdash; Event dispatcher & listeners
+- [@lara-node/mail](/packages/mail) &mdash; Email system with multiple drivers
 
 ### Utilities
-
-- [@lara-node/carbon](/packages/carbon) -- Date/time library
-- [@lara-node/console](/packages/console) -- Artisan CLI
+- [@lara-node/carbon](/packages/carbon) &mdash; Date/time manipulation
+- [@lara-node/console](/packages/console) &mdash; Artisan-style CLI commands
 
 ### Monitoring
+- [@lara-node/horizon](/packages/horizon) &mdash; Queue monitoring dashboard
+- [@lara-node/telescope](/packages/telescope) &mdash; Debug & introspection dashboard
 
-- [@lara-node/horizon](/packages/horizon) -- Queue monitoring
-- [@lara-node/telescope](/packages/telescope) -- Debug dashboard
+::
+
+::section
 
 ## CLI Tools
 
-- [create-laranode](/cli/create-laranode) -- Scaffold new apps
+[create-laranode](/cli/create-laranode) &mdash; Scaffold new LaraNode applications from the command line.
+
+::

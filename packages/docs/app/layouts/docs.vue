@@ -17,6 +17,10 @@ const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
       </template>
 
       <slot />
+
+      <template #right>
+        <div class="lg:block hidden" />
+      </template>
     </UPage>
   </UContainer>
 </template>

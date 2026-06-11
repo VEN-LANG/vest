@@ -1,24 +1,50 @@
 export default defineAppConfig({
   ui: {
     colors: {
-      primary: 'green',
-      neutral: 'slate'
+      primary: 'neutral',
+      neutral: 'zinc'
+    },
+    button: {
+      slots: {
+        base: 'active:translate-y-px transition-transform duration-300'
+      }
+    },
+    contentToc: {
+      defaultVariants: {
+        highlightVariant: 'circuit'
+      }
+    },
+    contentSurround: {
+      variants: {
+        direction: {
+          left: {
+            linkLeadingIcon: [
+              'group-active:-translate-x-0'
+            ]
+          },
+          right: {
+            linkLeadingIcon: [
+              'group-active:translate-x-0'
+            ]
+          }
+        }
+      }
     },
     footer: {
       slots: {
-        root: 'border-t border-default',
+        root: 'border-t border-default mt-12',
         left: 'text-sm text-muted'
       }
     }
   },
   seo: {
-    siteName: 'Nuxt Docs Template'
+    siteName: 'LaraNode'
   },
   header: {
     title: '',
     to: '/',
     logo: {
-      alt: '',
+      alt: 'LaraNode',
       light: '',
       dark: ''
     },
@@ -26,45 +52,40 @@ export default defineAppConfig({
     colorMode: true,
     links: [{
       'icon': 'i-simple-icons-github',
-      'to': 'https://github.com/nuxt-ui-templates/docs',
+      'to': 'https://github.com/laranode',
       'target': '_blank',
       'aria-label': 'GitHub'
     }]
   },
   footer: {
-    credits: `Built with Nuxt UI • © ${new Date().getFullYear()}`,
+    credits: `LaraNode Framework \u00A9 ${new Date().getFullYear()}`,
     colorMode: false,
     links: [{
-      'icon': 'i-simple-icons-discord',
-      'to': 'https://go.nuxt.com/discord',
+      'icon': 'i-simple-icons-npm',
+      'to': 'https://www.npmjs.com/package/laranode',
       'target': '_blank',
-      'aria-label': 'Nuxt on Discord'
-    }, {
-      'icon': 'i-simple-icons-x',
-      'to': 'https://go.nuxt.com/x',
-      'target': '_blank',
-      'aria-label': 'Nuxt on X'
+      'aria-label': 'NPM'
     }, {
       'icon': 'i-simple-icons-github',
-      'to': 'https://github.com/nuxt/ui',
+      'to': 'https://github.com/laranode',
       'target': '_blank',
-      'aria-label': 'Nuxt UI on GitHub'
+      'aria-label': 'GitHub'
     }]
   },
   toc: {
-    title: 'Table of Contents',
+    title: 'On this page',
     bottom: {
-      title: 'Community',
-      edit: 'https://github.com/nuxt-ui-templates/docs/edit/main/content',
+      title: 'Links',
+      edit: 'https://github.com/laranode/docs/edit/main/content',
       links: [{
         icon: 'i-lucide-star',
         label: 'Star on GitHub',
-        to: 'https://github.com/nuxt/ui',
+        to: 'https://github.com/laranode',
         target: '_blank'
       }, {
         icon: 'i-lucide-book-open',
-        label: 'Nuxt UI docs',
-        to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
+        label: 'Documentation',
+        to: '/getting-started',
         target: '_blank'
       }]
     }
