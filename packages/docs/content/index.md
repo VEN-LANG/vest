@@ -5,7 +5,7 @@ navigation: false
 
 # LaraNode Framework
 
-**A modern Node.js framework inspired by Laravel's elegance, built for TypeScript.**
+A modern Node.js framework inspired by Laravel's elegance, built for TypeScript.
 
 Get started in minutes and build expressive, scalable applications with an intuitive API.
 
@@ -33,6 +33,7 @@ Get started in minutes and build expressive, scalable applications with an intui
 - [@lara-node/db](/packages/db) &mdash; Eloquent ORM with MySQL & MongoDB support
 - [@lara-node/router](/packages/router) &mdash; Expressive routing with controllers & middleware
 - [@lara-node/validator](/packages/validator) &mdash; 50+ validation rules
+- [@lara-node/exports](/packages/exports) &mdash; PDF, Excel & CSV export utilities
 
 ### Security
 
@@ -62,7 +63,8 @@ Get started in minutes and build expressive, scalable applications with an intui
 
 ---
 
-## AI & LLM
+## AI & LLM Integration
 
-- [llms.txt](/llms.txt) &mdash; Documentation summary for LLMs
-- [llms-full.txt](/llms-full.txt) &mdash; Full documentation for LLMs
+- <a href="/mcp" target="_blank">MCP Server</a> &mdash; Connect AI assistants to your LaraNode application
+- <a href="/llms.txt" target="_blank">llms.txt</a> &mdash; Documentation summary for LLMs
+- <a href="/llms-full.txt" target="_blank">llms-full.txt</a> &mdash; Full documentation for LLMs

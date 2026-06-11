@@ -45,6 +45,7 @@ const { header } = useAppConfig()
       <UContentNavigation
         highlight
         :navigation="navigation"
+        :defaultOpen="false"
       />
     </template>
   </UHeader>
