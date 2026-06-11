@@ -8,7 +8,13 @@ import { horizonMetrics } from "./HorizonMetrics.js";
 import { HorizonManager } from "./HorizonManager.js";
 import { renderHorizonDashboard } from "./HorizonDashboard.js";
 import { OpenApiGenerator } from "@lara-node/router";
-import horizonConfig from "./horizon.config.js";
+import { Broadcast, getBroadcastingConfig } from "@lara-node/events";
+import { getHorizonConfig } from "./horizon.config.js";
+
+/** Live-metrics relay timer (web process). Module-level so double-boot is a no-op. */
+let relayTimer: ReturnType<typeof setInterval> | null = null;
+/** Last broadcast snapshot, so the relay only emits on change. */
+let lastRelayFingerprint = "";
 
 /*
 |--------------------------------------------------------------------------
@@ -39,7 +45,7 @@ export class HorizonServiceProvider extends ServiceProvider {
     // the scheduler (schedule:work); idempotent and harmless elsewhere.
     HorizonManager.registerSchedulerEvents();
 
-    const { path: basePath, token } = horizonConfig;
+    const { path: basePath, token } = getHorizonConfig();
     const expressApp = this.app.getExpressApp();
     const router = Router();
 
@@ -67,7 +73,13 @@ export class HorizonServiceProvider extends ServiceProvider {
     */
     router.get("/", (_req, res) => {
       res.setHeader("Content-Type", "text/html; charset=utf-8");
-      res.send(renderHorizonDashboard(basePath, token));
+      res.send(
+        renderHorizonDashboard(
+          basePath,
+          token,
+          getBroadcastingConfig().connections.websocket.path,
+        ),
+      );
     });
 
     /*
@@ -233,7 +245,46 @@ export class HorizonServiceProvider extends ServiceProvider {
     */
     this.registerDocs(basePath);
 
+    /*
+    |--------------------------------------------------------------------------
+    | Live metrics relay (web process only)
+    |--------------------------------------------------------------------------
+    | Workers run in a separate process and share state through the cache.
+    | The dashboard's web process polls that shared state once and pushes it
+    | to all connected browsers over the `horizon` WebSocket channel, so the
+    | UI updates live without every browser polling the REST API.
+    */
+    if (this.app.getHttpServer()) this.startMetricsRelay();
+
     console.log(`[Horizon] Dashboard available at ${basePath}`);
+  }
+
+  private startMetricsRelay(): void {
+    if (relayTimer) return; // guard against double-boot
+    const tick = async (): Promise<void> => {
+      try {
+        const [sum, workers, queues, jobs, failed, sched, metrics] = await Promise.all([
+          horizonMetrics.summary(),
+          horizonMetrics.getWorkers(),
+          HorizonManager.getQueueSizes().catch(() => ({})),
+          horizonMetrics.getRecentJobs(200).catch(() => []),
+          HorizonManager.getFailedJobs().catch(() => []),
+          HorizonManager.getSchedulerTasks().catch(() => []),
+          horizonMetrics.getMetrics(60).catch(() => []),
+        ]);
+        // Only broadcast when the snapshot actually changed — keeps idle
+        // dashboards quiet and avoids needless socket traffic.
+        const payload = { sum, workers, queues, jobs, failed, sched, metrics };
+        const fingerprint = JSON.stringify(payload);
+        if (fingerprint === lastRelayFingerprint) return;
+        lastRelayFingerprint = fingerprint;
+        await Broadcast.to("horizon").send("metrics", payload);
+      } catch {
+        /* best-effort */
+      }
+    };
+    relayTimer = setInterval(() => void tick(), 3000);
+    if (typeof relayTimer.unref === "function") relayTimer.unref();
   }
 
   /*
@@ -243,6 +294,7 @@ export class HorizonServiceProvider extends ServiceProvider {
   */
 
   private isEnabled(): boolean {
+    const horizonConfig = getHorizonConfig();
     if (horizonConfig.enabled === false) return false;
     if (!horizonConfig.token && process.env.NODE_ENV === "production") {
       console.warn("[Horizon] Disabled in production — set HORIZON_TOKEN to enable.");
@@ -254,7 +306,7 @@ export class HorizonServiceProvider extends ServiceProvider {
   private registerDocs(base: string): void {
     const tag = { name: "Horizon", description: "Queue manager dashboard & worker control API" };
 
-    const auth = horizonConfig.token ? { security: [{ bearerAuth: [] }] } : {};
+    const auth = getHorizonConfig().token ? { security: [{ bearerAuth: [] }] } : {};
 
     OpenApiGenerator.registerPaths(
       {

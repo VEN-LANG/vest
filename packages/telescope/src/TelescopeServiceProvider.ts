@@ -13,8 +13,9 @@ import {
   CacheWatcher,
 } from "./Watchers/index.js";
 import { setCacheWatchHook } from "@lara-node/cache";
+import { getWebSocketStats, getBroadcastingConfig } from "@lara-node/events";
 import { OpenApiGenerator } from "@lara-node/router";
-import telescopeConfig from "./telescope.config.js";
+import { getTelescopeConfig } from "./telescope.config.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -40,10 +41,10 @@ export class TelescopeServiceProvider extends ServiceProvider {
   */
   register(): void {
     if (!this.isEnabled()) return;
-    if (!telescopeConfig.watchers.requests) return;
+    if (!getTelescopeConfig().watchers.requests) return;
 
     // Configure then register the plain middleware (before routes mount).
-    initRequestWatcher(telescopeConfig);
+    initRequestWatcher(getTelescopeConfig());
     this.app.getExpressApp().use(requestWatcher);
   }
 
@@ -55,7 +56,7 @@ export class TelescopeServiceProvider extends ServiceProvider {
   async boot(): Promise<void> {
     if (!this.isEnabled()) return;
 
-    const { path: basePath, token, watchers } = telescopeConfig;
+    const { path: basePath, token, watchers } = getTelescopeConfig();
     const expressApp = this.app.getExpressApp();
 
     /*
@@ -98,7 +99,13 @@ export class TelescopeServiceProvider extends ServiceProvider {
     */
     router.get("/", (_req, res) => {
       res.setHeader("Content-Type", "text/html; charset=utf-8");
-      res.send(renderTelescopeDashboard(basePath, token));
+      res.send(
+        renderTelescopeDashboard(
+          basePath,
+          token,
+          getBroadcastingConfig().connections.websocket.path,
+        ),
+      );
     });
 
     /*
@@ -129,6 +136,15 @@ export class TelescopeServiceProvider extends ServiceProvider {
       const type = (req.query as any).type;
       await TelescopeStore.clear(type);
       res.json({ cleared: true });
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | API — WebSocket metrics (null when broadcasting isn't running)
+    |--------------------------------------------------------------------------
+    */
+    router.get("/api/websocket", (_req, res) => {
+      res.json(getWebSocketStats());
     });
 
     /*
@@ -228,8 +244,8 @@ export class TelescopeServiceProvider extends ServiceProvider {
   */
 
   private isEnabled(): boolean {
-    if (telescopeConfig.enabled === false) return false;
-    if (!telescopeConfig.token && process.env.NODE_ENV === "production") {
+    if (getTelescopeConfig().enabled === false) return false;
+    if (!getTelescopeConfig().token && process.env.NODE_ENV === "production") {
       console.warn("[Telescope] Disabled in production — set TELESCOPE_TOKEN to enable.");
       return false;
     }
@@ -241,7 +257,7 @@ export class TelescopeServiceProvider extends ServiceProvider {
       name: "Telescope",
       description: "Observability dashboard — inspect requests, exceptions, jobs, queries & logs",
     };
-    const auth = telescopeConfig.token ? { security: [{ bearerAuth: [] }] } : {};
+    const auth = getTelescopeConfig().token ? { security: [{ bearerAuth: [] }] } : {};
 
     OpenApiGenerator.registerPaths(
       {

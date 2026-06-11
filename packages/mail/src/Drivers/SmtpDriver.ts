@@ -1,6 +1,6 @@
 import { MailDriverInterface, MailMessage, SendMailResult, MailAddress } from "../types.js";
 import nodemailer, { Transporter } from "nodemailer";
-import mailConfig, { MailerConfig } from "../mail.config.js";
+import { getMailConfig, type MailerConfig } from "../mail.config.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -16,7 +16,7 @@ export class SmtpDriver implements MailDriverInterface {
   private config: MailerConfig;
 
   constructor(config?: MailerConfig) {
-    this.config = config || mailConfig.mailers.smtp;
+    this.config = config || getMailConfig().mailers.smtp;
     this.transporter = this.createTransporter();
   }
 
@@ -60,7 +60,7 @@ export class SmtpDriver implements MailDriverInterface {
 
   private buildMailOptions(message: MailMessage): nodemailer.SendMailOptions {
     return {
-      from: this.formatAddress(message.from || mailConfig.from),
+      from: this.formatAddress(message.from || getMailConfig().from),
       to: this.formatAddresses(message.to),
       cc: message.cc ? this.formatAddresses(message.cc) : undefined,
       bcc: message.bcc ? this.formatAddresses(message.bcc) : undefined,

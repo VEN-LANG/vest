@@ -1,3 +1,5 @@
+import { config } from "@lara-node/core";
+
 export interface HorizonSupervisor {
   name: string;
   connection?: string;
@@ -74,3 +76,13 @@ const horizonConfig: HorizonConfig = {
 };
 
 export default horizonConfig;
+
+/**
+ * Resolve the effective Horizon config. Reads the application override
+ * registered via `setConfig('horizon', …)` (e.g. by the app's
+ * ConfigServiceProvider), falling back to this package's bundled default.
+ * Always call this instead of importing the constant so app config wins.
+ */
+export function getHorizonConfig(): HorizonConfig {
+  return config<HorizonConfig>("horizon", horizonConfig);
+}

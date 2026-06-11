@@ -1,6 +1,6 @@
 import { Command } from "@lara-node/console";
 import { ArgumentsCamelCase } from "yargs";
-import { HorizonManager, horizonMetrics, horizonConfig } from "./index.js";
+import { HorizonManager, horizonMetrics, getHorizonConfig } from "./index.js";
 import type { HorizonSupervisor } from "./index.js";
 
 export class HorizonWorkCommand extends Command {
@@ -14,6 +14,7 @@ export class HorizonWorkCommand extends Command {
   };
 
   async handle(args: ArgumentsCamelCase): Promise<void> {
+    const horizonConfig = getHorizonConfig();
     const env = (args.env as string) || process.env.NODE_ENV || "development";
     const envConfig = horizonConfig.environments[env] || horizonConfig.environments["development"];
 
@@ -62,7 +63,7 @@ export class HorizonWorkCommand extends Command {
     this.line(`║ Environment : ${env.padEnd(46)}║`);
     this.line(`║ Supervisors : ${String(supervisors.length).padEnd(46)}║`);
     this.line(`║ Workers     : ${String(totalWorkers).padEnd(46)}║`);
-    this.line(`║ Dashboard   : ${horizonConfig.path.padEnd(46)}║`);
+    this.line(`║ Dashboard   : ${getHorizonConfig().path.padEnd(46)}║`);
     this.line("╚══════════════════════════════════════════════════════════════╝\n");
   }
 }
@@ -143,6 +144,7 @@ export class HorizonListCommand extends Command {
   };
 
   async handle(args: ArgumentsCamelCase): Promise<void> {
+    const horizonConfig = getHorizonConfig();
     const env = (args.env as string) || process.env.NODE_ENV || "development";
     const envConfig = horizonConfig.environments[env] || horizonConfig.environments["development"];
 

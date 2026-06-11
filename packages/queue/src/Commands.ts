@@ -1,7 +1,7 @@
 import { Command } from "@lara-node/console";
 import { ArgumentsCamelCase } from "yargs";
 import { Queue, Worker, scheduler, getRegisteredJobs } from "./index.js";
-import { queueConfig } from "./index.js";
+import { getQueueConfig } from "./index.js";
 import { Cache } from "@lara-node/cache";
 
 export class QueueWorkCommand extends Command {
@@ -22,8 +22,8 @@ export class QueueWorkCommand extends Command {
     once: { type: "boolean" as const, description: "Only process the next job on the queue", default: false },
     "stop-when-empty": { type: "boolean" as const, description: "Stop when the queue is empty", default: false },
     delay: { type: "number" as const, description: "Seconds to delay failed jobs before retrying", default: 0 },
-    tries: { type: "number" as const, description: "Number of times to attempt a job before logging it failed", default: queueConfig.defaults.tries },
-    timeout: { type: "number" as const, description: "Seconds a child process can run", default: queueConfig.defaults.timeout },
+    tries: { type: "number" as const, description: "Number of times to attempt a job before logging it failed", default: getQueueConfig().defaults.tries },
+    timeout: { type: "number" as const, description: "Seconds a child process can run", default: getQueueConfig().defaults.timeout },
     sleep: { type: "number" as const, description: "Seconds to sleep when no job is available", default: 3 },
     memory: { type: "number" as const, description: "Memory limit in megabytes", default: 128 },
     "max-jobs": { type: "number" as const, description: "Maximum number of jobs to process before stopping", default: 0 },
@@ -33,7 +33,7 @@ export class QueueWorkCommand extends Command {
   };
 
   async handle(args: ArgumentsCamelCase): Promise<void> {
-    const connection = (args.connection as string) || queueConfig.default;
+    const connection = (args.connection as string) || getQueueConfig().default;
     const queues = (args.queue as string).split(",").map((q) => q.trim());
 
     console.log("╔══════════════════════════════════════════════════════════════╗");
@@ -82,14 +82,14 @@ export class QueueListenCommand extends Command {
   protected options = {
     queue: { type: "string" as const, description: "The queue to listen on", default: "default" },
     delay: { type: "number" as const, description: "Seconds to delay failed jobs", default: 0 },
-    tries: { type: "number" as const, description: "Number of attempts before logging failure", default: queueConfig.defaults.tries },
-    timeout: { type: "number" as const, description: "Seconds a child process can run", default: queueConfig.defaults.timeout },
+    tries: { type: "number" as const, description: "Number of attempts before logging failure", default: getQueueConfig().defaults.tries },
+    timeout: { type: "number" as const, description: "Seconds a child process can run", default: getQueueConfig().defaults.timeout },
     sleep: { type: "number" as const, description: "Seconds to sleep when no job available", default: 3 },
     memory: { type: "number" as const, description: "Memory limit in megabytes", default: 128 },
   };
 
   async handle(args: ArgumentsCamelCase): Promise<void> {
-    const connection = (args.connection as string) || queueConfig.default;
+    const connection = (args.connection as string) || getQueueConfig().default;
     console.log(`Listening on queue [${args.queue}] connection [${connection}]...`);
 
     const worker = new Worker(connection, args.queue as string, {
@@ -216,7 +216,7 @@ export class QueueClearCommand extends Command {
   };
 
   async handle(args: ArgumentsCamelCase): Promise<void> {
-    const connection = (args.connection as string) || queueConfig.default;
+    const connection = (args.connection as string) || getQueueConfig().default;
     const queue = args.queue as string;
     const count = await Queue.clear(queue, connection);
     console.log(`Cleared ${count} job(s) from the [${queue}] queue on [${connection}] connection.`);
@@ -233,7 +233,7 @@ export class QueueStatusCommand extends Command {
   };
 
   async handle(args: ArgumentsCamelCase): Promise<void> {
-    const connection = (args.connection as string) || queueConfig.default;
+    const connection = (args.connection as string) || getQueueConfig().default;
     const queue = args.queue as string;
 
     const [size, jobs, failedJobs] = await Promise.all([
@@ -247,7 +247,7 @@ export class QueueStatusCommand extends Command {
     console.log("╠══════════════════════════════════════════════════════════════╣");
     console.log(`║ Connection: ${connection.padEnd(48)}║`);
     console.log(`║ Queue: ${queue.padEnd(53)}║`);
-    console.log(`║ Driver: ${(queueConfig.connections[connection]?.driver ?? "").padEnd(52)}║`);
+    console.log(`║ Driver: ${(getQueueConfig().connections[connection]?.driver ?? "").padEnd(52)}║`);
     console.log("╠══════════════════════════════════════════════════════════════╣");
     console.log(`║ Pending Jobs: ${String(size).padEnd(46)}║`);
     console.log(`║ Failed Jobs: ${String(failedJobs.length).padEnd(47)}║`);

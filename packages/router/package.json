@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/router",
-  "version": "0.2.17",
+  "version": "0.2.18",
   "description": "Lara-Node Express router builder, middleware stack, and OpenAPI generator",
   "files": [
     "dist",

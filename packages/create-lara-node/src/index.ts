@@ -13,19 +13,19 @@ import pc from "picocolors";
 import prompts from "prompts";
 
 const VERSIONS: Record<string, string> = {
-  "@lara-node/core": "0.1.12",
-  "@lara-node/router": "0.2.12",
-  "@lara-node/db": "0.1.17",
-  "@lara-node/auth": "0.1.8",
-  "@lara-node/console": "0.1.16",
-  "@lara-node/validator": "0.1.15",
-  "@lara-node/middlewares": "0.1.15",
-  "@lara-node/events": "0.1.9",
-  "@lara-node/queue": "0.1.16",
-  "@lara-node/mail": "0.1.8",
-  "@lara-node/horizon": "0.1.17",
-  "@lara-node/telescope": "0.1.13",
-  "@lara-node/cache": "0.1.11",
+  "@lara-node/core": "0.1.18",
+  "@lara-node/router": "0.2.18",
+  "@lara-node/db": "0.1.24",
+  "@lara-node/auth": "0.1.12",
+  "@lara-node/console": "0.1.23",
+  "@lara-node/validator": "0.1.21",
+  "@lara-node/middlewares": "0.1.20",
+  "@lara-node/events": "0.1.16",
+  "@lara-node/queue": "0.1.23",
+  "@lara-node/mail": "0.1.14",
+  "@lara-node/horizon": "0.1.27",
+  "@lara-node/telescope": "0.1.25",
+  "@lara-node/cache": "0.1.17",
 };
 
 async function main() {
@@ -221,7 +221,7 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
       ...(hasOxfmt ? { fmt: "oxfmt", "fmt:check": "oxfmt --check" } : {}),
     },
     dependencies: {
-      ...Object.fromEntries(laraNodeDeps.map((p) => [p, `^${VERSIONS[p] ?? "0.1.0"}`])),
+      ...Object.fromEntries(laraNodeDeps.map((p) => [p, `>=${VERSIONS[p] ?? "0.1.0"}`])),
       "reflect-metadata": "^0.2.2",
       dotenv: "^17.2.3",
       express: "^5.2.1",
@@ -661,7 +661,8 @@ main().catch((err) => {
   w(
     dir,
     "src/bootstrap/app.ts",
-    `import fs from 'fs';
+    `import '../register';
+import fs from 'fs';
 import path from 'path';
 import { container, Application } from '@lara-node/core';
 import type { ServiceProviderClass } from '@lara-node/core';
@@ -771,6 +772,10 @@ export async function startApplication(): Promise<void> {
   app.configureBaseMiddleware();
 
   app.useMiddleware(modelRegistryMiddleware(path.join(__dirname, '../app/Models')));
+
+  // Create the HTTP server BEFORE booting providers so broadcasting can attach
+  // its WebSocket upgrade handler to it (otherwise /ws falls through to a 404).
+  app.createHttpServer();
 
   await app.boot();
 
@@ -903,48 +908,33 @@ export class MiddlewareServiceProvider extends BaseProvider {
   );
 
   // ── ConfigServiceProvider ─────────────────────────────────────────────────────
-  const configImports: string[] = [
-    `import { ServiceProvider, setConfig } from '@lara-node/core';`,
-    `import appConfig from '../../config/app.config';`,
-    `import dbConfig from '../../config/db.config';`,
-    `import mailConfig from '../../config/mail.config';`,
-    `import queueConfig from '../../config/queue.config';`,
-  ];
-  const configRegistrations: string[] = [
-    `    setConfig('app', appConfig as unknown as Record<string, unknown>);`,
-    `    setConfig('db', dbConfig as unknown as Record<string, unknown>);`,
-    `    setConfig('mail', mailConfig as unknown as Record<string, unknown>);`,
-    `    setConfig('queue', queueConfig as unknown as Record<string, unknown>);`,
-  ];
-  if (hasEvents) {
-    configImports.push(`import broadcastingConfig from '../../config/broadcasting.config';`);
-    configRegistrations.push(
-      `    setConfig('broadcasting', broadcastingConfig as unknown as Record<string, unknown>);`,
-    );
-  }
-
   w(
     dir,
     "src/app/Providers/ConfigServiceProvider.ts",
-    `${configImports.join("\n")}
+    `import { ServiceProvider } from '@lara-node/core';
+import path from 'path';
 
 /*
 |--------------------------------------------------------------------------
 | ConfigServiceProvider
 |--------------------------------------------------------------------------
 |
-| Loads all application config files and registers them with the global
-| config() system. This provider must run FIRST so every other provider
-| and module can call config('mail.default') and get app-level overrides
-| instead of the package defaults.
+| Crawls src/config and registers every *.config.{ts,js} file with the global
+| config() system (the filename minus '.config' becomes the namespace, e.g.
+| queue.config.ts → config('queue')). App values override package defaults.
 |
-| After running \`pnpm artisan vendor:publish --tag=config\`, new config
-| files will appear in src/config/. Import and register them here.
+| This provider must run FIRST so every other provider and module can call
+| config('mail.default') and get app-level overrides instead of package
+| defaults. The resolved snapshot is also persisted to the cache backend for
+| faster cross-process retrieval (see the config:cache / config:clear commands).
+|
+| After \`pnpm artisan vendor:publish --tag=config\`, new config files in
+| src/config/ are picked up automatically — no edits needed here.
 |
 */
 export class ConfigServiceProvider extends ServiceProvider {
   register(): void {
-${configRegistrations.join("\n")}
+    this.loadConfigDir(path.join(__dirname, '../../config'));
   }
 }
 `,
@@ -2469,6 +2459,7 @@ export class FileController extends Controller {
     additionalProviders.push(`BroadcastServiceProvider`);
   }
   if (hasQueue) additionalProviders.push(`QueueServiceProvider`);
+  if (hasMail) additionalProviders.push(`MailServiceProvider`);
   if (hasHorizon) additionalProviders.push(`HorizonServiceProvider`);
   if (hasTelescope) additionalProviders.push(`TelescopeServiceProvider`);
 
@@ -2490,6 +2481,8 @@ export class FileController extends Controller {
   }
   if (hasQueue)
     appProviderImports.push(`import { QueueServiceProvider } from './QueueServiceProvider';`);
+  if (hasMail)
+    appProviderImports.push(`import { MailServiceProvider } from '@lara-node/mail';`);
   if (hasHorizon)
     appProviderImports.push(`import { HorizonServiceProvider } from '@lara-node/horizon';`);
   if (hasTelescope)
@@ -2797,24 +2790,29 @@ export class BroadcastServiceProvider extends BaseProvider {
   if (hasQueue) {
     w(
       dir,
-      "src/app/Jobs/SendMailJob.ts",
+      "src/app/Jobs/ExampleEmailJob.ts",
       `import { Job, Queueable } from '@lara-node/queue';
 
 /*
 |--------------------------------------------------------------------------
-| SendMailJob
+| ExampleEmailJob
 |--------------------------------------------------------------------------
+|
+| An example custom queue job. To send mail you usually do NOT need this —
+| @lara-node/mail ships its own SendMailJob (registered by MailServiceProvider),
+| so 'Mail().to(...).queue(mailable)' just works. Use a job like this only
+| when you want custom background work around an email.
 |
 | @Queueable sets the default queue and retry count for every dispatch.
 | Override per-dispatch with fluent methods:
-|   SendMailJob.dispatch().onQueue('urgent').tries(5).dispatch();
+|   ExampleEmailJob.dispatch().onQueue('urgent').tries(5).dispatch();
 |
 | Conditional dispatch via shouldQueue():
 |   shouldQueue() { return !this.payload.suppressEmail; }
 |
 */
 @Queueable({ queue: 'emails', tries: 3 })
-export class SendMailJob extends Job {
+export class ExampleEmailJob extends Job {
   constructor(
     private readonly payload: {
       to: string;
@@ -2826,14 +2824,14 @@ export class SendMailJob extends Job {
   ) { super(); }
 
   async handle(): Promise<void> {
-    console.log(\`[SendMailJob] Sending to \${this.payload.to}: \${this.payload.subject}\`);
-    // Inject MailService or use @lara-node/mail directly:
+    console.log(\`[ExampleEmailJob] Sending to \${this.payload.to}: \${this.payload.subject}\`);
+    // Use @lara-node/mail directly:
     // const { Mail } = await import('@lara-node/mail');
-    // await Mail.send(new WelcomeEmail(this.payload.to));
+    // await Mail().to(this.payload.to).send(new WelcomeEmail(this.payload));
   }
 
   async failed(error: Error): Promise<void> {
-    console.error(\`[SendMailJob] Failed for \${this.payload.to}: \${error.message}\`);
+    console.error(\`[ExampleEmailJob] Failed for \${this.payload.to}: \${error.message}\`);
   }
 }
 `,
@@ -2911,7 +2909,7 @@ export class GenerateReportJob extends Job {
     // const data = await this.collectData();
     // await this.generatePdf(data);
     // if (this.config.email) {
-    //   await Queue.push(new SendMailJob({ to: this.config.email, subject: 'Your report is ready', body: '...' }));
+    //   await Mail().to(this.config.email).send(new ReportReadyEmail());
     // }
 
     console.log(\`[GenerateReportJob] \${period} \${type} report complete\`);
@@ -2923,7 +2921,7 @@ export class GenerateReportJob extends Job {
     w(
       dir,
       "src/app/Jobs/index.ts",
-      `export * from './SendMailJob';
+      `export * from './ExampleEmailJob';
 export * from './CleanupJob';
 export * from './GenerateReportJob';
 `,
@@ -4189,13 +4187,13 @@ Available mailables:
 
 \`\`\`typescript
 import { Queue } from '@lara-node/queue';
-import { SendMailJob } from '@app/Jobs/SendMailJob';
+import { ExampleEmailJob } from '@app/Jobs/ExampleEmailJob';
 
 // Dispatch a job
-await Queue.push(new SendMailJob({ to: 'user@example.com', subject: 'Hello', body: 'World' }));
+await Queue.push(new ExampleEmailJob({ to: 'user@example.com', subject: 'Hello', body: 'World' }));
 
 // Dispatch with delay (seconds)
-await Queue.later(300, new SendMailJob({ ... }));
+await Queue.later(300, new ExampleEmailJob({ to: 'user@example.com', subject: 'Hello', body: 'World' }));
 \`\`\`
 
 Scheduled jobs (configured in \`QueueServiceProvider\`):

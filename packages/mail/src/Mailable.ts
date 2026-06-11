@@ -1,5 +1,5 @@
 import { MailableInterface, MailMessage, MailAddress, MailAttachment } from "./types.js";
-import mailConfig from "./mail.config.js";
+import { getMailConfig } from "./mail.config.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -261,7 +261,7 @@ export abstract class Mailable implements MailableInterface {
 
     return {
       to: this._to,
-      from: this._from || mailConfig.from,
+      from: this._from || getMailConfig().from,
       replyTo: this._replyTo,
       cc: this._cc.length > 0 ? this._cc : undefined,
       bcc: this._bcc.length > 0 ? this._bcc : undefined,

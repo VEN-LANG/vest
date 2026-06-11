@@ -5,7 +5,7 @@ import { horizonMetrics, writeHorizonSignal } from "./HorizonMetrics.js";
 import type { SchedulerTaskInfo } from "./HorizonMetrics.js";
 import { WorkerOptions } from "@lara-node/queue";
 import { getEventDispatcher } from "@lara-node/events";
-import { queueConfig } from "@lara-node/queue";
+import { getQueueConfig } from "@lara-node/queue";
 
 /*
 |--------------------------------------------------------------------------
@@ -85,7 +85,7 @@ class HorizonManagerClass {
 
     worker.on("job:processed", ({ job }) => {
       const durationMs = jobStartTime ? Date.now() - jobStartTime : 0;
-      const conn = connection || queueConfig.default;
+      const conn = connection || getQueueConfig().default;
       horizonMetrics
         .updateWorker(id, {
           jobsProcessed: worker.getJobsProcessed(),
@@ -116,7 +116,7 @@ class HorizonManagerClass {
 
     worker.on("job:failed", ({ job, exception }) => {
       const durationMs = jobStartTime ? Date.now() - jobStartTime : 0;
-      const conn = connection || queueConfig.default;
+      const conn = connection || getQueueConfig().default;
       horizonMetrics
         .updateWorker(id, {
           currentJob: null,
@@ -418,7 +418,7 @@ class HorizonManagerClass {
 
   async getQueueSizes(): Promise<Record<string, number>> {
     const queues = new Set<string>(["default"]);
-    for (const conn of Object.values(queueConfig.connections)) {
+    for (const conn of Object.values(getQueueConfig().connections)) {
       if (conn.queue) {
         const qs = Array.isArray(conn.queue) ? conn.queue : [conn.queue];
         qs.forEach((q) => queues.add(q));

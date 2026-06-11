@@ -1,6 +1,8 @@
 import { setConfig } from "@lara-node/core";
+import { getBroadcastManager as _getBroadcastManager } from "./Broadcasting/BroadcastManager.js";
 import _broadcastingConfig from "./Broadcasting/broadcasting.config.js";
 setConfig("broadcasting", _broadcastingConfig as unknown as Record<string, unknown>);
+export { getBroadcastingConfig } from "./Broadcasting/broadcasting.config.js";
 export { default as broadcastingConfig } from "./Broadcasting/broadcasting.config.js";
 export type { BroadcastingConfig } from "./Broadcasting/broadcasting.config.js";
 
@@ -60,6 +62,11 @@ export {
   setBroadcastManager,
   broadcast,
 } from "./Broadcasting/BroadcastManager.js";
+
+/** Live WebSocket metrics from the active broadcaster (connections, channels, throughput). */
+export function getWebSocketStats() {
+  return _getBroadcastManager().getWebSocketStats();
+}
 export { Broadcast } from "./Broadcasting/BroadcastFacade.js";
 export {
   Channel,

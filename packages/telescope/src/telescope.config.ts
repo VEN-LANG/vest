@@ -1,3 +1,5 @@
+import { config } from "@lara-node/core";
+
 export interface TelescopeConfig {
   enabled: boolean;
   path: string;
@@ -31,7 +33,17 @@ const telescopeConfig: TelescopeConfig = {
     scheduler: true,
   },
   pruneAfterHours: parseInt(process.env.TELESCOPE_PRUNE_HOURS ?? "48", 10),
-  maxEntries: parseInt(process.env.TELESCOPE_MAX_ENTRIES ?? "1000", 10),
+  // Ring-buffer cap PER ENTRY TYPE (request/query/log/…), not a global total.
+  maxEntries: parseInt(process.env.TELESCOPE_MAX_ENTRIES ?? "250", 10),
 };
 
 export default telescopeConfig;
+
+/**
+ * Resolve the effective Telescope config. Reads the application override
+ * registered via `setConfig('telescope', …)`, falling back to this package's
+ * bundled default. Always call this so app config wins.
+ */
+export function getTelescopeConfig(): TelescopeConfig {
+  return config<TelescopeConfig>("telescope", telescopeConfig);
+}

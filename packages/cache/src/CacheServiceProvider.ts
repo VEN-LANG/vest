@@ -1,5 +1,18 @@
-import { ServiceProvider, type CommandClass } from "@lara-node/core";
-import { initCache, getCacheDriver as getCache, getCacheDriverName } from "./CacheManager.js";
+import {
+  ServiceProvider,
+  type CommandClass,
+  setConfigCacheBackend,
+  restoreConfigFromCache,
+  cacheConfig,
+} from "@lara-node/core";
+import {
+  initCache,
+  getCacheDriver as getCache,
+  getCacheDriverName,
+  cacheGet,
+  cacheSet,
+  cacheDel,
+} from "./CacheManager.js";
 import {
   CacheClearCommand, CacheListCommand, CacheGetCommand, CacheSetCommand,
   CacheForgetCommand, CacheHasCommand, CacheKeyCommand, CacheDriverCommand,
@@ -26,6 +39,23 @@ export class CacheServiceProvider extends ServiceProvider {
     try {
       await initCache();
       console.log(`[Cache] Initialized (driver=${getCacheDriverName()})`);
+
+      // Wire config caching: core persists/restores the resolved config snapshot
+      // through the application cache (core can't depend on this package directly).
+      setConfigCacheBackend({
+        get: (k: string) => cacheGet(k),
+        set: async (k: string, v: unknown) => {
+          await cacheSet(k, v);
+        },
+        forget: async (k: string) => {
+          await cacheDel(k);
+        },
+      });
+
+      // Use a previously cached snapshot when present; otherwise persist the
+      // config resolved so far so subsequent processes can read it quickly.
+      const restored = await restoreConfigFromCache();
+      if (!restored) await cacheConfig();
     } catch (err: any) {
       console.error("[Cache] Initialization failed:", err.message);
     }

@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/core",
-  "version": "0.1.16",
+  "version": "0.1.18",
   "description": "Lara-Node IoC container, Application, and ServiceProvider",
   "files": [
     "dist",

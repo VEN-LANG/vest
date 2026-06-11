@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { SerializedJob, JobOptions } from "./types.js";
-import queueConfig from "./queue.config.js";
+import { getQueueConfig } from "./queue.config.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -148,27 +148,27 @@ export abstract class Job {
   /**
    * The name of the connection the job should be sent to.
    */
-  public connection: string = queueConfig.default;
+  public connection: string = getQueueConfig().default;
 
   /**
    * The number of times the job may be attempted.
    */
-  public tries: number = queueConfig.defaults.tries;
+  public tries: number = getQueueConfig().defaults.tries;
 
   /**
    * The maximum number of unhandled exceptions to allow before failing.
    */
-  public maxExceptions: number = queueConfig.defaults.maxExceptions;
+  public maxExceptions: number = getQueueConfig().defaults.maxExceptions;
 
   /**
    * The number of seconds the job can run before timing out.
    */
-  public timeout: number = queueConfig.defaults.timeout;
+  public timeout: number = getQueueConfig().defaults.timeout;
 
   /**
    * The number of seconds to wait before retrying the job.
    */
-  public backoff: number | number[] = queueConfig.defaults.backoff;
+  public backoff: number | number[] = getQueueConfig().defaults.backoff;
 
   /**
    * Indicate if the job should be encrypted.

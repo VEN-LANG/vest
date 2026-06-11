@@ -1,7 +1,13 @@
 {
-  "name": "@lara-node/pdf",
-  "version": "0.2.1",
-  "description": "Laravel-inspired class-based PDF generation for Lara-Node using Puppeteer",
+  "name": "@lara-node/example",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Skeleton for a new @lara-node package — copy this directory, rename, and remove \"private\".",
+  "keywords": [
+    "lara-node",
+    "laravel"
+  ],
+  "license": "MIT",
   "files": [
     "dist",
     "README.md"
@@ -27,14 +33,11 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
-  "dependencies": {
-    "puppeteer": "^24.43.1"
-  },
   "peerDependencies": {
-    "express": "^5.2.1"
+    "@lara-node/core": "workspace:^"
   },
   "devDependencies": {
-    "@types/express": "^5.0.6",
+    "@lara-node/core": "workspace:^",
     "@types/node": "^24.12.4",
     "rimraf": "^6.1.3",
     "tsdown": "^0.12.9",

@@ -3,12 +3,41 @@ import fs from "fs";
 import { MongoClient, Db, Collection, Document } from "mongodb";
 import { createMongoQueryProxy } from "./QueryInstrumentation.js";
 
-// MySQL state
-let pool: mysql.Pool | undefined;
+/*
+|--------------------------------------------------------------------------
+| Global Connection State
+|--------------------------------------------------------------------------
+|
+| The active database connection is held on `globalThis` under a shared,
+| registry-wide Symbol. This makes it a true process-global singleton: even
+| when more than one physical copy of `@lara-node/db` is loaded (e.g. the app
+| bundles its own copy while other @lara-node packages resolve a separate copy
+| from node_modules), every copy reads and writes the SAME connection state.
+|
+| Without this, a package that calls initDatabase() on one module instance
+| would leave getMongoDb()/getPool() uninitialised on every other instance,
+| producing "MongoDB not initialized. Call initDatabase() first." even though
+| the app booted the database correctly.
+|
+*/
 
-// Mongo state
-let mongoClient: MongoClient | undefined;
-let mongoDb: Db | undefined;
+interface ConnectionState {
+  // MySQL state
+  pool?: mysql.Pool;
+  // Mongo state
+  mongoClient?: MongoClient;
+  mongoDb?: Db;
+}
+
+const STATE_KEY: unique symbol = Symbol.for("@lara-node/db:connection-state");
+
+function state(): ConnectionState {
+  const g = globalThis as unknown as Record<symbol, ConnectionState | undefined>;
+  if (!g[STATE_KEY]) {
+    g[STATE_KEY] = {};
+  }
+  return g[STATE_KEY]!;
+}
 
 // All env vars are read inside functions (not at module evaluation time) so that
 // dotenv has a chance to populate process.env before these values are captured.
@@ -34,7 +63,8 @@ function readMysqlCfg() {
 }
 
 function ensureMysqlPool() {
-  if (pool) return pool;
+  const s = state();
+  if (s.pool) return s.pool;
   const cfg = readMysqlCfg();
   const baseOptions: mysql.PoolOptions = {
     waitForConnections: true,
@@ -42,7 +72,7 @@ function ensureMysqlPool() {
     queueLimit: 0,
     multipleStatements: true,
   };
-  pool = mysql.createPool(
+  s.pool = mysql.createPool(
     cfg.socketPath
       ? {
           ...baseOptions,
@@ -60,7 +90,7 @@ function ensureMysqlPool() {
           port: cfg.port,
         },
   );
-  return pool;
+  return s.pool;
 }
 
 export function getDbType(): "mysql" | "mongodb" {
@@ -106,14 +136,14 @@ export async function initDatabase(): Promise<void> {
               queueLimit: 0,
               multipleStatements: true,
             };
-            pool = mysql.createPool({
+            state().pool = mysql.createPool({
               ...baseOptions,
               user: cfg.user,
               password: cfg.password,
               database: cfg.database,
               socketPath: pth,
             });
-            conn = await pool.getConnection();
+            conn = await state().pool!.getConnection();
             await conn.ping();
             return;
           } catch {
@@ -165,7 +195,7 @@ export async function initDatabase(): Promise<void> {
   }
 
   // MongoDB init
-  if (mongoDb) return;
+  if (state().mongoDb) return;
   const dbHost = process.env.DB_HOST || "localhost";
   const dbPort = process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 27017;
   const dbName = process.env.DB_NAME || "test";
@@ -210,9 +240,10 @@ export async function initDatabase(): Promise<void> {
     clientOptions as ConstructorParameters<typeof MongoClient>[1],
   );
   await client.connect();
-  mongoClient = client;
-  mongoDb = client.db(dbName);
-  await mongoDb.command({ ping: 1 });
+  const s = state();
+  s.mongoClient = client;
+  s.mongoDb = client.db(dbName);
+  await s.mongoDb.command({ ping: 1 });
 }
 
 export function getPool() {
@@ -222,8 +253,9 @@ export function getPool() {
 
 export function getMongoDb(): Db {
   if (readDbType() !== "mongodb") throw new Error("getMongoDb() only valid for MongoDB");
-  if (!mongoDb) throw new Error("MongoDB not initialized. Call initDatabase() first.");
-  return mongoDb;
+  const db = state().mongoDb;
+  if (!db) throw new Error("MongoDB not initialized. Call initDatabase() first.");
+  return db;
 }
 
 export function collection(name: string): Collection<Document> {
@@ -232,20 +264,21 @@ export function collection(name: string): Collection<Document> {
 }
 
 export function __setMongoDbForTest(db: Db | undefined): void {
-  mongoDb = db;
+  state().mongoDb = db;
 }
 
 export function __setPoolForTest(p: mysql.Pool | undefined): void {
-  pool = p;
+  state().pool = p;
 }
 
 export async function closeDatabase(): Promise<void> {
+  const s = state();
   if (readDbType() === "mysql") {
-    if (pool) await pool.end();
-    pool = undefined;
+    if (s.pool) await s.pool.end();
+    s.pool = undefined;
     return;
   }
-  if (mongoClient) await mongoClient.close();
-  mongoClient = undefined;
-  mongoDb = undefined;
+  if (s.mongoClient) await s.mongoClient.close();
+  s.mongoClient = undefined;
+  s.mongoDb = undefined;
 }

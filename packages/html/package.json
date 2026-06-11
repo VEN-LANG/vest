@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/html",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Handlebars-based HTML template rendering with Express response helpers for Lara-Node",
   "files": [
     "dist",

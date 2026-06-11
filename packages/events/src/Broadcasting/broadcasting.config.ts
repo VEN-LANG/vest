@@ -1,3 +1,5 @@
+import { config } from "@lara-node/core";
+
 export interface BroadcastingConfig {
   default: string;
   connections: {
@@ -29,3 +31,12 @@ const broadcastingConfig: BroadcastingConfig = {
 };
 
 export default broadcastingConfig;
+
+/**
+ * Resolve the effective broadcasting config. Reads the application override
+ * registered via `setConfig('broadcasting', …)`, falling back to this
+ * package's bundled default. Always call this so app config wins.
+ */
+export function getBroadcastingConfig(): BroadcastingConfig {
+  return config<BroadcastingConfig>("broadcasting", broadcastingConfig);
+}

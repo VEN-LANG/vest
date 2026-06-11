@@ -19,6 +19,19 @@ export {
   hasMiddleware,
   getMiddlewareStack,
 } from "./middleware.js";
-export { config, setConfig, mergeConfig, hasConfig, allConfig } from "./Config.js";
+export {
+  config,
+  setConfig,
+  mergeConfig,
+  hasConfig,
+  allConfig,
+  hydrateConfig,
+  cacheConfig,
+  restoreConfigFromCache,
+  clearConfigCache,
+  setConfigCacheBackend,
+  hasConfigCacheBackend,
+} from "./Config.js";
+export type { ConfigCacheBackend } from "./Config.js";
 export { Provider, getRegisteredProviders } from "./decorators.js";
 export { dd, clone } from "./helpers.js";

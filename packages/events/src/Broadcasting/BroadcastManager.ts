@@ -17,7 +17,7 @@ import {
 } from "./types.js";
 import { WebSocketBroadcaster } from "./WebSocketBroadcaster.js";
 import { Channel } from "./Channel.js";
-import broadcastingConfig from "./broadcasting.config.js";
+import { getBroadcastingConfig } from "./broadcasting.config.js";
 
 /**
  * Log broadcaster driver - logs broadcasts instead of sending.
@@ -151,7 +151,7 @@ export class BroadcastManager {
   private httpServer: HttpServer | null = null;
 
   constructor() {
-    this.defaultDriver = broadcastingConfig.default;
+    this.defaultDriver = getBroadcastingConfig().default;
   }
 
   /**
@@ -194,11 +194,19 @@ export class BroadcastManager {
     this.drivers.set(driverName, driver);
   }
 
+  /** Live WebSocket metrics from the active WS broadcaster, or null if none. */
+  getWebSocketStats(): ReturnType<WebSocketBroadcaster["getStats"]> | null {
+    for (const d of this.drivers.values()) {
+      if (d instanceof WebSocketBroadcaster) return d.getStats();
+    }
+    return null;
+  }
+
   /**
    * Create a broadcaster driver instance.
    */
   private async createDriver(name: string): Promise<BroadcasterDriver> {
-    const config = (broadcastingConfig.connections as any)[name];
+    const config = (getBroadcastingConfig().connections as any)[name];
 
     if (!config) {
       throw new Error(`Broadcast driver [${name}] is not configured`);
