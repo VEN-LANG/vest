@@ -52,7 +52,7 @@ export default defineNuxtConfig({
   },
 
   llms: {
-    domain: "https://laranode.dev",
+    domain: "https://laranode.doitrix.co.ke",
     title: "LaraNode Framework",
     description: "A modern Node.js framework inspired by Laravel's elegance, built for TypeScript.",
     full: {

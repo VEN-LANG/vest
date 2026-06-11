@@ -18,10 +18,9 @@ useSeoMeta({
 
 <template>
   <UContainer v-if="page">
-    <div class="divide-y divide-default">
+    <div class="py-12">
       <ContentRenderer
         :value="page"
-        :prose="false"
       />
     </div>
   </UContainer>
