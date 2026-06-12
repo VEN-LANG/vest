@@ -23,22 +23,59 @@ The documentation site exposes an MCP server at `/mcp` that AI assistants can co
 
 1. Open Cursor Settings
 2. Navigate to Features &rarr; MCP Servers
-3. Add a new MCP server with URL: `https://laranode.doitrix.co.ke/mcp`
+3. Add a new MCP server with URL: `https://laranode.doitrixtech.co.ke/mcp`
+
+Or manually create/update `.cursor/mcp.json` in your project root:
+```json [.cursor/mcp.json]
+{
+  "mcpServers": {
+    "laranode-docs": {
+      "type": "http",
+      "url": "https://laranode.doitrixtech.co.ke/mcp"
+    }
+  }
+}
+```
 
 ### VS Code
 
 1. Install the MCP extension
-2. Add the server URL: `https://laranode.doitrix.co.ke/mcp`
+2. Add the server URL: `https://laranode.doitrixtech.co.ke/mcp`
 
 ### Claude Desktop
 
 Add to your `claude_desktop_config.json`:
 
-```json
+```json [claude_desktop_config.json]
 {
   "mcpServers": {
     "laranode-docs": {
-      "url": "https://laranode.doitrix.co.ke/mcp"
+      "url": "https://laranode.doitrixtech.co.ke/mcp"
+    }
+  }
+}
+```
+
+### Claude Code 
+
+Add the server using the CLI command:
+```bash
+claude mcp add --transport http laranode https://laranode.doitrixtech.co.ke/mcp
+```
+
+### Opencode
+
+1. In your project root, create `opencode.json`
+2. Add the following configuration:
+
+```json [opencode.json]
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "agentskills": {
+      "type": "remote",
+      "url": "https://agentskills.io/mcp",
+      "enabled": true
     }
   }
 }
@@ -92,29 +129,9 @@ To use Agent Skills with your AI assistant, install the skills collection:
 npx skills add laranode/lara-node
 ```
 
-Or run the [skills.sh](https://www.skills.sh/) script directly:
-
-```bash
-curl -fsSL https://skills.sh/install.sh | bash
-skills link skills
-```
 
 After installation, the skills are available at the root `skills/` directory.
 
-### Skill Structure
-
-Each skill is a directory containing a `SKILL.md` file:
-
-```
-skills/
-├── laranode-framework/SKILL.md      # Root framework skill
-├── laranode-core/SKILL.md           # Core package skill
-├── laranode-db/SKILL.md             # Database ORM skill
-├── laranode-router/SKILL.md         # Routing skill
-└── ...                              # One per package
-```
-
-Skills follow the [Agent Skills specification](https://agentskills.io/specification) with YAML frontmatter (name, description) and markdown body with step-by-step instructions, code examples, and common patterns.
 
 ### Using Skills in AI Assistants
 
