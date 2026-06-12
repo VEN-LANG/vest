@@ -6,69 +6,69 @@
       "title": "Core Infrastructure",
       "description": "IoC container, routing, middleware, and CLI tools.",
       "skills": [
-        "core",
-        "router",
-        "middlewares",
-        "console"
+        "laranode-core",
+        "laranode-router",
+        "laranode-middlewares",
+        "laranode-console"
       ]
     },
     {
       "title": "Data & Validation",
       "description": "ORM, validation, and caching.",
       "skills": [
-        "db",
-        "validator",
-        "cache"
+        "laranode-db",
+        "laranode-validator",
+        "laranode-cache"
       ]
     },
     {
       "title": "Async & Communication",
       "description": "Job queues, events, and email.",
       "skills": [
-        "queue",
-        "events",
-        "mail"
+        "laranode-queue",
+        "laranode-events",
+        "laranode-mail"
       ]
     },
     {
       "title": "Security",
       "description": "Authentication and authorization.",
       "skills": [
-        "auth"
+        "laranode-auth"
       ]
     },
     {
       "title": "Date/Time",
       "description": "Date manipulation library.",
       "skills": [
-        "carbon"
+        "laranode-carbon"
       ]
     },
     {
       "title": "File Export",
       "description": "PDF, Excel, CSV, XML, and HTML generation.",
       "skills": [
-        "exports",
-        "csv",
-        "excel",
-        "pdf",
-        "xml",
-        "html"
+        "laranode-exports",
+        "laranode-csv",
+        "laranode-excel",
+        "laranode-pdf",
+        "laranode-xml",
+        "laranode-html"
       ]
     },
     {
       "title": "Monitoring",
       "description": "Debugging and queue monitoring dashboards.",
       "skills": [
-        "horizon",
-        "telescope"
+        "laranode-horizon",
+        "laranode-telescope"
       ]
     },
     {
       "title": "Scaffolding",
       "description": "Project initialization and setup.",
       "skills": [
-        "create-lara-node"
+        "laranode-create-lara-node"
       ]
     }
   ]
