@@ -57,7 +57,7 @@ LaraNode includes a comprehensive set of [Agent Skills](https://www.skills.sh/) 
 
 ### Available Skills
 
-The skills are located in `packages/skills/` and cover every LaraNode package:
+The skills are located in the root `skills/` directory and cover every LaraNode package:
 
 | Skill | Package | Purpose |
 |-------|---------|---------|
@@ -86,25 +86,27 @@ The skills are located in `packages/skills/` and cover every LaraNode package:
 
 ### Setting Up Skills
 
-To use Agent Skills with your AI assistant, run the [skills.sh](https://www.skills.sh/) script in the LaraNode repository root:
+To use Agent Skills with your AI assistant, install the skills collection:
+
+```bash
+npx skills add laranode/lara-node
+```
+
+Or run the [skills.sh](https://www.skills.sh/) script directly:
 
 ```bash
 curl -fsSL https://skills.sh/install.sh | bash
-skills link packages/skills
+skills link skills
 ```
 
-Or with npx:
-
-```bash
-npx skills.sh link packages/skills
-```
+After installation, the skills are available at the root `skills/` directory.
 
 ### Skill Structure
 
 Each skill is a directory containing a `SKILL.md` file:
 
 ```
-packages/skills/
+skills/
 ├── SKILL.md                    # Root framework skill
 ├── core/SKILL.md               # Core package skill
 ├── db/SKILL.md                 # Database ORM skill

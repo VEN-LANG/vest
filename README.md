@@ -1,5 +1,7 @@
 # Lara-Node
 
+[![skills.sh](https://skills.sh/b/laranode/lara-node)](https://skills.sh/laranode/lara-node)
+
 A Laravel-inspired Node.js framework for building production-ready REST APIs — structured, expressive, and batteries-included.
 
 ```bash
