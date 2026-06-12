@@ -59,30 +59,30 @@ LaraNode includes a comprehensive set of [Agent Skills](https://www.skills.sh/) 
 
 The skills are located in the root `skills/` directory and cover every LaraNode package:
 
-| Skill | Package | Purpose |
-|-------|---------|---------|
-| Root Skill | — | Framework overview, philosophy, architecture |
-| Core | `@lara-node/core` | IoC container, Application, Service Providers |
-| DB | `@lara-node/db` | Eloquent ORM, Models, Migrations, Query Builder |
-| Router | `@lara-node/router` | Routing, Controllers, OpenAPI generation |
-| Auth | `@lara-node/auth` | JWT auth, password hashing, token encryption |
-| Validator | `@lara-node/validator` | 50+ validation rules, custom rules |
-| Cache | `@lara-node/cache` | Multi-driver caching, rate limiting |
-| Queue | `@lara-node/queue` | Job queue, workers, scheduler |
-| Events | `@lara-node/events` | Event dispatcher, listeners, broadcasting |
-| Mail | `@lara-node/mail` | Multi-driver email, Mailable classes |
-| Middlewares | `@lara-node/middlewares` | Pre-built HTTP middleware |
-| Carbon | `@lara-node/carbon` | Date/time manipulation |
-| Console | `@lara-node/console` | Artisan CLI, 40+ commands |
-| Horizon | `@lara-node/horizon` | Queue monitoring dashboard |
-| Telescope | `@lara-node/telescope` | Debug & observability dashboard |
-| Exports | `@lara-node/exports` | PDF, Excel & CSV export utilities |
-| CSV | `@lara-node/csv` | CSV generation, parsing, streaming |
-| Excel | `@lara-node/excel` | Excel file generation & parsing |
-| HTML | `@lara-node/html` | HTML rendering, templating, sanitization |
-| PDF | `@lara-node/pdf` | PDF generation via Puppeteer |
-| XML | `@lara-node/xml` | XML building, parsing, serialization |
-| Scaffolding | `create-lara-node` | Project scaffolding |
+| Skill Name | Package | Purpose |
+|-----------|---------|---------|
+| `laranode-framework` | — | Framework overview, philosophy, architecture |
+| `laranode-core` | `@lara-node/core` | IoC container, Application, Service Providers |
+| `laranode-db` | `@lara-node/db` | Eloquent ORM, Models, Migrations, Query Builder |
+| `laranode-router` | `@lara-node/router` | Routing, Controllers, OpenAPI generation |
+| `laranode-auth` | `@lara-node/auth` | JWT auth, password hashing, token encryption |
+| `laranode-validator` | `@lara-node/validator` | 50+ validation rules, custom rules |
+| `laranode-cache` | `@lara-node/cache` | Multi-driver caching, rate limiting |
+| `laranode-queue` | `@lara-node/queue` | Job queue, workers, scheduler |
+| `laranode-events` | `@lara-node/events` | Event dispatcher, listeners, broadcasting |
+| `laranode-mail` | `@lara-node/mail` | Multi-driver email, Mailable classes |
+| `laranode-middlewares` | `@lara-node/middlewares` | Pre-built HTTP middleware |
+| `laranode-carbon` | `@lara-node/carbon` | Date/time manipulation |
+| `laranode-console` | `@lara-node/console` | Artisan CLI, 40+ commands |
+| `laranode-horizon` | `@lara-node/horizon` | Queue monitoring dashboard |
+| `laranode-telescope` | `@lara-node/telescope` | Debug & observability dashboard |
+| `laranode-exports` | `@lara-node/exports` | PDF, Excel & CSV export utilities |
+| `laranode-csv` | `@lara-node/csv` | CSV generation, parsing, streaming |
+| `laranode-excel` | `@lara-node/excel` | Excel file generation & parsing |
+| `laranode-html` | `@lara-node/html` | HTML rendering, templating, sanitization |
+| `laranode-pdf` | `@lara-node/pdf` | PDF generation via Puppeteer |
+| `laranode-xml` | `@lara-node/xml` | XML building, parsing, serialization |
+| `laranode-create-lara-node` | `create-lara-node` | Project scaffolding |
 
 ### Setting Up Skills
 
@@ -107,11 +107,11 @@ Each skill is a directory containing a `SKILL.md` file:
 
 ```
 skills/
-├── SKILL.md                    # Root framework skill
-├── core/SKILL.md               # Core package skill
-├── db/SKILL.md                 # Database ORM skill
-├── router/SKILL.md             # Routing skill
-└── ...                         # One per package
+├── laranode-framework/SKILL.md      # Root framework skill
+├── laranode-core/SKILL.md           # Core package skill
+├── laranode-db/SKILL.md             # Database ORM skill
+├── laranode-router/SKILL.md         # Routing skill
+└── ...                              # One per package
 ```
 
 Skills follow the [Agent Skills specification](https://agentskills.io/specification) with YAML frontmatter (name, description) and markdown body with step-by-step instructions, code examples, and common patterns.

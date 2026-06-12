@@ -15,114 +15,76 @@ All skills are located in the root `skills/` directory of the LaraNode monorepo:
 
 ### Framework & Tooling
 
-### Framework & Tooling
-
-| Skill | File | Description |
-|-------|------|-------------|
-| Root | `skills/SKILL.md` | Framework overview, philosophy, architecture, getting started |
-| Scaffolding | `skills/create-lara-node/SKILL.md` | Project scaffolding with `pnpm create laranode` |
+| Skill Name | File | Description |
+|-----------|------|-------------|
+| `laranode-framework` | `skills/laranode-framework/SKILL.md` | Framework overview, philosophy, architecture, getting started |
+| `laranode-create-lara-node` | `skills/laranode-create-lara-node/SKILL.md` | Project scaffolding with `pnpm create laranode` |
 
 ### Core Infrastructure
 
-| Skill | Package | Description |
-|-------|---------|-------------|
-| Core | `skills/core/SKILL.md` | IoC container, Application, Service Providers, Config |
-| Router | `skills/router/SKILL.md` | Routing, controllers, decorators, OpenAPI |
-| Middlewares | `skills/middlewares/SKILL.md` | Pre-built HTTP middleware (auth, logging, error handling) |
-| Console | `skills/console/SKILL.md` | Artisan CLI, 40+ commands, custom commands |
+| Skill Name | Package | Description |
+|-----------|---------|-------------|
+| `laranode-core` | `skills/laranode-core/SKILL.md` | IoC container, Application, Service Providers, Config |
+| `laranode-router` | `skills/laranode-router/SKILL.md` | Routing, controllers, decorators, OpenAPI |
+| `laranode-middlewares` | `skills/laranode-middlewares/SKILL.md` | Pre-built HTTP middleware (auth, logging, error handling) |
+| `laranode-console` | `skills/laranode-console/SKILL.md` | Artisan CLI, 40+ commands, custom commands |
 
 ### Data & Validation
 
-| Skill | Package | Description |
-|-------|---------|-------------|
-| DB | `skills/db/SKILL.md` | Eloquent ORM, models, migrations, query builder, relationships, traits |
-| Validator | `skills/validator/SKILL.md` | 50+ validation rules, custom rules, dot-notation |
-| Cache | `skills/cache/SKILL.md` | Multi-driver caching (file, DB, Redis), rate limiting |
+| Skill Name | Package | Description |
+|-----------|---------|-------------|
+| `laranode-db` | `skills/laranode-db/SKILL.md` | Eloquent ORM, models, migrations, query builder, relationships, traits |
+| `laranode-validator` | `skills/laranode-validator/SKILL.md` | 50+ validation rules, custom rules, dot-notation |
+| `laranode-cache` | `skills/laranode-cache/SKILL.md` | Multi-driver caching (file, DB, Redis), rate limiting |
 
 ### Async & Communication
 
-| Skill | Package | Description |
-|-------|---------|-------------|
-| Queue | `skills/queue/SKILL.md` | Job queue, workers, scheduler, failed jobs |
-| Events | `skills/events/SKILL.md` | Event dispatcher, listeners, broadcasting |
-| Mail | `skills/mail/SKILL.md` | Multi-driver email, Mailable classes |
+| Skill Name | Package | Description |
+|-----------|---------|-------------|
+| `laranode-queue` | `skills/laranode-queue/SKILL.md` | Job queue, workers, scheduler, failed jobs |
+| `laranode-events` | `skills/laranode-events/SKILL.md` | Event dispatcher, listeners, broadcasting |
+| `laranode-mail` | `skills/laranode-mail/SKILL.md` | Multi-driver email, Mailable classes |
 
 ### Security
 
-| Skill | Package | Description |
-|-------|---------|-------------|
-| Auth | `skills/auth/SKILL.md` | JWT auth, bcrypt hashing, token encryption |
+| Skill Name | Package | Description |
+|-----------|---------|-------------|
+| `laranode-auth` | `skills/laranode-auth/SKILL.md` | JWT auth, bcrypt hashing, token encryption |
 
 ### Date/Time
 
-| Skill | Package | Description |
-|-------|---------|-------------|
-| Carbon | `skills/carbon/SKILL.md` | Carbon-inspired date/time library |
+| Skill Name | Package | Description |
+|-----------|---------|-------------|
+| `laranode-carbon` | `skills/laranode-carbon/SKILL.md` | Carbon-inspired date/time library |
 
 ### File Export
 
-| Skill | Package | Description |
-|-------|---------|-------------|
-| Exports | `skills/exports/SKILL.md` | PDF, Excel & CSV exports |
-| CSV | `skills/csv/SKILL.md` | CSV generation, parsing, streaming, manipulation |
-| Excel | `skills/excel/SKILL.md` | Excel .xlsx generation & parsing |
-| PDF | `skills/pdf/SKILL.md` | PDF generation via Puppeteer |
-| XML | `skills/xml/SKILL.md` | XML building, parsing, serialization, RSS/Atom/sitemap |
-| HTML | `skills/html/SKILL.md` | HTML rendering, templating, minification, sanitization |
+| Skill Name | Package | Description |
+|-----------|---------|-------------|
+| `laranode-exports` | `skills/laranode-exports/SKILL.md` | PDF, Excel & CSV exports |
+| `laranode-csv` | `skills/laranode-csv/SKILL.md` | CSV generation, parsing, streaming, manipulation |
+| `laranode-excel` | `skills/laranode-excel/SKILL.md` | Excel .xlsx generation & parsing |
+| `laranode-pdf` | `skills/laranode-pdf/SKILL.md` | PDF generation via Puppeteer |
+| `laranode-xml` | `skills/laranode-xml/SKILL.md` | XML building, parsing, serialization, RSS/Atom/sitemap |
+| `laranode-html` | `skills/laranode-html/SKILL.md` | HTML rendering, templating, minification, sanitization |
 
 ### Monitoring
 
-| Skill | Package | Description |
-|-------|---------|-------------|
-| Horizon | `skills/horizon/SKILL.md` | Queue monitoring dashboard |
-| Telescope | `skills/telescope/SKILL.md` | Debug & observability dashboard |
+| Skill Name | Package | Description |
+|-----------|---------|-------------|
+| `laranode-horizon` | `skills/laranode-horizon/SKILL.md` | Queue monitoring dashboard |
+| `laranode-telescope` | `skills/laranode-telescope/SKILL.md` | Debug & observability dashboard |
 
 ## Setting Up Skills
 
 ### Using skills.sh
 
 Run the [skills.sh](https://www.skills.sh/) script in the LaraNode repository root:
-
-```bash
-curl -fsSL https://skills.sh/install.sh | bash
-skills link skills
-```
-
 ### Using npx
 
 ```bash
-npx skills add laranode/lara-node
+npx skills add VEN-LANG/vest
 ```
-
-### OpenCode / AgentSkills MCP
-
-If you use OpenCode, the LaraNode repository already has the `agentskills.io` MCP server configured in `opencode.json`:
-
-```json
-{
-  "mcp": {
-    "agentskills": {
-      "type": "remote",
-      "url": "https://agentskills.io/mcp",
-      "enabled": true
-    }
-  }
-}
-```
-
-## Skill Structure
-
-Each skill follows the [Agent Skills specification](https://agentskills.io/specification):
-
-```
-skills/<package>/
-├── SKILL.md   # Required: metadata + instructions
-```
-
-The `SKILL.md` file has two parts:
-
-1. **YAML Frontmatter** between `---` delimiters with `name` and `description` fields
-2. **Markdown body** with API references, code examples, common patterns, and step-by-step instructions
 
 ## How Skills Work
 
@@ -132,11 +94,11 @@ When an AI assistant connected to the LaraNode repository receives a question, i
 
 | User Question | Activated Skill | Guidance Provided |
 |---------------|-----------------|-------------------|
-| "How do I set up model relationships?" | DB | Eloquent relationship patterns (hasMany, belongsTo, etc.) |
-| "How do I define API routes?" | Router | Route decorators, groups, resource routing |
-| "Send email on user registration" | Events + Mail | Event listener + Mailable class patterns |
-| "Cache database queries" | Cache + DB | Cache::remember() with query builder |
-| "Authenticate API requests" | Auth | JWT token generation + auth middleware |
-| "Generate a PDF report" | PDF | PDF generation with Puppeteer options |
-| "Parse user-uploaded CSV" | CSV | CSV.parse(), import concerns, streaming |
-| "Monitor queue performance" | Horizon | Dashboard setup, worker management |
+| "How do I set up model relationships?" | `laranode-db` | Eloquent relationship patterns (hasMany, belongsTo, etc.) |
+| "How do I define API routes?" | `laranode-router` | Route decorators, groups, resource routing |
+| "Send email on user registration" | `laranode-events` + `laranode-mail` | Event listener + Mailable class patterns |
+| "Cache database queries" | `laranode-cache` + `laranode-db` | Cache::remember() with query builder |
+| "Authenticate API requests" | `laranode-auth` | JWT token generation + auth middleware |
+| "Generate a PDF report" | `laranode-pdf` | PDF generation with Puppeteer options |
+| "Parse user-uploaded CSV" | `laranode-csv` | CSV.parse(), import concerns, streaming |
+| "Monitor queue performance" | `laranode-horizon` | Dashboard setup, worker management |
