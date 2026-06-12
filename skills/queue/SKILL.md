@@ -1,5 +1,5 @@
 ---
-name: @lara-node/queue — Job Queue, Workers & Scheduler
+name: queue
 description: >-
   Job queue system with sync, database, and Redis drivers. Includes Job classes,
   queue workers in daemon mode, task scheduler with cron, failed job tracking,

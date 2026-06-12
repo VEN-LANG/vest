@@ -1,5 +1,5 @@
 ---
-name: @lara-node/events — Event Dispatcher, Listeners & Broadcasting
+name: events
 description: >-
   Publish/subscribe event system with listeners, subscribers, queueable listeners,
   transaction-aware events, and WebSocket broadcasting (public/private/presence channels).

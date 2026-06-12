@@ -1,5 +1,5 @@
 ---
-name: @lara-node/horizon — Queue Monitoring Dashboard
+name: horizon
 description: >-
   Laravel Horizon-inspired queue monitoring dashboard with worker management,
   job metrics, failed job tracking, scheduler monitoring, and real-time updates.

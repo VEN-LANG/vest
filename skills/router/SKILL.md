@@ -1,5 +1,5 @@
 ---
-name: @lara-node/router — Routing, Controllers & OpenAPI
+name: router
 description: >-
   Express routing with fluent builder, controller decorators, route model binding,
   groups, resource routing, and OpenAPI generation. Activates for questions about

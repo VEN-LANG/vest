@@ -1,5 +1,5 @@
 ---
-name: @lara-node/console — Artisan CLI & Commands
+name: console
 description: >-
   Laravel Artisan-style CLI with 40+ built-in commands and custom command creation.
   Interactive prompts, colored output, tables, and scheduler integration.

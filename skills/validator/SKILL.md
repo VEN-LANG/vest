@@ -1,5 +1,5 @@
 ---
-name: @lara-node/validator — Validation Engine with 50+ Rules
+name: validator
 description: >-
   Laravel-inspired validation with 50+ rules, dot-notation nested fields, wildcard
   patterns, custom error messages, type coercion, and custom rules. Activates for

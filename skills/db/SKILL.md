@@ -1,5 +1,5 @@
 ---
-name: @lara-node/db — Eloquent ORM, Models, Migrations & Query Builder
+name: db
 description: >-
   Database ORM inspired by Laravel Eloquent. Activates for questions about Model
   definitions, queries, relationships, migrations, seeders, traits (SoftDeletes,

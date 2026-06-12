@@ -1,5 +1,5 @@
 ---
-name: LaraNode Framework
+name: laranode-framework
 description: >-
   General LaraNode framework knowledge. Activates for broad questions about the framework,
   its architecture, philosophy, package ecosystem, or when the user asks "how do I" without

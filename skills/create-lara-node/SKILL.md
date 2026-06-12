@@ -1,5 +1,5 @@
 ---
-name: create-lara-node — Project Scaffolding
+name: create-lara-node
 description: >-
   Project scaffolding CLI tool (pnpm create laranode). Creates a complete LaraNode
   application with TypeScript config, service providers, sample models/controllers/services,

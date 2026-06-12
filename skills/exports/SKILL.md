@@ -1,5 +1,5 @@
 ---
-name: @lara-node/exports — PDF, Excel & CSV Export Utilities
+name: exports
 description: >-
   PDF generation via Puppeteer, Excel via SheetJS, and CSV export. Template support
   with variable interpolation and custom delimiters. Activates for questions about

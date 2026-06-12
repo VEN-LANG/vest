@@ -1,5 +1,5 @@
 ---
-name: @lara-node/cache — Multi-Driver Caching & Rate Limiting
+name: cache
 description: >-
   Cache facade with File, Database, and Redis drivers plus Laravel-style rate limiter.
   Activates for questions about Cache.get/set/del/remember/has, CacheManager,

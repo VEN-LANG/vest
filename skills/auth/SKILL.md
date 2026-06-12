@@ -1,5 +1,5 @@
 ---
-name: @lara-node/auth — JWT Authentication & Password Hashing
+name: auth
 description: >-
   JWT token generation/verification, bcrypt password hashing, and auth middleware.
   Activates for questions about generateToken, verifyToken, hashPassword,

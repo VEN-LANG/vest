@@ -1,5 +1,5 @@
 ---
-name: @lara-node/mail — Multi-Driver Email System
+name: mail
 description: >-
   Email system with SMTP, Log, Array, and Failover drivers. Fluent Mailable classes,
   queue support, HTML/text templates. Activates for questions about Mail facade,

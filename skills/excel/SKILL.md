@@ -1,5 +1,5 @@
 ---
-name: @lara-node/excel — Excel File Generation & Parsing
+name: excel
 description: >-
   Excel (.xlsx) generation and import using SheetJS. Supports export with concerns
   (headings, mapping, styles, column formatting, multiple sheets, auto-filter, frozen

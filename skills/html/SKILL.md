@@ -1,5 +1,5 @@
 ---
-name: @lara-node/html — HTML Rendering, Templating & Sanitization
+name: html
 description: >-
   HTML utilities: template rendering with variable interpolation, HTML minification,
   sanitization, and HTML building helpers (tables, lists, pagination, breadcrumbs, meta tags).

@@ -1,5 +1,5 @@
 ---
-name: @lara-node/telescope — Debug & Observability Dashboard
+name: telescope
 description: >-
   Debug dashboard for requests, queries, exceptions, cache operations, queue jobs,
   and scheduled tasks. Dark-mode SPA with real-time monitoring.

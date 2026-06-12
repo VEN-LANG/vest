@@ -1,5 +1,5 @@
 ---
-name: @lara-node/carbon — Date/Time Library
+name: carbon
 description: >-
   Laravel Carbon-inspired date/time library. Immutable, fluent, zero-dependency.
   Activates for questions about Carbon, CarbonImmutable, CarbonInterval, CarbonPeriod,

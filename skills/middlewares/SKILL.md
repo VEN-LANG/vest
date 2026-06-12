@@ -1,5 +1,5 @@
 ---
-name: @lara-node/middlewares — Pre-Built HTTP Middleware
+name: middlewares
 description: >-
   Pre-built Express middleware for authentication (JWT), authorization (roles/permissions),
   request logging, error handling, validation, response extension, and async context.

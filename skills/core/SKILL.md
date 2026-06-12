@@ -1,5 +1,5 @@
 ---
-name: @lara-node/core — Container, Application & Service Providers
+name: core
 description: >-
   IoC container dependency injection, Application bootstrap, Service Provider system,
   and Configuration management. Activates for questions about container.make(),

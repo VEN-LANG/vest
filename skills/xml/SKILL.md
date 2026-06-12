@@ -1,5 +1,5 @@
 ---
-name: @lara-node/xml — XML Building, Parsing & Serialization
+name: xml
 description: >-
   XML utilities: builder (XmlBuilder), parser (XmlParser), facade (Xml), and
   serializer helpers (fromObject, fromArray, prettyPrint, compact, escape,

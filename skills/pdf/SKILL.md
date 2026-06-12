@@ -1,5 +1,5 @@
 ---
-name: @lara-node/pdf — PDF Generation via Puppeteer
+name: pdf
 description: >-
   PDF generation from HTML using Puppeteer. Supports paper sizes, orientation,
   headers/footers, watermarks, margins, viewport options, page metadata, and

@@ -1,5 +1,5 @@
 ---
-name: @lara-node/csv — CSV Generation, Parsing & Streaming
+name: csv
 description: >-
   CSV utilities for export (download, store, raw, stream, toBuffer), import (parse,
   validate, transform), and manipulation (merge, filter, sort, deduplicate, select,
