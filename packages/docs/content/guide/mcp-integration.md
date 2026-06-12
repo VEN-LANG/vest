@@ -53,4 +53,69 @@ LaraNode provides LLM-optimized documentation:
 
 ## Agent Skills
 
-The documentation supports Agent Skills &mdash; specialized instructions that help AI assistants work with LaraNode more effectively. See the [skills.sh](<a href="https://www.skills.sh/" target="_blank">SKILLS.sh</a>) script to set up agent skills.
+LaraNode includes a comprehensive set of [Agent Skills](https://www.skills.sh/) &mdash; specialized instructions that help AI assistants work with the framework more effectively. Each skill provides detailed API references, code patterns, and common tasks for a specific package.
+
+### Available Skills
+
+The skills are located in `packages/skills/` and cover every LaraNode package:
+
+| Skill | Package | Purpose |
+|-------|---------|---------|
+| Root Skill | — | Framework overview, philosophy, architecture |
+| Core | `@lara-node/core` | IoC container, Application, Service Providers |
+| DB | `@lara-node/db` | Eloquent ORM, Models, Migrations, Query Builder |
+| Router | `@lara-node/router` | Routing, Controllers, OpenAPI generation |
+| Auth | `@lara-node/auth` | JWT auth, password hashing, token encryption |
+| Validator | `@lara-node/validator` | 50+ validation rules, custom rules |
+| Cache | `@lara-node/cache` | Multi-driver caching, rate limiting |
+| Queue | `@lara-node/queue` | Job queue, workers, scheduler |
+| Events | `@lara-node/events` | Event dispatcher, listeners, broadcasting |
+| Mail | `@lara-node/mail` | Multi-driver email, Mailable classes |
+| Middlewares | `@lara-node/middlewares` | Pre-built HTTP middleware |
+| Carbon | `@lara-node/carbon` | Date/time manipulation |
+| Console | `@lara-node/console` | Artisan CLI, 40+ commands |
+| Horizon | `@lara-node/horizon` | Queue monitoring dashboard |
+| Telescope | `@lara-node/telescope` | Debug & observability dashboard |
+| Exports | `@lara-node/exports` | PDF, Excel & CSV export utilities |
+| CSV | `@lara-node/csv` | CSV generation, parsing, streaming |
+| Excel | `@lara-node/excel` | Excel file generation & parsing |
+| HTML | `@lara-node/html` | HTML rendering, templating, sanitization |
+| PDF | `@lara-node/pdf` | PDF generation via Puppeteer |
+| XML | `@lara-node/xml` | XML building, parsing, serialization |
+| Scaffolding | `create-lara-node` | Project scaffolding |
+
+### Setting Up Skills
+
+To use Agent Skills with your AI assistant, run the [skills.sh](https://www.skills.sh/) script in the LaraNode repository root:
+
+```bash
+curl -fsSL https://skills.sh/install.sh | bash
+skills link packages/skills
+```
+
+Or with npx:
+
+```bash
+npx skills.sh link packages/skills
+```
+
+### Skill Structure
+
+Each skill is a directory containing a `SKILL.md` file:
+
+```
+packages/skills/
+├── SKILL.md                    # Root framework skill
+├── core/SKILL.md               # Core package skill
+├── db/SKILL.md                 # Database ORM skill
+├── router/SKILL.md             # Routing skill
+└── ...                         # One per package
+```
+
+Skills follow the [Agent Skills specification](https://agentskills.io/specification) with YAML frontmatter (name, description) and markdown body with step-by-step instructions, code examples, and common patterns.
+
+### Using Skills in AI Assistants
+
+Skills are automatically loaded when your AI assistant connects to the LaraNode repository through any [skills.sh-compatible client](https://www.skills.sh/clients). When you ask a question about a specific package, the corresponding skill activates to provide precise, contextual guidance.
+
+For example, asking "How do I set up model relationships?" activates the **DB skill**, which provides Eloquent relationship patterns. Asking "How do I define routes?" activates the **Router skill**.

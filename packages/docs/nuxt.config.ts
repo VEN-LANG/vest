@@ -44,6 +44,7 @@ export default defineNuxtConfig({
       crawlLinks: true,
       autoSubfolderIndex: false,
       failOnError: false,
+      concurrency: 1,
     },
   },
 
@@ -70,6 +71,12 @@ export default defineNuxtConfig({
         title: "Packages",
         contentCollection: "docs",
         contentFilters: [{ field: "path", operator: "LIKE", value: "/packages%" }],
+      },
+      {
+        title: "Agent Skills",
+        description: "Specialized AI assistant instructions for LaraNode packages",
+        contentCollection: "docs",
+        contentFilters: [{ field: "path", operator: "LIKE", value: "/guide/skills%" }],
       },
     ],
   },
