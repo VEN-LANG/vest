@@ -35,7 +35,7 @@ export default defineNuxtConfig({
   compatibilityDate: "2024-07-11",
 
   routeRules: {
-    '/getting-started': { redirect: { to: '/guide/getting-started', statusCode: 301 } },
+    "/getting-started": { redirect: { to: "/guide/getting-started", statusCode: 301 } },
   },
 
   nitro: {
@@ -52,12 +52,13 @@ export default defineNuxtConfig({
   },
 
   llms: {
-    domain: "https://laranode.doitrix.co.ke",
+    domain: "https://laranode.doitrixtech.co.ke/",
     title: "LaraNode Framework",
     description: "A modern Node.js framework inspired by Laravel's elegance, built for TypeScript.",
     full: {
       title: "LaraNode Framework - Full Documentation",
-      description: "Complete documentation for the LaraNode framework - a modern Node.js framework inspired by Laravel.",
+      description:
+        "Complete documentation for the LaraNode framework - a modern Node.js framework inspired by Laravel.",
     },
     sections: [
       {
