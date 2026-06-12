@@ -1,6 +1,6 @@
 FROM node:24-alpine AS build
 WORKDIR /app
-COPY package.json  ./
+COPY package.json pnpm-workspace.yaml  ./
 RUN npm install -g pnpm && pnpm install
 COPY . .
 RUN pnpm run build
