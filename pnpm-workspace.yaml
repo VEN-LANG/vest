@@ -8,3 +8,5 @@ allowBuilds:
   better-sqlite3: true
   esbuild: true
   puppeteer: true
+  sharp: true
+  vue-demi: true
