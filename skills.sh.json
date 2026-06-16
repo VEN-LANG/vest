@@ -1,0 +1,75 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "Core Infrastructure",
+      "description": "IoC container, routing, middleware, and CLI tools.",
+      "skills": [
+        "laranode-core",
+        "laranode-router",
+        "laranode-middlewares",
+        "laranode-console"
+      ]
+    },
+    {
+      "title": "Data & Validation",
+      "description": "ORM, validation, and caching.",
+      "skills": [
+        "laranode-db",
+        "laranode-validator",
+        "laranode-cache"
+      ]
+    },
+    {
+      "title": "Async & Communication",
+      "description": "Job queues, events, and email.",
+      "skills": [
+        "laranode-queue",
+        "laranode-events",
+        "laranode-mail"
+      ]
+    },
+    {
+      "title": "Security",
+      "description": "Authentication and authorization.",
+      "skills": [
+        "laranode-auth"
+      ]
+    },
+    {
+      "title": "Date/Time",
+      "description": "Date manipulation library.",
+      "skills": [
+        "laranode-carbon"
+      ]
+    },
+    {
+      "title": "File Export",
+      "description": "PDF, Excel, CSV, XML, and HTML generation.",
+      "skills": [
+        "laranode-exports",
+        "laranode-csv",
+        "laranode-excel",
+        "laranode-pdf",
+        "laranode-xml",
+        "laranode-html"
+      ]
+    },
+    {
+      "title": "Monitoring",
+      "description": "Debugging and queue monitoring dashboards.",
+      "skills": [
+        "laranode-horizon",
+        "laranode-telescope"
+      ]
+    },
+    {
+      "title": "Scaffolding",
+      "description": "Project initialization and setup.",
+      "skills": [
+        "laranode-create-lara-node"
+      ]
+    }
+  ]
+}

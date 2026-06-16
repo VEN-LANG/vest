@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@source "../../../content/**/*";
+
+@theme static {
+  --container-8xl: 90rem;
+  --font-sans: 'Inter', 'Public Sans', sans-serif;
+}
+
+:root {
+  --ui-container: var(--container-8xl);
+  --ui-radius: 0;
+  --ui-bg: var(--color-white);
+}
+
+.dark {
+  --ui-bg: #060606;
+}
+
+.main-gradient {
+  @apply bg-gradient-to-r from-inverted/45 to-inverted to-50% bg-clip-text text-transparent;
+}
