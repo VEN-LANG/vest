@@ -1012,6 +1012,40 @@ export abstract class Model {
     return result;
   }
 
+  /**
+   * Eagerly resolve every appended attribute (sync and async) into the
+   * attribute cache so that later synchronous access — including `toJSON()`
+   * and direct property reads — returns the fully resolved values without
+   * needing `toJSONAsync()`.
+   *
+   * Recurses into already-loaded relationships so nested models that declare
+   * `appends` are resolved too. This is called automatically after a model is
+   * fetched, but is safe to call manually as well.
+   */
+  async loadAppends(visited: WeakSet<object> = new WeakSet()): Promise<this> {
+    if (visited.has(this)) return this;
+    visited.add(this);
+
+    const staticClass = this.constructor as typeof Model;
+
+    // Resolve this model's appends (warms __attributeCache as a side effect).
+    for (const key of staticClass.appends) {
+      await this.getAttributeAsync(key);
+    }
+
+    // Resolve appends on any loaded relationships (any depth).
+    for (const value of Object.values(this.relationshipsLoaded)) {
+      const related = Array.isArray(value) ? value : [value];
+      for (const item of related) {
+        if (item && typeof (item as Model).loadAppends === "function") {
+          await (item as Model).loadAppends(visited);
+        }
+      }
+    }
+
+    return this;
+  }
+
   // ====================
   // STATIC REGISTRATION METHODS
   // ====================
@@ -2179,6 +2213,11 @@ export abstract class Model {
     // Fire saved event
     await staticClass.fireModelEvent("saved", this);
 
+    // Re-resolve appends against the persisted state (new id, timestamps, etc.)
+    // so the returned model serializes consistently without toJSONAsync().
+    this.__attributeCache.clear();
+    await this.loadAppends();
+
     return ((this as any).__proxy ?? this) as this;
   }
 
@@ -2385,6 +2424,10 @@ export abstract class Model {
     if (fresh) {
       this.attributes = { ...(fresh as any).attributes };
       this.original = { ...this.attributes };
+      // Drop stale accessor/append values, then eagerly re-resolve appends so
+      // synchronous toJSON()/property access reflects the freshly loaded data.
+      this.__attributeCache.clear();
+      await this.loadAppends();
     }
 
     return this;
@@ -2769,6 +2812,9 @@ export abstract class Model {
       Object.keys((fresh as any).relationshipsLoaded || {}).forEach((rel) => {
         this.setLoadedRelation(rel, (fresh as any).relationshipsLoaded[rel]);
       });
+
+      // Re-resolve appends now that fresh attributes and relations are in place.
+      await this.loadAppends();
     }
 
     return this;

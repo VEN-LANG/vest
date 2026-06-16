@@ -813,6 +813,15 @@ export class EloquentBuilder<T extends Model> {
       await this.loadRelationTree(models, this.relationTree, "");
     }
 
+    // Eagerly resolve appended attributes (sync + async) so that callers get
+    // fully hydrated models without having to call toJSONAsync(). Runs after
+    // relationships so accessors that depend on relations resolve correctly.
+    await Promise.all(
+      models.map((m) =>
+        typeof (m as any).loadAppends === "function" ? (m as any).loadAppends() : undefined,
+      ),
+    );
+
     // Return the actual Model instances, NOT their JSON representation
     return models;
   }
