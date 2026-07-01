@@ -36,7 +36,11 @@ export abstract class FormRequest<T = Record<string, unknown>> {
         if (own !== undefined) return own;
         const all = target._inputData();
         if (prop in all) return all[prop as string];
-        return undefined;
+        // Fall back to the underlying express request so a FormRequest also
+        // behaves like the request it wraps (req.context, req.user, req.headers,
+        // req.get(), …) — mirroring Laravel's FormRequest-extends-Request.
+        const fromReq = (target._req as unknown as Record<string, unknown>)[prop as string];
+        return typeof fromReq === "function" ? fromReq.bind(target._req) : fromReq;
       },
     }) as FormRequest<T>;
   }
