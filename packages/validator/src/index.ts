@@ -235,7 +235,9 @@ export async function validate<T extends Record<string, unknown>>(
   function normalizePattern(p: string) {
     return p
       .replace(/\.\.+/g, ".*")
-      .replace(/(^|\.)\*(\.|$)/g, (_, a, b) => "*" + (b ? "." : ""))
+      // Preserve the left separator `a`; dropping it collapsed nested wildcard
+      // paths like "fields.*.key" into the literal key "fields*.key".
+      .replace(/(^|\.)\*(\.|$)/g, (_, a, b) => a + "*" + (b ? "." : ""))
       .replace(/\.\*/g, ".*");
   }
 

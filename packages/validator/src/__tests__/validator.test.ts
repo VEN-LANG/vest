@@ -1094,6 +1094,23 @@ describe("wildcard array rules", () => {
       "min",
     );
   });
+
+  it("validates a nested key inside each array item (middle wildcard)", async () => {
+    const r = await validate(
+      { fields: [{ key: "a" }, { key: "b" }] },
+      { fields: "required|array", "fields.*.key": "required|string|max:64" },
+    );
+    expect((r as any).fields).toEqual([{ key: "a" }, { key: "b" }]);
+  });
+
+  it("fails when a nested key inside an array item is missing", async () => {
+    await failsWith(
+      { fields: [{ key: "a" }, { label: "no key" }] },
+      { fields: "required|array", "fields.*.key": "required|string" },
+      "fields.1.key",
+      "required",
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------

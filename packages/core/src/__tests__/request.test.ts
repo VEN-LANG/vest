@@ -70,6 +70,35 @@ describe("FormRequest base class", () => {
     });
   });
 
+  describe("underlying request fallback", () => {
+    class BlankRequest extends FormRequest {
+      rules() {
+        return {};
+      }
+    }
+
+    it("exposes non-input properties from the wrapped request (e.g. context)", () => {
+      const context = { module: "sacco", saccoId: "s1" };
+      const req = createMockReq({ ...({ context } as object), ip: "10.0.0.1" });
+      const instance = new BlankRequest(req) as unknown as {
+        context: typeof context;
+        ip: string;
+      };
+      expect(instance.context).toBe(context);
+      expect(instance.ip).toBe("10.0.0.1");
+    });
+
+    it("binds methods from the wrapped request", () => {
+      const get = vi.fn().mockReturnValue("application/json");
+      const req = createMockReq({ get } as object);
+      const instance = new BlankRequest(req) as unknown as {
+        get: (h: string) => string;
+      };
+      expect(instance.get("accept")).toBe("application/json");
+      expect(get).toHaveBeenCalledWith("accept");
+    });
+  });
+
   describe("authorize()", () => {
     it("defaults to true", () => {
       class TestRequest extends FormRequest {
