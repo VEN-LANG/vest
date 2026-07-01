@@ -2566,6 +2566,34 @@ export abstract class Model {
     return this.query<M>().where(column, operator, value) as EloquentBuilder<InstanceType<M>>;
   }
 
+  static randomise<M extends typeof Model>(
+    this: M,
+    options: { seed?: number | string } = {},
+  ): EloquentBuilder<InstanceType<M>> {
+    return this.query<M>().randomise(options) as EloquentBuilder<InstanceType<M>>;
+  }
+
+  static randomize<M extends typeof Model>(
+    this: M,
+    options: { seed?: number | string } = {},
+  ): EloquentBuilder<InstanceType<M>> {
+    return this.randomise<M>(options);
+  }
+
+  static random<M extends typeof Model>(
+    this: M,
+    seed?: number | string,
+  ): EloquentBuilder<InstanceType<M>> {
+    return this.query<M>().random(seed) as EloquentBuilder<InstanceType<M>>;
+  }
+
+  static inRandomOrder<M extends typeof Model>(
+    this: M,
+    seed?: number | string,
+  ): EloquentBuilder<InstanceType<M>> {
+    return this.random<M>(seed);
+  }
+
   static find<M extends typeof Model>(
     this: M,
     id: number | string,
