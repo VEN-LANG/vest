@@ -146,6 +146,7 @@ export class PendingBroadcast {
  */
 export class BroadcastManager {
   private drivers: Map<string, BroadcasterDriver> = new Map();
+  private creating: Map<string, Promise<BroadcasterDriver>> = new Map();
   private defaultDriver: string;
   private initialized = false;
   private httpServer: HttpServer | null = null;
@@ -180,13 +181,47 @@ export class BroadcastManager {
   async driver(name?: string): Promise<BroadcasterDriver> {
     const driverName = name || this.defaultDriver;
 
+    // Already created and cached.
     if (this.drivers.has(driverName)) {
       return this.drivers.get(driverName)!;
     }
 
-    const driver = await this.createDriver(driverName);
-    this.drivers.set(driverName, driver);
-    return driver;
+    // Creation in flight. Reuse the same promise so re-entrant calls do not each
+    // spin up a brand new driver.
+    const inFlight = this.creating.get(driverName);
+    if (inFlight) {
+      return inFlight;
+    }
+
+    // Register the in-flight promise *synchronously, before* createDriver() runs.
+    // A driver's initialize() may emit a console.log (e.g. the WebSocket
+    // broadcaster announcing its path). If a telescope-style log watcher taps
+    // console output and re-broadcasts it, that broadcast re-enters driver()
+    // synchronously — still inside this same initialize() call. Unless the
+    // in-flight marker is already set at that point, the re-entrant call misses
+    // the cache and constructs another driver, which logs again, recursing until
+    // the stack blows. Using a deferred promise published before createDriver()
+    // ensures the re-entrant caller awaits this creation instead of starting a
+    // new one, breaking the synchronous recursion.
+    let resolveDriver!: (driver: BroadcasterDriver) => void;
+    let rejectDriver!: (error: unknown) => void;
+    const pending = new Promise<BroadcasterDriver>((resolve, reject) => {
+      resolveDriver = resolve;
+      rejectDriver = reject;
+    });
+    this.creating.set(driverName, pending);
+
+    try {
+      const driver = await this.createDriver(driverName);
+      this.drivers.set(driverName, driver);
+      resolveDriver(driver);
+      return driver;
+    } catch (error) {
+      rejectDriver(error);
+      throw error;
+    } finally {
+      this.creating.delete(driverName);
+    }
   }
 
   setDriver(driver: BroadcasterDriver, name?: string): void {
@@ -355,6 +390,7 @@ export class BroadcastManager {
       await driver.shutdown();
     }
     this.drivers.clear();
+    this.creating.clear();
     this.initialized = false;
   }
 }
