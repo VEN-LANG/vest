@@ -19,6 +19,10 @@ export class EloquentBuilder<T extends Model> {
   private offsetValue?: number;
   private orderByColumn?: string;
   private orderByDirection: "asc" | "desc" = "asc";
+  // Random ordering: when true, results are ordered randomly. When a seed is
+  // provided the ordering is reproducible across calls and across SQL/MongoDB.
+  private randomOrder: boolean = false;
+  private randomSeed?: number;
   private groupByColumns: string[] = [];
   private hasConditions: {
     relation: string;
@@ -469,6 +473,100 @@ export class EloquentBuilder<T extends Model> {
     return this;
   }
 
+  /**
+   * Order the results randomly. Works for both SQL and MongoDB.
+   *
+   * For SQL this emits `ORDER BY RAND(seed)`. For MongoDB it performs a
+   * deterministic seeded in-memory shuffle. Passing a `seed` makes the ordering
+   * reproducible across calls and across database drivers; omitting it yields a
+   * fresh random order each time.
+   *
+   * @example
+   * await User.query().randomise().get();              // fresh random order
+   * await User.query().randomise({ seed: 42 }).limit(3).get(); // reproducible
+   */
+  randomise(options: { seed?: number | string } = {}): this {
+    this.randomOrder = true;
+    this.randomSeed =
+      options.seed === undefined ? undefined : EloquentBuilder.normalizeSeed(options.seed);
+    return this;
+  }
+
+  /** American-spelling alias for {@link randomise}. */
+  randomize(options: { seed?: number | string } = {}): this {
+    return this.randomise(options);
+  }
+
+  /**
+   * Convenience alias that accepts the seed directly rather than an options
+   * object. Mirrors Laravel's `inRandomOrder($seed)`.
+   *
+   * @example
+   * await User.query().random(42).get();
+   */
+  random(seed?: number | string): this {
+    return this.randomise(seed === undefined ? {} : { seed });
+  }
+
+  /** Laravel-compatible alias for {@link random}. */
+  inRandomOrder(seed?: number | string): this {
+    return this.random(seed);
+  }
+
+  /**
+   * Normalise an arbitrary seed value into an unsigned 32-bit integer so it can
+   * be used both as a MySQL `RAND()` seed and to seed the MongoDB PRNG.
+   */
+  private static normalizeSeed(seed: number | string): number {
+    if (typeof seed === "number") {
+      return Number.isFinite(seed) ? Math.floor(Math.abs(seed)) >>> 0 : 0;
+    }
+    // FNV-1a hash of the string → unsigned 32-bit int
+    let h = 0x811c9dc5;
+    for (let i = 0; i < seed.length; i++) {
+      h ^= seed.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+    return h >>> 0;
+  }
+
+  /**
+   * Deterministic Fisher–Yates shuffle driven by a mulberry32 PRNG seeded with
+   * `seed`. Given the same input order and seed it always returns the same order.
+   */
+  private static seededShuffle<E>(items: E[], seed: number): E[] {
+    let a = seed >>> 0;
+    const rand = () => {
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    const arr = items.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  /**
+   * Apply random ordering to an already-fetched set of MongoDB documents.
+   * When a seed is present the docs are first sorted by a stable key so the
+   * database fetch order cannot influence the seeded result.
+   */
+  private applyRandomOrder(docs: any[]): any[] {
+    if (this.randomSeed === undefined) {
+      return EloquentBuilder.seededShuffle(docs, (Math.random() * 0xffffffff) >>> 0);
+    }
+    const stable = docs.slice().sort((x, y) => {
+      const xk = String(x._id ?? x.id ?? "");
+      const yk = String(y._id ?? y.id ?? "");
+      return xk < yk ? -1 : xk > yk ? 1 : 0;
+    });
+    return EloquentBuilder.seededShuffle(stable, this.randomSeed);
+  }
+
   latest(column: string = "created_at"): this {
     return this.orderBy(column, "desc");
   }
@@ -596,6 +694,8 @@ export class EloquentBuilder<T extends Model> {
     (copy as any).offsetValue = this.offsetValue;
     (copy as any).orderByColumn = this.orderByColumn;
     (copy as any).orderByDirection = this.orderByDirection;
+    (copy as any).randomOrder = this.randomOrder;
+    (copy as any).randomSeed = this.randomSeed;
     (copy as any).groupByColumns = [...this.groupByColumns];
     (copy as any).hasConditions = this.hasConditions.map((h) => ({ ...h }));
     (copy as any).selectedColumns = this.selectedColumns ? [...this.selectedColumns] : undefined;
@@ -740,7 +840,13 @@ export class EloquentBuilder<T extends Model> {
     if (where.sql) parts.push(where.sql);
     if ((copy as any).groupByColumns.length)
       parts.push(`GROUP BY ${(copy as any).groupByColumns.join(", ")}`);
-    if ((copy as any).orderByColumn)
+    if ((copy as any).randomOrder)
+      parts.push(
+        (copy as any).randomSeed !== undefined
+          ? `ORDER BY RAND(${(copy as any).randomSeed})`
+          : "ORDER BY RAND()",
+      );
+    else if ((copy as any).orderByColumn)
       parts.push(
         `ORDER BY ${(copy as any).orderByColumn} ${(copy as any).orderByDirection.toUpperCase()}`,
       );
@@ -1789,7 +1895,10 @@ export class EloquentBuilder<T extends Model> {
     }
 
     // Add order by
-    if (this.orderByColumn) {
+    if (this.randomOrder) {
+      // randomSeed is a normalised integer, so interpolation is injection-safe
+      parts.push(this.randomSeed !== undefined ? `ORDER BY RAND(${this.randomSeed})` : "ORDER BY RAND()");
+    } else if (this.orderByColumn) {
       parts.push(`ORDER BY ${this.orderByColumn} ${this.orderByDirection.toUpperCase()}`);
     }
 
@@ -2860,17 +2969,17 @@ export class EloquentBuilder<T extends Model> {
     }
 
     let cursor = c.find(filter, findOpts);
-    if (this.orderByColumn) {
+    if (!this.randomOrder && this.orderByColumn) {
       cursor = cursor.sort({
         [this.normalizeField(this.orderByColumn)]: this.orderByDirection === "asc" ? 1 : -1,
       });
     }
-    // IMPORTANT: Apply limit and offset AFTER whereHas filtering, not before
-    // So we don't apply them here yet if there are hasConditions
-    if (this.offsetValue !== undefined && !this.hasConditions.length)
-      cursor = cursor.skip(this.offsetValue);
-    if (this.limitValue !== undefined && !this.hasConditions.length)
-      cursor = cursor.limit(this.limitValue);
+    // IMPORTANT: Apply limit and offset AFTER whereHas filtering, not before.
+    // Random ordering also needs the full set up front so the shuffle covers
+    // every matching document before paging is applied.
+    const deferPaging = this.hasConditions.length > 0 || this.randomOrder;
+    if (this.offsetValue !== undefined && !deferPaging) cursor = cursor.skip(this.offsetValue);
+    if (this.limitValue !== undefined && !deferPaging) cursor = cursor.limit(this.limitValue);
     let docs = await cursor.toArray();
     docs = docs.map((d) => {
       if (d && d._id && !("id" in d)) d.id = String(d._id);
@@ -2879,7 +2988,13 @@ export class EloquentBuilder<T extends Model> {
     // Post-filter by whereHas/whereDoesntHave conditions for Mongo
     if (this.hasConditions.length) {
       docs = await this.applyHasConditionsMongo(docs, originalWhereFilter);
-      // NOW apply limit and offset after whereHas filtering
+    }
+    // Apply random ordering (seeded shuffle) once the full result set is known
+    if (this.randomOrder) {
+      docs = this.applyRandomOrder(docs);
+    }
+    // NOW apply limit and offset after whereHas filtering / random ordering
+    if (deferPaging) {
       if (this.offsetValue !== undefined) {
         docs = docs.slice(this.offsetValue);
       }
