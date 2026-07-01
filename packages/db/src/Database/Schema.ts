@@ -797,8 +797,13 @@ export class TableBuilder {
     return this;
   }
 
-  unique(name: string) {
-    this.uniques.push(name);
+  unique(columns: string[] | string, name?: string) {
+    // Composite unique (array) → unique index over multiple columns.
+    // Single column (string) → simple UNIQUE KEY, preserving prior behaviour.
+    if (Array.isArray(columns)) {
+      return this.uniqueIndex(columns, name);
+    }
+    this.uniques.push(columns);
     return this;
   }
   primary(name: string) {
