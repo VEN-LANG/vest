@@ -1937,9 +1937,46 @@ export class EloquentBuilder<T extends Model> {
   }
 
   private async loadRelationships(models: T[]): Promise<void> {
-    for (const [relation, options] of this.withRelations) {
+    const entries = Array.from(this.withRelations);
+    // Top-level relations are independent of one another, so they can be
+    // loaded concurrently to save round-trip latency. This is only safe when
+    // NOT inside a transaction: a transaction routes every operation through a
+    // single connection (MySQL, see DB.executeQuery) or a single ClientSession
+    // (MongoDB), neither of which can run operations in parallel. Fall back to
+    // serial loading in that case. Applies to both MySQL and MongoDB otherwise,
+    // since each relation loader only mutates the models, not the builder.
+    if (!DB.inTransaction() && entries.length > 1) {
+      // Bounded concurrency: never fire every relation at once. With many
+      // relations, an unbounded Promise.all would (a) hold every relation's
+      // materialized result set in memory simultaneously and (b) grab one
+      // pooled connection each, starving the shared pool (default size 10).
+      // A small window keeps peak memory and connection usage bounded while
+      // still overlapping round-trips.
+      const window = EloquentBuilder.eagerLoadConcurrency();
+      let cursor = 0;
+      const worker = async (): Promise<void> => {
+        // `cursor++` is atomic in single-threaded JS: each worker claims a
+        // distinct index before it awaits, so no entry is loaded twice.
+        while (cursor < entries.length) {
+          const [relation, options] = entries[cursor++];
+          await this.loadRelationship(models, relation, options);
+        }
+      };
+      const workerCount = Math.min(window, entries.length);
+      await Promise.all(Array.from({ length: workerCount }, () => worker()));
+      return;
+    }
+    for (const [relation, options] of entries) {
       await this.loadRelationship(models, relation, options);
     }
+  }
+
+  // Max number of top-level relations to eager-load concurrently per query.
+  // Kept below the DB pool size (default 10) so a single request can't
+  // monopolize the pool. Override with DB_EAGER_LOAD_CONCURRENCY.
+  private static eagerLoadConcurrency(): number {
+    const raw = parseInt(process.env.DB_EAGER_LOAD_CONCURRENCY || "4", 10);
+    return Number.isFinite(raw) && raw >= 1 ? raw : 4;
   }
 
   // Replace old single-level nested loader with recursive tree loader
