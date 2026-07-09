@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/telescope",
-  "version": "0.1.25",
+  "version": "0.1.26",
   "description": "Lara-Node Telescope — request and query debug dashboard",
   "files": [
     "dist",

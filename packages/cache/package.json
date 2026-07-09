@@ -1,6 +1,6 @@
 {
   "name": "@lara-node/cache",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "description": "Lara-Node cache manager — file, database, and Redis drivers",
   "files": [
     "dist",
