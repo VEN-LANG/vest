@@ -1,5 +1,5 @@
 import { Command } from "@lara-node/console";
-import { ArgumentsCamelCase } from "yargs";
+import type { ArgumentsCamelCase } from "yargs";
 import fs from "fs";
 import path from "path";
 import {

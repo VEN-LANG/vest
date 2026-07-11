@@ -8,6 +8,7 @@
 |
 */
 
+import { AsyncLocalStorage } from "async_hooks";
 import { PoolConnection, Pool } from "mysql2/promise";
 import { getPool, getDbType, query as dbQuery, getMongoDb } from "./connection.js";
 import { ClientSession, Db, Collection as MongoCollection, Document } from "mongodb";
@@ -230,10 +231,63 @@ export interface RawQueryResult {
  *   await DB.rollback();
  * }
  */
+/**
+ * Per-async-context transaction state.
+ *
+ * The active transaction MUST NOT be shared between concurrent requests. If it
+ * were process-global, request A committing/ending its Mongo session while
+ * request B still holds a reference to that session (via getSessionOptions())
+ * would make B's next operation run on an already-committed session, producing
+ * `MongoServerError: Transaction with { txnNumber: N } has been committed.`
+ * (code 256 / TransactionCommitted). Scoping the state to an AsyncLocalStorage
+ * store isolates each request — and each nested DB.transaction() call — so a
+ * session can only ever be used within the async context that owns it.
+ */
+interface TransactionStore {
+  mysql: Transaction | null;
+  mongo: MongoTransaction | null;
+  level: number;
+}
+
 export class DB {
-  private static currentMysqlTransaction: Transaction | null = null;
-  private static currentMongoTransaction: MongoTransaction | null = null;
-  private static transactionLevel = 0;
+  private static readonly als = new AsyncLocalStorage<TransactionStore>();
+
+  /**
+   * Fallback store for the manual, callback-less API
+   * (`DB.beginTransaction()` / `DB.commit()` without a wrapping
+   * `DB.transaction()`), which has no async scope to attach to. This path is
+   * inherently process-global and should only be used by single-threaded
+   * tooling (migrations, scripts), never in request handlers.
+   */
+  private static readonly globalStore: TransactionStore = {
+    mysql: null,
+    mongo: null,
+    level: 0,
+  };
+
+  /** Resolve the transaction store for the current async context. */
+  private static store(): TransactionStore {
+    return this.als.getStore() ?? this.globalStore;
+  }
+
+  private static get currentMysqlTransaction(): Transaction | null {
+    return this.store().mysql;
+  }
+  private static set currentMysqlTransaction(v: Transaction | null) {
+    this.store().mysql = v;
+  }
+  private static get currentMongoTransaction(): MongoTransaction | null {
+    return this.store().mongo;
+  }
+  private static set currentMongoTransaction(v: MongoTransaction | null) {
+    this.store().mongo = v;
+  }
+  private static get transactionLevel(): number {
+    return this.store().level;
+  }
+  private static set transactionLevel(v: number) {
+    this.store().level = v;
+  }
 
   // ==========================================================================
   // QUERY EXECUTION METHODS
@@ -613,16 +667,21 @@ export class DB {
   static async transaction<T>(
     callback: UnifiedTransactionCallback<T> | (() => Promise<T>),
   ): Promise<T> {
-    const trx = await this.beginTransaction();
+    // Run the whole transaction inside its own async-local store so the session
+    // it opens is visible only to operations spawned within this callback, and
+    // never bleeds into concurrent requests (or an enclosing transaction).
+    return this.als.run({ mysql: null, mongo: null, level: 0 }, async () => {
+      const trx = await this.beginTransaction();
 
-    try {
-      const result = await callback(trx);
-      await this.commit();
-      return result;
-    } catch (error) {
-      await this.rollback();
-      throw error;
-    }
+      try {
+        const result = await callback(trx);
+        await this.commit();
+        return result;
+      } catch (error) {
+        await this.rollback();
+        throw error;
+      }
+    });
   }
 
   /**
@@ -633,16 +692,18 @@ export class DB {
       throw new Error("mysqlTransaction() is only supported for MySQL");
     }
 
-    const trx = (await this.beginTransaction()) as Transaction;
+    return this.als.run({ mysql: null, mongo: null, level: 0 }, async () => {
+      const trx = (await this.beginTransaction()) as Transaction;
 
-    try {
-      const result = await callback(trx);
-      await this.commit();
-      return result;
-    } catch (error) {
-      await this.rollback();
-      throw error;
-    }
+      try {
+        const result = await callback(trx);
+        await this.commit();
+        return result;
+      } catch (error) {
+        await this.rollback();
+        throw error;
+      }
+    });
   }
 
   /**
@@ -653,16 +714,18 @@ export class DB {
       throw new Error("mongoTransaction() is only supported for MongoDB");
     }
 
-    const trx = (await this.beginTransaction()) as MongoTransaction;
+    return this.als.run({ mysql: null, mongo: null, level: 0 }, async () => {
+      const trx = (await this.beginTransaction()) as MongoTransaction;
 
-    try {
-      const result = await callback(trx);
-      await this.commit();
-      return result;
-    } catch (error) {
-      await this.rollback();
-      throw error;
-    }
+      try {
+        const result = await callback(trx);
+        await this.commit();
+        return result;
+      } catch (error) {
+        await this.rollback();
+        throw error;
+      }
+    });
   }
 
   // ==========================================================================
