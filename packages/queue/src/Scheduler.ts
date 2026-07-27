@@ -1,6 +1,7 @@
 import { EventEmitter } from "events";
 import { CronExpressionParser as parser } from "cron-parser";
 import { Cache } from "@lara-node/cache";
+import { appKey } from "./namespace.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -8,10 +9,12 @@ import { Cache } from "@lara-node/cache";
 |--------------------------------------------------------------------------
 */
 
-const SCHEDULER_LOCK_PREFIX = `${process.env.APP_NAME || "app"}:scheduler:lock`;
+// Resolved per call so the key always reflects the current APP_NAME —
+// two services sharing a Redis instance must not share scheduler locks.
+const schedulerLockKey = (key: string) => appKey("scheduler", "lock", key);
 
 async function acquireLock(key: string, ttlSeconds: number): Promise<boolean> {
-  const lockKey = `${SCHEDULER_LOCK_PREFIX}:${key}`;
+  const lockKey = schedulerLockKey(key);
   const existing = await Cache.get(lockKey);
   if (existing) return false;
   await Cache.set(lockKey, Date.now(), ttlSeconds);
@@ -19,7 +22,7 @@ async function acquireLock(key: string, ttlSeconds: number): Promise<boolean> {
 }
 
 async function releaseLock(key: string): Promise<void> {
-  await Cache.del(`${SCHEDULER_LOCK_PREFIX}:${key}`);
+  await Cache.del(schedulerLockKey(key));
 }
 
 /*
@@ -73,7 +76,7 @@ export class Schedule {
   private events: EventEmitter = new EventEmitter();
   private readonly cronPartsCache = new Map<string, string[]>();
   private readonly taskCacheKey = (name: string) =>
-    `${process.env.APP_NAME || "app"}:scheduler:task:${name}`;
+    appKey("scheduler", "task", name);
 
   /*
   |--------------------------------------------------------------------------
@@ -263,7 +266,7 @@ export class Schedule {
   }
 
   async runDueTasks(): Promise<void> {
-    const maintenanceKey = `${process.env.APP_NAME || "app"}:maintenance`;
+    const maintenanceKey = appKey("maintenance");
     const inMaintenance = await Cache.has(maintenanceKey).catch(() => false);
 
     const dueTasks = this.getDueTasks();
