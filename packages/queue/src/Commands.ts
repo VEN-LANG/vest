@@ -1,7 +1,7 @@
 import { Command } from "@lara-node/console";
 import { ArgumentsCamelCase } from "yargs";
 import { Queue, Worker, scheduler, getRegisteredJobs } from "./index.js";
-import { getQueueConfig } from "./index.js";
+import { appKey, getQueueConfig } from "./index.js";
 import { Cache } from "@lara-node/cache";
 
 export class QueueWorkCommand extends Command {
@@ -109,7 +109,7 @@ export class QueueRestartCommand extends Command {
   protected description = "Signal all queue worker daemons to restart after their current job";
 
   async handle(_args: ArgumentsCamelCase): Promise<void> {
-    const restartKey = `${process.env.APP_NAME || "app"}:queue:restart`;
+    const restartKey = appKey("queue", "restart");
     await Cache.set(restartKey, Date.now(), 3600);
     console.log("Queue restart signal broadcast.");
   }
