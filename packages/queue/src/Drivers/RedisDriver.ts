@@ -1,6 +1,16 @@
 import { createClient, RedisClientType } from "redis";
-import { QueueDriverInterface, FailedJobsInterface, SerializedJob } from "../types.js";
-import queueConfig from "../queue.config.js";
+import {
+  QueueDriverInterface,
+  FailedJobsInterface,
+  SerializedJob,
+  QueueConnectionConfig,
+} from "../types.js";
+import {
+  defaultPrefixFor,
+  getQueueConfig,
+  parseQueueName,
+  resolvePrefix,
+} from "../namespace.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -17,26 +27,71 @@ import queueConfig from "../queue.config.js";
 | UUID-keyed reserved / delayed body hashes eliminate the fragile
 | "payload must exactly match" issue that plagued the old ZSet approach.
 |
+| Every key is namespaced by the owning application:
+|
+|   <prefix>:<queue>[:<suffix>]        e.g. billing_queue:emails:reserved
+|
+| so that multiple services sharing one Redis instance never pop each
+| other's jobs. Pass a queue name of the form `queue@app` to deliberately
+| address a sibling application's queue.
+|
 */
+
+export type RedisDriverConfig = Pick<
+  QueueConnectionConfig,
+  | "queue"
+  | "retry_after"
+  | "prefix"
+  | "app"
+  | "apps"
+  | "url"
+  | "host"
+  | "port"
+  | "password"
+  | "username"
+  | "database"
+>;
 
 export class RedisDriver implements QueueDriverInterface, FailedJobsInterface {
   private client: RedisClientType | null = null;
   private defaultQueue: string;
   private retryAfter: number;
   private prefix: string;
+  private apps: Record<string, string>;
+  private connectionConfig: RedisDriverConfig;
   private initialized: boolean = false;
 
-  constructor(config?: { queue?: string; retry_after?: number; prefix?: string }) {
-    const redisConfig = queueConfig.connections.redis;
-    this.defaultQueue = config?.queue || redisConfig.queue || "default";
-    this.retryAfter = config?.retry_after || redisConfig.retry_after || 90;
-    const appName = process.env.APP_NAME || "app";
-    this.prefix = config?.prefix || process.env.REDIS_PREFIX || `${appName}_queue`;
+  constructor(config?: RedisDriverConfig) {
+    // Read through getQueueConfig() so an application override registered via
+    // setConfig('queue', …) wins over this package's bundled defaults.
+    const redisConfig = getQueueConfig().connections.redis ?? {};
+    const merged: RedisDriverConfig = { ...redisConfig, ...config };
+
+    this.connectionConfig = merged;
+    this.defaultQueue = merged.queue || "default";
+    this.retryAfter = merged.retry_after || 90;
+    this.prefix = resolvePrefix(merged);
+    this.apps = merged.apps ?? {};
   }
 
-  // Key helpers
+  /** The Redis key prefix this driver writes under. */
+  getPrefix(): string {
+    return this.prefix;
+  }
+
+  /** Resolve the key prefix for a sibling application. */
+  private prefixForApp(app: string): string {
+    return this.apps[app] ?? defaultPrefixFor(app);
+  }
+
+  /**
+   * Build a namespaced Redis key. Queue names of the form `queue@app` are
+   * routed to that application's prefix instead of our own.
+   */
   private key(queue: string, suffix: string = ""): string {
-    const base = `${this.prefix}:${queue}`;
+    const { queue: bare, app } = parseQueueName(queue);
+    const prefix = app ? this.prefixForApp(app) : this.prefix;
+    const base = `${prefix}:${bare}`;
     return suffix ? `${base}:${suffix}` : base;
   }
 
@@ -44,13 +99,19 @@ export class RedisDriver implements QueueDriverInterface, FailedJobsInterface {
     if (this.initialized && this.client) return;
 
     try {
+      const c = this.connectionConfig;
       const redisUrl =
+        c.url ||
         process.env.REDIS_URL ||
-        `redis://${process.env.REDIS_HOST || "localhost"}:${process.env.REDIS_PORT || 6379}`;
+        `redis://${c.host || process.env.REDIS_HOST || "localhost"}:${c.port ?? process.env.REDIS_PORT ?? 6379}`;
+
+      const database = c.database ?? (process.env.REDIS_DB ? Number(process.env.REDIS_DB) : undefined);
 
       this.client = createClient({
         url: redisUrl,
-        password: process.env.REDIS_PASSWORD || undefined,
+        username: c.username || process.env.REDIS_USERNAME || undefined,
+        password: c.password || process.env.REDIS_PASSWORD || undefined,
+        database,
       });
 
       this.client.on("error", (err) => {
@@ -220,6 +281,17 @@ export class RedisDriver implements QueueDriverInterface, FailedJobsInterface {
   |--------------------------------------------------------------------------
   */
 
+  /**
+   * Failed jobs are stored under the prefix of the application that owns the
+   * queue, so a failure on `emails@billing` lands in billing's failed hash and
+   * billing's `queue:retry` can recover it.
+   */
+  private failedKey(queue?: string): string {
+    const app = queue ? parseQueueName(queue).app : undefined;
+    const prefix = app ? this.prefixForApp(app) : this.prefix;
+    return `${prefix}:failed_jobs`;
+  }
+
   async logFailed(
     connection: string,
     queue: string,
@@ -237,19 +309,19 @@ export class RedisDriver implements QueueDriverInterface, FailedJobsInterface {
       failed_at: new Date().toISOString(),
     };
 
-    await client.hSet(`${this.prefix}:failed_jobs`, job.uuid, JSON.stringify(failedJob));
+    await client.hSet(this.failedKey(queue), job.uuid, JSON.stringify(failedJob));
   }
 
   async getFailedJobs(): Promise<any[]> {
     const client = await this.ensureConnected();
-    const jobs = await client.hGetAll(`${this.prefix}:failed_jobs`);
+    const jobs = await client.hGetAll(this.failedKey());
     return Object.values(jobs).map((j) => JSON.parse(j));
   }
 
   async retryFailed(uuid: string): Promise<boolean> {
     const client = await this.ensureConnected();
 
-    const data = await client.hGet(`${this.prefix}:failed_jobs`, uuid);
+    const data = await client.hGet(this.failedKey(), uuid);
     if (!data) return false;
 
     const failedJob = JSON.parse(data);
@@ -268,14 +340,14 @@ export class RedisDriver implements QueueDriverInterface, FailedJobsInterface {
 
   async forgetFailed(uuid: string): Promise<boolean> {
     const client = await this.ensureConnected();
-    const result = await client.hDel(`${this.prefix}:failed_jobs`, uuid);
+    const result = await client.hDel(this.failedKey(), uuid);
     return result > 0;
   }
 
   async flushFailed(): Promise<number> {
     const client = await this.ensureConnected();
-    const count = await client.hLen(`${this.prefix}:failed_jobs`);
-    await client.del(`${this.prefix}:failed_jobs`);
+    const count = await client.hLen(this.failedKey());
+    await client.del(this.failedKey());
     return count;
   }
 
