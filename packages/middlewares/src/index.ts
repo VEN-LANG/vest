@@ -1,12 +1,20 @@
-import { AsyncLocalStorage } from "async_hooks";
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { ValidationError, validate, RuleFn, RuleSpec } from "@lara-node/validator";
 import { Model, QueryResult } from "@lara-node/db";
+import { asyncLocalStorage, Request as LaraRequest } from "@lara-node/core";
+import type { BasicCredentials, RequestInstance } from "@lara-node/core";
 
 // ─── Shared async context storage ──────────────────────────────────────────────
 
-export const asyncLocalStorage = new AsyncLocalStorage<Record<string, any>>();
+/**
+ * Re-exported from @lara-node/core, which now owns the store so that
+ * `request()` can resolve without a dependency on this package. Kept here
+ * for backwards compatibility — importing it from either place is the same
+ * globalThis-backed instance.
+ */
+export { asyncLocalStorage, request, requestOrFail } from "@lara-node/core";
+export type { RequestInstance, HeaderBag, CookieBag, BasicCredentials } from "@lara-node/core";
 
 // ─── FormRequest interface ──────────────────────────────────────────────────────
 
@@ -79,8 +87,38 @@ export interface FormRequest {
   cookie: (key: string, defaultValue?: string) => string | undefined;
   hasCookie: (key: string) => boolean;
   allCookies: () => Record<string, string>;
+  // Referrer / origin
+  referrer: (defaultValue?: string) => string | undefined;
+  referer: (defaultValue?: string) => string | undefined;
+  referrerHost: () => string | undefined;
+  origin: (defaultValue?: string) => string | undefined;
+  isCrossOrigin: () => boolean;
+  // Content metadata
+  contentType: () => string | undefined;
+  charset: () => string | undefined;
+  contentLength: () => number;
+  requestId: () => string;
+  // Content negotiation
+  accept: () => string | undefined;
+  acceptableContentTypes: () => string[];
+  acceptsAnyContentType: () => boolean;
+  acceptsJson: () => boolean;
+  acceptsHtml: () => boolean;
+  languages: () => string[];
+  language: () => string | undefined;
+  preferredLanguage: (available: string[], defaultValue?: string) => string | undefined;
+  encodings: () => string[];
   // Request type
   isMethod: (method: string) => boolean;
+  isGet: () => boolean;
+  isPost: () => boolean;
+  isPut: () => boolean;
+  isPatch: () => boolean;
+  isDelete: () => boolean;
+  isHead: () => boolean;
+  isOptions: () => boolean;
+  isMethodSafe: () => boolean;
+  isMethodIdempotent: () => boolean;
   isJson: () => boolean;
   wantsJson: () => boolean;
   expectsJson: () => boolean;
@@ -90,22 +128,38 @@ export interface FormRequest {
   isSecure: () => boolean;
   // URL helpers
   httpHost: () => string;
+  port: () => number;
   scheme: () => string;
   schemeAndHttpHost: () => string;
   root: () => string;
   fullUrl: () => string;
   fullUrlWithQuery: (query: Record<string, ScalarValue>) => string;
   fullUrlWithoutQuery: (...keys: string[]) => string;
+  queryString: () => string;
   decodedPath: () => string;
   segments: () => string[];
   segment: (index: number, defaultValue?: string) => string | undefined;
   pathIs: (...patterns: string[]) => boolean;
+  fullUrlIs: (...patterns: string[]) => boolean;
   routeIs: (...patterns: string[]) => boolean;
+  // Route parameters
+  routeParam: <V = string>(key: string, defaultValue?: V) => V | undefined;
   // Client info
   userAgent: () => string | undefined;
+  isBot: () => boolean;
+  isMobile: () => boolean;
+  clientIp: () => string | undefined;
   server: (key: string, defaultValue?: string) => string | undefined;
   fingerprint: () => string;
   bearerToken: () => string | null;
+  basicAuth: () => BasicCredentials | null;
+  // Timing
+  startedAt: () => number;
+  elapsed: () => number;
+  // Async request context
+  store: <V = unknown>(key?: string, value?: V) => V | Record<string, unknown> | undefined;
+  /** The Request wrapper for this express request — same object as `request()`. */
+  lara: () => RequestInstance;
 }
 
 // ─── Type augmentations ─────────────────────────────────────────────────────────
@@ -133,6 +187,11 @@ declare global {
 
 export class AsyncContextMiddleware {
   handle(req: Request, _res: Response, next: NextFunction): void {
+    // Build the Request wrapper up front so startedAt() reflects when the
+    // request entered the stack rather than first access, and so request()
+    // resolves the same instance for the whole request.
+    const lara = LaraRequest.from(req);
+    lara.startedAt();
     asyncLocalStorage.run({ req }, () => next());
   }
 }
@@ -510,6 +569,85 @@ export class RequestExtenderMiddleware {
       const header = req.headers["authorization"] ?? "";
       return header.startsWith("Bearer ") ? header.slice(7) : null;
     };
+
+    /*
+    |------------------------------------------------------------------------
+    | Delegated accessors
+    |------------------------------------------------------------------------
+    |
+    | Everything below is backed by the Request wrapper from @lara-node/core,
+    | so `req.referrer()` and `request()!.referrer()` are the same code path.
+    | The input helpers above keep their own implementation because their
+    | merge semantics (body + query + merged, no route params) predate the
+    | wrapper and changing them would alter existing behaviour.
+    |
+    | Note that `header()`, `accepts()`, `is()` and `ips` are NOT redefined —
+    | express owns those names with different signatures. Reach the wrapper
+    | versions through `req.lara()`.
+    |
+    */
+    const lara = LaraRequest.from(req);
+
+    req.lara = () => lara;
+
+    // Referrer / origin
+    req.referrer = (defaultValue?: string) => lara.referrer(defaultValue);
+    req.referer = (defaultValue?: string) => lara.referrer(defaultValue);
+    req.referrerHost = () => lara.referrerHost();
+    req.origin = (defaultValue?: string) => lara.origin(defaultValue);
+    req.isCrossOrigin = () => lara.isCrossOrigin();
+
+    // Content metadata
+    req.contentType = () => lara.contentType();
+    req.charset = () => lara.charset();
+    req.contentLength = () => lara.contentLength();
+    req.requestId = () => lara.requestId();
+
+    // Content negotiation
+    req.accept = () => lara.accept();
+    req.acceptableContentTypes = () => lara.acceptableContentTypes();
+    req.acceptsAnyContentType = () => lara.acceptsAnyContentType();
+    req.acceptsJson = () => lara.acceptsJson();
+    req.acceptsHtml = () => lara.acceptsHtml();
+    req.languages = () => lara.languages();
+    req.language = () => lara.language();
+    req.preferredLanguage = (available: string[], defaultValue?: string) =>
+      lara.preferredLanguage(available, defaultValue);
+    req.encodings = () => lara.encodings();
+
+    // Method predicates
+    req.isGet = () => lara.isGet();
+    req.isPost = () => lara.isPost();
+    req.isPut = () => lara.isPut();
+    req.isPatch = () => lara.isPatch();
+    req.isDelete = () => lara.isDelete();
+    req.isHead = () => lara.isHead();
+    req.isOptions = () => lara.isOptions();
+    req.isMethodSafe = () => lara.isMethodSafe();
+    req.isMethodIdempotent = () => lara.isMethodIdempotent();
+
+    // URL
+    req.port = () => lara.port();
+    req.queryString = () => lara.queryString();
+    req.fullUrlIs = (...patterns: string[]) => lara.fullUrlIs(...patterns);
+
+    // Route parameters
+    req.routeParam = <V = string>(key: string, defaultValue?: V) =>
+      lara.routeParam<V>(key, defaultValue);
+
+    // Client info
+    req.isBot = () => lara.isBot();
+    req.isMobile = () => lara.isMobile();
+    req.clientIp = () => lara.clientIp();
+    req.basicAuth = () => lara.basicAuth();
+
+    // Timing
+    req.startedAt = () => lara.startedAt();
+    req.elapsed = () => lara.elapsed();
+
+    // Async request context — named store() so it does not clobber an
+    // application's own req.context object.
+    req.store = <V = unknown>(key?: string, value?: V) => lara.store<V>(key, value);
 
     next();
   }
