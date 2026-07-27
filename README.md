@@ -15,11 +15,13 @@ pnpm create lara-node my-api
 - **Expressive routing** — fluent route builder with named middleware, groups, and parameter constraints
 - **Eloquent-style ORM** — models with relationships, traits (SoftDeletes, Timestamps, Cacheable…), and Mongo/MySQL support
 - **Service container** — IoC container with auto-injection and service providers
+- **Global `request()`** — the current request anywhere via async context; referrer, headers, negotiation, client info, and route helpers
 - **Global config system** — dot-notation `config()` accessor; packages set defaults, app overrides via `ConfigServiceProvider`
 - **Middleware service provider** — register aliases (`auth`, `can`, `role`), groups, and priority order in a dedicated provider
 - **Class-based middleware** — pass constructor classes directly; the engine calls `handle()` automatically
 - **Event system** — synchronous and queued events, listeners, subscribers, and WebSocket broadcasting
 - **Job queue** — driver-based queue (sync, MongoDB, Redis) with retries, priorities, and failed-job tracking
+- **Per-app queue namespacing** — several services share one Redis safely; address a sibling's queue with `queue@app`
 - **Cron scheduler** — fluent task scheduling with distributed locking
 - **Mail** — SMTP, log, and array drivers with Mailable classes; runtime config via `config('mail.*')`
 - **Artisan CLI** — 50+ built-in commands; add your own with a single class
@@ -263,6 +265,7 @@ import type { ErrorRequestHandler, RequestHandler } from 'express';
 import {
   AsyncContextMiddleware,
   RequestLoggerMiddleware,
+  RequestExtenderMiddleware,
   ValidatorMiddleware,
   ResponseExtenderMiddleware,
   ErrorHandlerMiddleware,
@@ -271,8 +274,9 @@ import {
 export class Kernel extends BaseKernel {
   // Pass classes directly — the stack calls handle() automatically
   protected override middleware: RequestHandler[] = middlewareStack.resolveMiddlewareStack([
-    AsyncContextMiddleware,
+    AsyncContextMiddleware,      // establishes the context request() reads
     RequestLoggerMiddleware,
+    RequestExtenderMiddleware,   // attaches the accessors to req
     ValidatorMiddleware,
     ResponseExtenderMiddleware,
   ] as Middleware[]);
@@ -281,6 +285,65 @@ export class Kernel extends BaseKernel {
     new ErrorHandlerMiddleware().handle(err, req, res, next);
 }
 ```
+
+---
+
+### The `request()` Helper
+
+`request()` returns the current request from anywhere — services, models, event
+listeners, policies — without threading `req` through every call. It resolves
+from the async request context established by `AsyncContextMiddleware`, so it
+works at any depth below it.
+
+Outside an HTTP request (queue workers, artisan commands) it returns `null`, so
+guard it:
+
+```typescript
+import { request, requestOrFail } from '@lara-node/core';
+// or use the globals — registered automatically, no import needed
+
+const ref    = request()?.referrer();
+const agent  = request()?.headers('user-agent');
+const apiKey = request()?.headers('x-api-key', 'none');
+const ip     = request()?.clientIp();
+const id     = request()?.requestId();
+
+// Throws instead of returning null — for code only reachable over HTTP
+const req = requestOrFail();
+```
+
+`headers` is both callable and indexable, so either style reads naturally:
+
+```typescript
+request()?.headers('referer')      // one header, case-insensitive
+request()?.headers('x-key', 'na')  // with a default
+request()?.headers()               // all of them
+request()?.headers['user-agent']   // index style still works
+```
+
+`RequestExtenderMiddleware` attaches the same accessors to the express `req`,
+backed by the same object — `req.referrer()` and `request()!.referrer()` are one
+code path. Where express already owns a name (`header()`, `accepts()`, `is()`,
+`ips`), reach the wrapper through `req.lara()`.
+
+| Section | Methods |
+|---|---|
+| Referrer / origin | `referrer()` `referer()` `referrerHost()` `origin()` `isCrossOrigin()` |
+| Headers | `headers(key?)` `header()` `hasHeader()` `requestId()` |
+| Content | `contentType()` `charset()` `contentLength()` |
+| Negotiation | `accepts()` `acceptsJson()` `acceptsHtml()` `acceptableContentTypes()` `languages()` `language()` `preferredLanguage()` `encodings()` |
+| Method | `isGet()` `isPost()` `isPut()` `isPatch()` `isDelete()` `isHead()` `isOptions()` `isMethodSafe()` `isMethodIdempotent()` |
+| URL | `fullUrl()` `port()` `queryString()` `is()` `fullUrlIs()` `segments()` `segment()` |
+| Route | `route()` `routeParam()` |
+| Client | `clientIp()` `ips()` `userAgent()` `isBot()` `isMobile()` `fingerprint()` |
+| Credentials | `bearerToken()` `basicAuth()` `user()` |
+| Cookies | `cookies(key?)` `cookie()` `hasCookie()` |
+| Input | `all()` `input()` `only()` `except()` `string()` `integer()` `boolean()` `date()` `collect()` `has()` `filled()` `merge()` |
+| Timing | `startedAt()` `elapsed()` |
+| Context | `store(key?, value?)` — read/write the async request store |
+
+`FormRequest` extends this class, so every method above is available on a
+validated form request too.
 
 ---
 
@@ -435,6 +498,61 @@ pnpm artisan queue:work
 pnpm artisan queue:work --connection redis --queue high,default
 ```
 
+#### Sharing one Redis between services
+
+Every Redis key the queue writes is namespaced by the owning application, so
+two Lara-Node services pointed at the same Redis instance never pop each
+other's jobs. The namespace resolves from `QUEUE_APP`, then `APP_NAME` —
+**set one per service**, or both fall back to `app` and collide.
+
+```
+billing_queue:invoices                 # billing's pending jobs
+billing_queue:invoices:delayed:score   # billing's delayed set
+billing_queue:invoices:reserved        # billing's in-flight jobs
+billing_queue:failed_jobs              # billing's failures
+search_queue:index                     # search's — a separate key entirely
+```
+
+Worker restart signals, scheduler locks and the maintenance flag are scoped the
+same way, so `queue:restart` on one service leaves the others running.
+
+To address a sibling service's queue **on purpose**, suffix the queue name with
+`@app`:
+
+```typescript
+// Dispatch onto search's 'index' queue from billing
+await Queue.push(new ReindexJob({ id }), 'index@search');
+await dispatch(new ReindexJob({ id })).onQueue('index@search').dispatch();
+```
+
+```bash
+# Or work another service's queue
+pnpm artisan queue:work redis --queue=index@search
+```
+
+Failed jobs follow the queue's owner, so a failure on `index@search` lands in
+search's failed-job hash where search's `queue:retry` can recover it.
+
+Configure it in `config/queue.config.ts`:
+
+```typescript
+redis: {
+  driver: 'redis',
+  app: process.env.QUEUE_APP ?? process.env.APP_NAME,  // → 'billing_queue'
+  prefix: process.env.REDIS_PREFIX ?? undefined,       // override outright
+
+  // Only needed for siblings whose prefix is not '<app>_queue'
+  apps: { search: 'search-jobs' },
+}
+```
+
+The default prefix shape is `<app>_queue`, unchanged from previous versions, so
+upgrading does not orphan jobs already sitting in Redis.
+
+Configuration files hold **data only** — the types live in
+`@lara-node/queue`'s `types.ts` and the namespacing behaviour in
+`namespace.ts`, so editing a published config can never break them.
+
 ---
 
 ### Scheduler
@@ -532,6 +650,15 @@ CACHE_DRIVER=file            # file | memory | redis | db
 
 # Queue
 QUEUE_CONNECTION=sync        # sync | database | redis
+QUEUE_APP=my-api             # Redis key namespace — unique per service
+# REDIS_PREFIX=              # overrides the derived '<app>_queue' prefix
+# REDIS_URL=redis://127.0.0.1:6379
+# REDIS_HOST=127.0.0.1
+# REDIS_PORT=6379
+# REDIS_USERNAME=
+# REDIS_PASSWORD=
+# REDIS_DB=0
+# REDIS_QUEUE=default
 
 # Mail
 MAIL_MAILER=smtp             # smtp | log | array
