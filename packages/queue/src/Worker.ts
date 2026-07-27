@@ -1,7 +1,7 @@
 import { Queue } from "./Queue.js";
 import { Job } from "./Job.js";
 import { SerializedJob, WorkerOptions } from "./types.js";
-import { getQueueConfig } from "./queue.config.js";
+import { appKey, getQueueConfig } from "./namespace.js";
 import { Cache } from "@lara-node/cache";
 import { EventEmitter } from "events";
 
@@ -48,8 +48,8 @@ export class Worker extends EventEmitter {
 
     this.connectionName = connectionName || getQueueConfig().default;
     this.queues = Array.isArray(queues) ? queues : [queues];
-    this.restartKey = `${process.env.APP_NAME || "app"}:queue:restart`;
-    this.horizonCtrlPrefix = `${process.env.APP_NAME || "app"}:horizon:ctrl`;
+    this.restartKey = appKey("queue", "restart");
+    this.horizonCtrlPrefix = appKey("horizon", "ctrl");
     this.workerId = options.workerId;
 
     this.options = {
@@ -376,7 +376,7 @@ export class Worker extends EventEmitter {
 
   private async isInMaintenanceMode(): Promise<boolean> {
     try {
-      return await Cache.has(`${process.env.APP_NAME || "app"}:maintenance`);
+      return await Cache.has(appKey("maintenance"));
     } catch {
       return false;
     }
