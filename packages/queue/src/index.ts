@@ -34,7 +34,17 @@ export { Schedule, ScheduledTaskBuilder, scheduler } from "./Scheduler.js";
 // Drivers
 export { SyncDriver, DatabaseDriver, RedisDriver } from "./Drivers/index.js";
 export { QueueServiceProvider } from "./QueueServiceProvider.js";
-export { default as queueConfig, getQueueConfig } from "./queue.config.js";
-export type { QueueConfig, QueueConnectionConfig } from "./queue.config.js";
+export { default as queueConfig, QUEUE_CONNECTION } from "./queue.config.js";
+export {
+  getQueueConfig,
+  appName,
+  appKey,
+  defaultPrefixFor,
+  resolvePrefix,
+  parseQueueName,
+  qualifyQueue,
+} from "./namespace.js";
+export type { ResolvedQueueName } from "./namespace.js";
+export type { RedisDriverConfig } from "./Drivers/RedisDriver.js";
 
 export * from "./Commands.js";
