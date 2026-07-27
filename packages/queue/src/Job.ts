@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { SerializedJob, JobOptions } from "./types.js";
-import { getQueueConfig } from "./queue.config.js";
+import { getQueueConfig } from "./namespace.js";
 
 /*
 |--------------------------------------------------------------------------
