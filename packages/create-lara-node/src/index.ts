@@ -13,15 +13,15 @@ import pc from "picocolors";
 import prompts from "prompts";
 
 const VERSIONS: Record<string, string> = {
-  "@lara-node/core": "0.1.18",
+  "@lara-node/core": "0.1.20",
   "@lara-node/router": "0.2.18",
   "@lara-node/db": "0.1.24",
   "@lara-node/auth": "0.1.12",
   "@lara-node/console": "0.1.23",
   "@lara-node/validator": "0.1.21",
-  "@lara-node/middlewares": "0.1.20",
+  "@lara-node/middlewares": "0.1.22",
   "@lara-node/events": "0.1.16",
-  "@lara-node/queue": "0.1.23",
+  "@lara-node/queue": "0.1.25",
   "@lara-node/mail": "0.1.14",
   "@lara-node/horizon": "0.1.27",
   "@lara-node/telescope": "0.1.25",
@@ -510,6 +510,20 @@ function scaffold(dir: string, name: string, opts: { database: string; packages:
     "# ── Cache / Queue / Mail / Broadcast ─────────────────────────",
     "CACHE_DRIVER=file",
     "QUEUE_CONNECTION=sync",
+    "",
+    "# Redis queue — every key is namespaced by QUEUE_APP (default APP_NAME).",
+    "# Two services sharing one Redis MUST have different names, or their",
+    "# workers will pop each other's jobs.",
+    "# QUEUE_APP=" + name,
+    "# REDIS_PREFIX=            # overrides the derived '<app>_queue' prefix",
+    "# REDIS_URL=redis://127.0.0.1:6379",
+    "# REDIS_HOST=127.0.0.1",
+    "# REDIS_PORT=6379",
+    "# REDIS_USERNAME=",
+    "# REDIS_PASSWORD=",
+    "# REDIS_DB=0",
+    "# REDIS_QUEUE=default",
+    "",
     "MAIL_DRIVER=log",
     "MAIL_FROM_ADDRESS=hello@example.com",
     "MAIL_FROM_NAME=" + name,
@@ -542,6 +556,7 @@ export {};
     dir,
     "src/types/global.d.ts",
     `import type { AuthGuard } from '@lara-node/auth';
+import type { RequestInstance } from '@lara-node/core';
 
 declare global {
   /** Returns the auth guard for the current request context. */
@@ -555,6 +570,22 @@ declare global {
 
   /** Get the raw user value from the current request context. */
   function getUser<U = unknown>(): U | undefined;
+
+  /**
+   * The current request, or null when there is none.
+   *
+   * Resolved from the async request context established by
+   * AsyncContextMiddleware, so it works in services, models and listeners
+   * without threading req through every call. It is null in queue workers
+   * and console commands, so always guard:
+   *
+   *   const ref = request()?.referrer();
+   *   const ua  = request()?.headers('user-agent');
+   */
+  function request(): RequestInstance | null;
+
+  /** The current request, throwing when there is none. */
+  function requestOrFail(): RequestInstance;
 }
 
 export {};
@@ -3924,12 +3955,32 @@ export default mailConfig;
   w(
     dir,
     "src/config/queue.config.ts",
-    `export interface QueueConfig {
-  default: string;
-  connections: Record<string, { driver: string; table?: string; queue?: string; retry_after?: number }>;
-  failed: { driver: string; table: string };
-}
+    `import type { QueueConfig } from '@lara-node/queue';
 
+/*
+|--------------------------------------------------------------------------
+| Queue Configuration
+|--------------------------------------------------------------------------
+|
+| Default values only — this file is yours to edit. Types and behaviour stay
+| in @lara-node/queue so that changing this file can never break them.
+|
+| ── Sharing one Redis instance between services ──────────────────────────
+|
+| Every Redis key is namespaced by \`app\` (or an explicit \`prefix\`). Two
+| services pointed at the same Redis MUST have different app names, or each
+| one's worker will pop the other's jobs and fail to resolve the job class.
+| APP_NAME already covers this as long as you set it per service.
+|
+| To dispatch onto another service's queue on purpose, use \`queue@app\`:
+|
+|   Queue.push(job, 'invoices@billing');
+|   pnpm artisan queue:work redis --queue=invoices@billing
+|
+| List a sibling under \`apps\` only when its prefix is not the default
+| \`<app>_queue\` shape.
+|
+*/
 const queueConfig: QueueConfig = {
   default: process.env.QUEUE_CONNECTION || 'sync',
 
@@ -3940,6 +3991,22 @@ const queueConfig: QueueConfig = {
       driver: 'redis',
       queue: process.env.REDIS_QUEUE || 'default',
       retry_after: 90,
+
+      // Key namespacing — must be unique per service on a shared Redis.
+      app: process.env.QUEUE_APP || process.env.APP_NAME || '${name}',
+      prefix: process.env.REDIS_PREFIX || undefined,
+
+      // Sibling services whose prefix is not '<app>_queue', e.g.
+      //   apps: { billing: 'billing_queue', search: 'search-jobs' },
+      apps: {},
+
+      // Connection — omit to fall back to the REDIS_* env vars.
+      url: process.env.REDIS_URL,
+      host: process.env.REDIS_HOST,
+      port: process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : undefined,
+      username: process.env.REDIS_USERNAME,
+      password: process.env.REDIS_PASSWORD,
+      database: process.env.REDIS_DB ? Number(process.env.REDIS_DB) : undefined,
     },
   },
 
@@ -4163,6 +4230,55 @@ const data = await req.validate({
 
 Available rules: \`required\`, \`email\`, \`string\`, \`integer\`, \`numeric\`, \`boolean\`, \`array\`, \`min\`, \`max\`, \`between\`, \`in\`, \`not_in\`, \`unique:table,col\`, \`exists:table,col\`, \`regex\`, \`url\`, \`uuid\`, \`date\`, \`before\`, \`after\`, \`confirmed\`, \`nullable\`, \`sometimes\`, and many more.
 
+## The \`request()\` Helper
+
+\`request()\` returns the current request from anywhere — services, models,
+listeners, policies — with no need to thread \`req\` through every call. It is
+backed by the async request context established by \`AsyncContextMiddleware\`.
+
+It returns \`null\` outside an HTTP request (queue workers, artisan commands),
+so always guard:
+
+\`\`\`typescript
+const ref     = request()?.referrer();
+const agent   = request()?.headers('user-agent');
+const apiKey  = request()?.headers('x-api-key', 'none');
+const ip      = request()?.clientIp();
+const id      = request()?.requestId();
+
+// Throws instead of returning null, for code only reachable over HTTP
+const req = requestOrFail();
+\`\`\`
+
+\`headers\` is both callable and indexable:
+
+\`\`\`typescript
+request()?.headers('referer')      // one header, case-insensitive
+request()?.headers('x-key', 'na')  // with a default
+request()?.headers()               // all of them
+request()?.headers['user-agent']   // index style still works
+\`\`\`
+
+The same accessors are attached to \`req\` by \`RequestExtenderMiddleware\`, so
+\`req.referrer()\` and \`request()!.referrer()\` are the same code path. Where
+express already owns a name (\`header()\`, \`accepts()\`, \`is()\`, \`ips\`), reach
+the wrapper through \`req.lara()\`.
+
+| Section | Methods |
+|---|---|
+| Referrer / origin | \`referrer()\` \`referer()\` \`referrerHost()\` \`origin()\` \`isCrossOrigin()\` |
+| Headers | \`headers(key?)\` \`header()\` \`hasHeader()\` \`requestId()\` |
+| Content | \`contentType()\` \`charset()\` \`contentLength()\` |
+| Negotiation | \`accepts()\` \`acceptsJson()\` \`acceptsHtml()\` \`acceptableContentTypes()\` \`languages()\` \`preferredLanguage()\` \`encodings()\` |
+| Method | \`isGet()\` \`isPost()\` \`isPut()\` \`isPatch()\` \`isDelete()\` \`isMethodSafe()\` \`isMethodIdempotent()\` |
+| URL | \`fullUrl()\` \`port()\` \`queryString()\` \`is()\` \`fullUrlIs()\` \`segments()\` |
+| Route | \`route()\` \`routeParam()\` |
+| Client | \`clientIp()\` \`ips()\` \`userAgent()\` \`isBot()\` \`isMobile()\` \`fingerprint()\` |
+| Credentials | \`bearerToken()\` \`basicAuth()\` \`user()\` |
+| Cookies | \`cookies(key?)\` \`cookie()\` \`hasCookie()\` |
+| Timing | \`startedAt()\` \`elapsed()\` |
+| Context | \`store(key?, value?)\` — read/write the async request store |
+
 ## Mail
 
 \`\`\`typescript
@@ -4195,6 +4311,32 @@ await Queue.push(new ExampleEmailJob({ to: 'user@example.com', subject: 'Hello',
 // Dispatch with delay (seconds)
 await Queue.later(300, new ExampleEmailJob({ to: 'user@example.com', subject: 'Hello', body: 'World' }));
 \`\`\`
+
+### Sharing one Redis between services
+
+Every Redis key is namespaced by the application, so two services on the same
+Redis never pop each other's jobs. The namespace comes from \`QUEUE_APP\`, then
+\`APP_NAME\` — **set one per service**, or both resolve to \`app\` and collide.
+
+\`\`\`
+billing_queue:invoices           # billing's pending jobs
+billing_queue:invoices:reserved  # billing's in-flight jobs
+search_queue:index               # search's — a separate key entirely
+\`\`\`
+
+To address another service's queue on purpose, suffix it with \`@app\`:
+
+\`\`\`typescript
+await Queue.push(new ReindexJob({ id }), 'index@search');
+\`\`\`
+
+\`\`\`bash
+pnpm artisan queue:work redis --queue=index@search
+\`\`\`
+
+Failed jobs follow the queue's owner, so a failure on \`index@search\` lands in
+search's failed-job hash. If a sibling's prefix is not the default
+\`<app>_queue\`, map it in \`src/config/queue.config.ts\` under \`apps\`.
 
 Scheduled jobs (configured in \`QueueServiceProvider\`):
 
@@ -4346,7 +4488,13 @@ ${
 |---|---|---|
 | \`MAIL_DRIVER\` | \`log\` | Mail driver (log, smtp) |
 | \`MAIL_FROM_ADDRESS\` | — | From address |
-| \`QUEUE_CONNECTION\` | \`sync\` | Queue driver |
+| \`QUEUE_CONNECTION\` | \`sync\` | Queue driver (sync, database, redis) |
+| \`QUEUE_APP\` | \`APP_NAME\` | Redis key namespace — unique per service |
+| \`REDIS_PREFIX\` | \`<app>_queue\` | Overrides the derived key prefix |
+| \`REDIS_URL\` | — | Full connection URL |
+| \`REDIS_HOST\` / \`REDIS_PORT\` | \`127.0.0.1\` / \`6379\` | Used when REDIS_URL is unset |
+| \`REDIS_USERNAME\` / \`REDIS_PASSWORD\` | — | Redis auth |
+| \`REDIS_DB\` | \`0\` | Redis database index |
 | \`BROADCAST_DRIVER\` | \`null\` | Broadcasting driver |
 
 ## Decorator Support
