@@ -1,7 +1,7 @@
 import { QueueDriverInterface, FailedJobsInterface, SerializedJob } from "./types.js";
 import { SyncDriver, DatabaseDriver, RedisDriver } from "./Drivers/index.js";
 import { Job } from "./Job.js";
-import { getQueueConfig } from "./queue.config.js";
+import { getQueueConfig } from "./namespace.js";
 import { Cache } from "@lara-node/cache";
 
 /*
@@ -77,6 +77,15 @@ class QueueManager {
         return new RedisDriver({
           queue: config.queue,
           retry_after: config.retry_after,
+          app: config.app,
+          prefix: config.prefix,
+          apps: config.apps,
+          url: config.url,
+          host: config.host,
+          port: config.port,
+          username: config.username,
+          password: config.password,
+          database: config.database,
         });
       default:
         throw new Error(`Queue driver [${config.driver}] is not supported.`);
