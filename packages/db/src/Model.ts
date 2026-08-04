@@ -19,6 +19,24 @@ import type { AttachTraits } from "./Traits/helper.js";
 import { Observer } from "./Observers/Observer.js";
 
 type ObserverConstructor<T extends object> = new () => Observer<T>;
+
+/**
+ * The getter function for `prop`, if one is declared anywhere on the
+ * prototype chain — without invoking it.
+ *
+ * Reading `target[prop]` to find out would run the getter, which is the whole
+ * problem: it would run bound to the raw instance.
+ */
+function findGetter(target: object, prop: string): (() => any) | null {
+  let proto: object | null = Object.getPrototypeOf(target);
+  while (proto && proto !== Object.prototype) {
+    const descriptor = Object.getOwnPropertyDescriptor(proto, prop);
+    if (descriptor) return descriptor.get ?? null;
+    proto = Object.getPrototypeOf(proto);
+  }
+  return null;
+}
+
 // Type guard for class-based traits
 function isClassBasedTrait(traitRef: any): traitRef is ClassBasedTrait {
   return (
@@ -197,6 +215,31 @@ export abstract class Model {
 
           if (hasAccessor) {
             return target.getAttributeWithAccessor(prop, isAppended);
+          }
+
+          /*
+           * Getters declared on a subclass — `get tierCode() { return this.code }`
+           * — have to run with the proxy as `this`, for the same reason
+           * subclass methods are bound to the receiver below.
+           *
+           * This has to happen before the `typeof target[prop] === "function"`
+           * check, because reading `target[prop]` INVOKES the getter, and
+           * invoking it that way binds `this` to the raw target. Attribute
+           * access inside it then misses the trap and comes back undefined —
+           * silently, so the model reports empty fields rather than throwing.
+           *
+           * Base-class getters keep `this = target`, matching the method
+           * policy: they reach for internals like `this.attributes` and have
+           * no business going back through the trap.
+           *
+           * No recursion risk from a getter that reads its own name: the
+           * `prop in target.attributes` check above answers first, so
+           * `get status()` reading `this.status` gets the stored attribute.
+           */
+          const accessor = findGetter(target, prop);
+          if (accessor) {
+            const isModelBaseGetter = prop in modelBaseProto;
+            return accessor.call(isModelBaseGetter ? target : receiver);
           }
 
           if (prop in target && typeof target[prop] === "function") {
