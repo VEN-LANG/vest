@@ -108,6 +108,24 @@ export class SendReportEmail {
 }
 ```
 
+### Dependency injection
+
+Listeners are built through the container, so they may declare the services
+they need — synchronous and queued alike:
+
+```ts
+@Injectable()
+@ListensTo("purchase.completed")
+@ShouldQueue
+export class SendPurchaseReceipt {
+  constructor(private readonly mailer: MailService) {}
+
+  async handle(payload: { purchaseId: string }) {
+    await this.mailer.send(new ReceiptMail(payload.purchaseId));
+  }
+}
+```
+
 ### `@AfterCommit`
 
 Delays event dispatch until after the active database transaction commits. Has no effect outside a transaction.
@@ -253,4 +271,5 @@ export class AppBroadcastServiceProvider extends BroadcastServiceProvider {
 
 - The `null` broadcast driver silently drops all broadcasts — useful during development when real-time infra is not running.
 - Queued listeners require a configured queue connection (`QUEUE_CONNECTION`). See `@lara-node/queue`.
+- Loading this package registers the `CallQueuedListener` and `CallQueuedEvent` jobs, so a worker can rebuild them. Before 0.1.19 they were pulled in with a dynamic `import()` that resolved a second copy of `@lara-node/queue` from the CJS build, leaving that copy's job registry empty — every queued listener was then discarded with `Job class "CallQueuedListener" not found in registry`, logged but never thrown.
 - `@AfterCommit` is a no-op if `@lara-node/db` is not in use or no transaction is active.
