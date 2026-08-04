@@ -121,6 +121,51 @@ export class MailService {
 }
 ```
 
+### Where injection happens
+
+Controllers are not the only place. Commands, queued jobs, event listeners and
+subscribers are all built through the container, so any of them may ask for a
+service on its constructor:
+
+```ts
+@Injectable()
+export class SyncTariffsCommand extends Command {
+  constructor(private readonly tariffs: TariffService) { super(); }
+}
+```
+
+### Services and data in the same constructor
+
+`design:paramtypes` reports a constructor for every parameter, including the
+ones that are plainly data — `Number` for `n: number`, and `Object` for an
+interface, a union, or `any`, where it really means *cannot say*. The container
+builds what it recognises and passes `undefined` for the rest, which lets a
+default parameter apply:
+
+```ts
+@Injectable()
+export class RelayOutboxJob extends Job {
+  constructor(
+    private readonly outbox: Outbox,   // injected
+    public batchSize = 100,            // left to its default
+  ) { super(); }
+}
+```
+
+Without that rule `batchSize` would arrive as `new Number()` — an object
+wrapper that is not `===` any integer and is truthy even at zero.
+
+### `INJECTED_DEPENDENCIES`
+
+The container records what it injected under a non-enumerable symbol, so it
+never appears in a spread, `Object.keys`, or `JSON.stringify`.
+
+Anything that serializes an object can use it to tell state the object carries
+apart from collaborators it was handed. `@lara-node/queue` does exactly that:
+a service in a job payload is wasteful on the way in and lossy on the way out,
+coming back as a plain object with none of its methods and silently replacing
+the real one.
+
 ---
 
 ## ServiceProvider
