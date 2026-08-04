@@ -3,7 +3,6 @@ import {
   type CommandClass,
   setConfigCacheBackend,
   restoreConfigFromCache,
-  cacheConfig,
 } from "@lara-node/core";
 import {
   initCache,
@@ -52,10 +51,18 @@ export class CacheServiceProvider extends ServiceProvider {
         },
       });
 
-      // Use a previously cached snapshot when present; otherwise persist the
-      // config resolved so far so subsequent processes can read it quickly.
-      const restored = await restoreConfigFromCache();
-      if (!restored) await cacheConfig();
+      /*
+       * Use a snapshot only when `config:cache` deliberately built one.
+       *
+       * This used to also WRITE a snapshot whenever it did not find one, which
+       * froze an application's configuration on its first ever boot: every
+       * later boot restored that snapshot over the config just resolved from
+       * files and the environment, so editing .env changed nothing and there
+       * was no message to say why. `config:clear` removes it.
+       */
+      if (await restoreConfigFromCache()) {
+        console.log("[Config] Using the cached snapshot — run `config:clear` to read config live.");
+      }
     } catch (err: any) {
       console.error("[Cache] Initialization failed:", err.message);
     }
