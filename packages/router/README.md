@@ -398,6 +398,13 @@ export class AuthMiddleware implements IMiddleware {
 }
 ```
 
+> **Naming.** `Middleware` is the decorator. The *constructor type* is exported
+> as `MiddlewareClass`, and the handler interface as `IMiddleware`. Before
+> 0.2.20 the type was also exported as `Middleware`, and two symbols under one
+> name made the `.d.ts` generator emit the decorator as `export type` — so
+> `@Middleware('auth')` failed to compile with `TS1362: 'Middleware' cannot be
+> used as a value` on code that ran perfectly well.
+
 ### Manual registration
 
 ```ts
