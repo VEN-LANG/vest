@@ -113,6 +113,35 @@ node artisan schedule:run   # execute all due scheduled tasks immediately
 
 ## Custom Commands
 
+### Dependency injection
+
+Commands are resolved through the container, so a command may declare the
+services it needs on its constructor:
+
+```ts
+import { Injectable } from '@lara-node/core';
+import { Command } from '@lara-node/console';
+
+@Injectable()
+export class SyncTariffsCommand extends Command {
+  protected signature = 'tariffs:sync';
+  protected description = 'Pull the latest tariffs';
+
+  constructor(private readonly tariffs: TariffService) { super(); }
+
+  async handle(): Promise<void> {
+    await this.tariffs.sync();
+  }
+}
+```
+
+Parameters the container cannot build — a `number`, a `string`, an interface —
+are passed as `undefined`, so a default applies and services can sit alongside
+plain data in the same constructor.
+
+A command whose dependencies fail to resolve is reported on stderr and left
+out of the CLI, rather than disappearing silently.
+
 ### Commands in `app/Console/Commands/`
 
 The generated `ConsoleKernel` auto-discovers every `Command` subclass exported from files in `app/Console/Commands/`. Just create a file there — no manual registration needed.
