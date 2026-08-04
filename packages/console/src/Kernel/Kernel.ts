@@ -4,7 +4,34 @@ import { Argv } from "yargs";
 import { Command } from "../Command.js";
 import * as SystemCommands from "../Commands/index.js";
 import { getRegisteredCommands } from "../decorators.js";
+import { container } from "@lara-node/core";
 import type { Application, ServiceProvider, CommandClass } from "@lara-node/core";
+
+/*
+ * Commands are resolved through the container, so a command may declare the
+ * services it needs on its constructor and receive them — the same deal
+ * controllers get:
+ *
+ *   @Injectable()
+ *   export class SyncTariffsCommand extends Command {
+ *     constructor(private readonly tariffs: TariffService) { super(); }
+ *   }
+ *
+ * A command whose dependencies cannot be built is reported rather than
+ * silently dropped. Skipping quietly meant a typo in a constructor made the
+ * command disappear from `artisan --help` with nothing to explain why.
+ */
+function instantiate(Ctor: new (...args: any[]) => Command): Command | null {
+  try {
+    return container.make(Ctor);
+  } catch (error) {
+    console.warn(
+      `[Console] Skipping command ${Ctor.name}: could not resolve its dependencies.`,
+      error instanceof Error ? error.message : error,
+    );
+    return null;
+  }
+}
 
 export class Kernel {
   /** Additional commands registered by the app. Override via addCommand() or subclass. */
@@ -33,32 +60,23 @@ export class Kernel {
 
     for (const CommandClass of Object.values(SystemCommands)) {
       if (typeof CommandClass === "function" && CommandClass.prototype instanceof Command) {
-        try {
-          commandInstances.push(new (CommandClass as new () => Command)());
-        } catch {
-          /* skip */
-        }
+        const instance = instantiate(CommandClass as new (...args: any[]) => Command);
+        if (instance) commandInstances.push(instance);
       }
     }
 
     const allAppCommands = [...this.commands, ...getRegisteredCommands()];
     for (const CommandClass of allAppCommands) {
-      try {
-        commandInstances.push(new CommandClass());
-      } catch {
-        /* skip */
-      }
+      const instance = instantiate(CommandClass as new (...args: any[]) => Command);
+      if (instance) commandInstances.push(instance);
     }
 
     // Collect commands declared in service providers
     for (const provider of this._providers) {
       const cmds = provider.commands() as CommandClass[];
       for (const Ctor of cmds) {
-        try {
-          commandInstances.push(new (Ctor as new () => Command)());
-        } catch {
-          /* skip */
-        }
+        const instance = instantiate(Ctor as new (...args: any[]) => Command);
+        if (instance) commandInstances.push(instance);
       }
     }
 

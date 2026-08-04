@@ -9,6 +9,7 @@
 |
 */
 
+import { container } from "@lara-node/core";
 import { Job, Queueable } from "@lara-node/queue";
 
 /*
@@ -107,7 +108,8 @@ export class CallQueuedListener extends Job {
    * Execute a listener class with the payload.
    */
   private async executeListener(ListenerClass: new () => any): Promise<void> {
-    const listener = new ListenerClass();
+    // Through the container, so a listener may inject the services it needs.
+    const listener = container.make(ListenerClass);
 
     if (typeof listener.handle !== "function") {
       throw new Error(`Listener [${this.listenerClass}] does not have a handle method`);

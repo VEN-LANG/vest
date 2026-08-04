@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { SerializedJob, JobOptions } from "./types.js";
+import { container, INJECTED_DEPENDENCIES } from "@lara-node/core";
 import { getQueueConfig } from "./namespace.js";
 
 /*
@@ -292,11 +293,23 @@ export abstract class Job {
   protected getSerializableProperties(): Record<string, any> {
     const props: Record<string, any> = {};
 
+    /*
+     * Injected services are collaborators, not state. Serializing one writes
+     * the whole service into the payload and then, on the way back out,
+     * overwrites the freshly injected instance with a plain object that has
+     * none of its methods — a failure that surfaces as an inexplicable
+     * "x.doThing is not a function" inside the worker.
+     */
+    const injected = (this as any)[INJECTED_DEPENDENCIES] as Set<unknown> | undefined;
+
     // Get all own properties except private ones
     for (const key of Object.keys(this)) {
-      if (!key.startsWith("_")) {
-        props[key] = (this as any)[key];
-      }
+      if (key.startsWith("_")) continue;
+
+      const value = (this as any)[key];
+      if (injected?.has(value)) continue;
+
+      props[key] = value;
     }
 
     return props;
@@ -346,7 +359,17 @@ export abstract class Job {
       return null;
     }
 
-    const instance = new JobClass() as T;
+    /*
+     * Built through the container, so a job can declare the services it needs
+     * on its constructor and get them on the way out of the queue:
+     *
+     *   constructor(private readonly outbox: Outbox, batchSize = 100) {}
+     *
+     * Serialized state is layered on top below — the payload always wins over
+     * anything a constructor default set, because the payload is what the
+     * dispatching side actually decided.
+     */
+    const instance = container.make(JobClass) as T;
 
     let rawData = serialized.data;
     if (serialized.encrypted) {

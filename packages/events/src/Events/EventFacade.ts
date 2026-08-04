@@ -13,6 +13,7 @@
 | - Event.listen('event.*', wildcardHandler)
 |
 */
+import { container } from "@lara-node/core";
 
 import {
   EventDispatcher,
@@ -416,7 +417,7 @@ class EventFacadeClass {
         typeof eventInstance.eventName === "function" ? eventInstance.eventName() : EventClass.name;
 
       // Create listener wrapper
-      const listenerInstance = new ListenerClass();
+      const listenerInstance = container.make(ListenerClass);
       if (typeof listenerInstance.handle === "function") {
         dispatcher.listen(eventName, (payload) => listenerInstance.handle(payload));
       }

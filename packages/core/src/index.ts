@@ -1,4 +1,4 @@
-export { Container, container, app, Injectable } from "./Container.js";
+export { Container, container, app, Injectable, INJECTED_DEPENDENCIES } from "./Container.js";
 export { FormRequest, Request, request, requestOrFail } from "./Request.js";
 export type {
   RequestInstance,

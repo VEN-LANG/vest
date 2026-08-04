@@ -1,4 +1,4 @@
-import { ServiceProvider, type CommandClass } from "@lara-node/core";
+import { ServiceProvider, container, type CommandClass } from "@lara-node/core";
 import { getEventDispatcher } from "./Events/EventDispatcher.js";
 import type { ListenerRegistration } from "./Events/EventDispatcher.js";
 import { getRegisteredListeners, getRegisteredSubscribers } from "./Events/EventDecorators.js";
@@ -58,7 +58,7 @@ export class EventServiceProvider extends ServiceProvider {
       for (const event of meta.events) {
         if (meta.shouldQueue) {
           const reg: ListenerRegistration = {
-            listener: (p) => new ListenerClass().handle(p),
+            listener: (p) => container.make(ListenerClass).handle(p),
             shouldQueue: true,
             queueConfig: meta.queueConfig,
             listenerClass: ListenerClass,
@@ -84,7 +84,7 @@ export class EventServiceProvider extends ServiceProvider {
     event: string,
     ListenerClass: new () => any,
   ): void {
-    const instance = new ListenerClass();
+    const instance = container.make(ListenerClass);
     if (typeof instance.handle !== "function") return;
 
     if (instance.shouldQueue) {

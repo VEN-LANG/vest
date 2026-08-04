@@ -1,10 +1,15 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 
-vi.mock("@lara-node/core", () => ({
-  config: <T>(_key: string, fallback: T) => fallback,
-  setConfig: () => {},
-  ServiceProvider: class {},
-}));
+vi.mock("@lara-node/core", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@lara-node/core")>();
+  return {
+    ...actual,
+    // Only the config accessors are stubbed; `container` has to be the real
+    // one, because jobs and listeners are now built through it.
+    config: <T>(_key: string, fallback: T) => fallback,
+    setConfig: () => {},
+  };
+});
 
 import { EventDispatcher, ShouldQueue, ListensTo } from "../index.js";
 import { getRegisteredJobs } from "@lara-node/queue";
