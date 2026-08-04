@@ -131,28 +131,63 @@ export function hydrateConfig(snapshot: Record<string, ConfigValue>): void {
   for (const [k, v] of Object.entries(snapshot)) store[k] = v;
 }
 
+/*
+|--------------------------------------------------------------------------
+| Config caching
+|--------------------------------------------------------------------------
+|
+| A cached snapshot REPLACES everything resolved from config files and the
+| environment, so it has to be something the operator asked for. It used to be
+| written automatically on first boot and restored on every boot after that,
+| which meant an application froze its configuration the very first time it
+| ran: editing .env or a config file changed nothing, forever, and the only
+| clue was a value that would not budge.
+|
+| So a snapshot now carries a marker saying it was built deliberately —
+| `config:cache` sets it, nothing else does — and a snapshot without one is
+| ignored. Legacy snapshots have no marker, so an application already stuck
+| this way recovers on its next boot without anyone having to know why.
+|
+*/
+
+/** Shape written by `config:cache`. The marker is what makes it trustworthy. */
+interface ConfigSnapshot {
+  __explicit: true;
+  values: Record<string, ConfigValue>;
+}
+
+function isExplicitSnapshot(value: unknown): value is ConfigSnapshot {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as ConfigSnapshot).__explicit === true &&
+    typeof (value as ConfigSnapshot).values === "object"
+  );
+}
+
 /**
  * Persist the current resolved config snapshot to the cache backend.
  * No-op when no backend is wired. Mirrors Laravel's `config:cache`.
+ *
+ * Call this from `config:cache` and nowhere else. Anything that writes a
+ * snapshot as a side effect of booting takes the environment out of play.
  */
 export async function cacheConfig(): Promise<boolean> {
   if (!configCacheBackend) return false;
-  await configCacheBackend.set(CONFIG_CACHE_KEY, allConfig());
+  const snapshot: ConfigSnapshot = { __explicit: true, values: allConfig() };
+  await configCacheBackend.set(CONFIG_CACHE_KEY, snapshot);
   return true;
 }
 
 /**
  * Load a previously cached config snapshot into the in-memory store.
- * Returns true when a snapshot was found and hydrated.
+ * Returns true when an explicitly-built snapshot was found and hydrated.
  */
 export async function restoreConfigFromCache(): Promise<boolean> {
   if (!configCacheBackend) return false;
-  const snapshot = (await configCacheBackend.get(CONFIG_CACHE_KEY)) as
-    | Record<string, ConfigValue>
-    | null
-    | undefined;
-  if (!snapshot || typeof snapshot !== "object") return false;
-  hydrateConfig(snapshot);
+  const snapshot = await configCacheBackend.get(CONFIG_CACHE_KEY);
+  if (!isExplicitSnapshot(snapshot)) return false;
+  hydrateConfig(snapshot.values);
   return true;
 }
 
