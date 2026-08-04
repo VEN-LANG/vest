@@ -1,6 +1,6 @@
 import RouterBuilder from "./router.js";
 import { registerMiddleware } from "./Middleware/middleware.js";
-import type { Middleware as MiddlewareEntry } from "./Middleware/MiddlewareStack.js";
+import type { MiddlewareClass as MiddlewareEntry } from "./Middleware/MiddlewareStack.js";
 
 /**
  * @Bind(name?)

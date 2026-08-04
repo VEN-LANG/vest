@@ -3,7 +3,7 @@ import type { Application } from "@lara-node/core";
 import { registerMiddleware, middlewareStack } from "../Middleware/middleware.js";
 import type {
   MiddlewareEntry,
-  Middleware,
+  MiddlewareClass,
   MiddlewareStack as IMiddlewareStack,
 } from "../Middleware/MiddlewareStack.js";
 
@@ -80,28 +80,28 @@ export abstract class HttpKernel {
   // Fluent runtime API (optional, for programmatic config)
   // ---------------------------------------------------------------------------
 
-  withMiddlewareAlias(name: string, mw: MiddlewareEntry | Middleware): this {
+  withMiddlewareAlias(name: string, mw: MiddlewareEntry | MiddlewareClass): this {
     middlewareStack.alias(name, mw as any);
     registerMiddleware(name, mw as MiddlewareEntry);
     return this;
   }
 
-  withMiddlewareAliases(aliases: Record<string, MiddlewareEntry | Middleware>): this {
+  withMiddlewareAliases(aliases: Record<string, MiddlewareEntry | MiddlewareClass>): this {
     for (const [n, mw] of Object.entries(aliases)) this.withMiddlewareAlias(n, mw);
     return this;
   }
 
-  withMiddlewareGroup(name: string, mws: (string | MiddlewareEntry | Middleware)[]): this {
+  withMiddlewareGroup(name: string, mws: (string | MiddlewareEntry | MiddlewareClass)[]): this {
     middlewareStack.group(name, mws as any);
     return this;
   }
 
-  appendToGroup(group: string, mw: string | MiddlewareEntry | Middleware): this {
+  appendToGroup(group: string, mw: string | MiddlewareEntry | MiddlewareClass): this {
     middlewareStack.appendToGroup(group, mw as any);
     return this;
   }
 
-  prependToGroup(group: string, mw: string | MiddlewareEntry | Middleware): this {
+  prependToGroup(group: string, mw: string | MiddlewareEntry | MiddlewareClass): this {
     middlewareStack.prependToGroup(group, mw as any);
     return this;
   }

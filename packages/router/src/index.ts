@@ -7,9 +7,10 @@ export { RouteScanner, registerRouteBuilder } from "./RouteScanner.js";
 export { MiddlewareStack, middlewareStack } from "./Middleware/MiddlewareStack.js";
 export type {
   MiddlewareEntry,
-  // Renamed to MiddlewareClass to avoid clash with the @Middleware() decorator below.
-  // Use IMiddleware for the handler interface, MiddlewareClass for the constructor type.
-  Middleware as MiddlewareClass,
+  // MiddlewareClass is the constructor type, IMiddleware the handler interface.
+  // Neither is called `Middleware` — that name belongs to the decorator below,
+  // and sharing it broke the generated .d.ts. See MiddlewareStack.ts.
+  MiddlewareClass,
   IMiddleware,
   MiddlewareGroupConfig,
 } from "./Middleware/MiddlewareStack.js";
