@@ -298,13 +298,16 @@ export abstract class ServiceProvider {
    * `setConfig`-ing each file by hand. Package providers should keep their own
    * bundled defaults as the `config('<key>', packageDefault)` fallback.
    *
-   * When `persist` is true (default) the resolved snapshot is written to the
-   * config cache backend (if one is wired) for faster cross-process retrieval.
+   * `persist` writes the resolved snapshot to the config cache. It defaults to
+   * false, and should stay that way: a snapshot replaces everything resolved
+   * from files and the environment on subsequent boots, so writing one as a
+   * side effect of loading config froze an application's configuration the
+   * first time it ran. Building a snapshot is what `config:cache` is for.
    *
    * @example
    * this.loadConfigDir(path.join(__dirname, "../../config"));
    */
-  protected loadConfigDir(dir: string, persist: boolean = true): void {
+  protected loadConfigDir(dir: string, persist: boolean = false): void {
     if (!fs.existsSync(dir)) return;
     const seen = new Set<string>();
     for (const file of fs.readdirSync(dir)) {
