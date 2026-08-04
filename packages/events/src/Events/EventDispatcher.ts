@@ -7,7 +7,30 @@
 | Supports synchronous and asynchronous event handling, event listeners,
 | event subscribers, queueable listeners, and automatic discovery.
 |
+| ── Why these imports are static ────────────────────────────────────────────
+|
+| `Queue` and the CallQueued* jobs used to be pulled in with `await import()`
+| / `await require()` "to avoid circular dependencies". There is no cycle —
+| @lara-node/queue depends on cache, console and db, never on events — and
+| the dynamic form was actively harmful: a dynamic `import()` evaluated from
+| the CJS build resolves the *ESM* condition of @lara-node/queue, so the
+| process ends up holding two copies of the package. The job registry that
+| `@Queueable` writes to is module-global, so the second copy starts empty
+| and every queued listener dies with
+|
+|   Job class "CallQueuedListener" not found in registry.
+|
+| Importing statically keeps one instance and — just as important — makes
+| loading the dispatcher enough to register the jobs it dispatches.
+|
 */
+
+import { Queue } from "@lara-node/queue";
+import {
+  CallQueuedEvent,
+  CallQueuedListener,
+  registerQueuedListener,
+} from "./QueuedEventJobs.js";
 
 export type EventListener<T = any> = (payload: T) => void | Promise<void>;
 
@@ -174,10 +197,6 @@ export class EventDispatcher {
   private async dispatchQueuedListeners(event: string, payload: any): Promise<void> {
     const queuedListeners = this.queuedListeners.get(event);
     if (!queuedListeners || queuedListeners.size === 0) return;
-
-    // Dynamic import to avoid circular dependencies
-    const { CallQueuedListener, registerQueuedListener } = await require("./QueuedEventJobs");
-    const { Queue } = await import("@lara-node/queue");
 
     for (const registration of queuedListeners) {
       if (registration.listenerClass) {
@@ -463,9 +482,6 @@ export abstract class Event {
    * Dispatch this event to the queue.
    */
   async dispatchToQueue(): Promise<void> {
-    const { CallQueuedEvent } = await require("./QueuedEventJobs");
-    const { Queue } = await import("@lara-node/queue");
-
     const job = new CallQueuedEvent(this.constructor.name, this.eventName(), this.toPayload());
 
     if (this.connection) job.connection = this.connection;

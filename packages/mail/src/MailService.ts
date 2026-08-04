@@ -16,6 +16,13 @@ function getMailConfig(): MailConfig {
   return config<MailConfig>("mail", defaultMailConfig);
 }
 import { getEventDispatcher } from "@lara-node/events";
+/*
+ * Static, deliberately: a dynamic `import("@lara-node/queue")` evaluated from
+ * this package's CJS build resolves the ESM condition and loads a second copy
+ * of the queue, with its own driver manager and its own — empty — job
+ * registry. Mail queued through that copy is dropped on deserialization.
+ */
+import { dispatch } from "@lara-node/queue";
 
 /** Optional SendMailJob class — registered by the app to avoid circular deps. */
 let _sendMailJobClass: (new () => any) | null = null;
@@ -257,7 +264,6 @@ export class Mailer implements MailerInterface {
    * Queue a mailable for background sending.
    */
   async queue(mailable: MailableInterface, queue?: string): Promise<string> {
-    const { dispatch } = await import("@lara-node/queue");
     const message = mailable.toMailMessage();
     const SendMailJobClass = _sendMailJobClass;
     if (!SendMailJobClass) {
@@ -274,8 +280,6 @@ export class Mailer implements MailerInterface {
    * Queue a mailable with delay.
    */
   async later(mailable: MailableInterface, delay: number, queue?: string): Promise<string> {
-    const { dispatch } = await import("@lara-node/queue");
-
     const message = mailable.toMailMessage();
     const SendMailJobClass = _sendMailJobClass;
     if (!SendMailJobClass) {

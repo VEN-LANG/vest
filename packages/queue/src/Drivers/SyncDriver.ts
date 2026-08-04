@@ -1,5 +1,6 @@
 import { QueueDriverInterface, SerializedJob } from "../types.js";
 import queueConfig from "../queue.config.js";
+import { Job } from "../Job.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -21,8 +22,6 @@ export class SyncDriver implements QueueDriverInterface {
   async push(job: SerializedJob, queue: string = "default"): Promise<string> {
     if (!this.jobs.has(queue)) this.jobs.set(queue, []);
 
-    const { Job: JobBase } = await import("../Job.js");
-
     const maxTries = job.maxTries || queueConfig.defaults.tries;
     const maxExceptions = job.maxExceptions ?? queueConfig.defaults.maxExceptions;
 
@@ -32,8 +31,22 @@ export class SyncDriver implements QueueDriverInterface {
       job.attempts += 1;
       job.exceptionCount = job.exceptionCount ?? 0;
 
-      const instance = JobBase.deserialize(job);
-      if (!instance) break;
+      const instance = Job.deserialize(job);
+
+      /*
+       * An unregistered job class is a programming error, not a transient
+       * fault: nothing about retrying will make the class appear. It used to
+       * `break` here and fall through to the "no lastError" path, which
+       * returned the job id — so the caller was told the job had run while it
+       * had in fact been discarded. Say so instead.
+       */
+      if (!instance) {
+        throw new Error(
+          `[Sync] Job "${job.job}" could not be deserialized — it is not in the job ` +
+            `registry. Decorate the class with @Queueable() and make sure the module ` +
+            `defining it is loaded before the job is dispatched.`,
+        );
+      }
 
       try {
         await instance.handle();
@@ -60,7 +73,7 @@ export class SyncDriver implements QueueDriverInterface {
         `[Sync] Job ${job.displayName} failed permanently after ${job.attempts} attempt(s):`,
         lastError.message,
       );
-      const instance = JobBase.deserialize(job);
+      const instance = Job.deserialize(job);
       if (instance) {
         try {
           instance.failed(lastError);

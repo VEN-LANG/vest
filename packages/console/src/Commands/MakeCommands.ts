@@ -1,4 +1,4 @@
-import { Command, CommandArguments, CommandOptions } from "Command.js";
+import { Command, CommandArguments, CommandOptions } from "../Command.js";
 import path from "path";
 import fs from "fs";
 import { ArgumentsCamelCase } from "yargs";
