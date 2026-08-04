@@ -130,6 +130,34 @@ my-api/
 
 ## Core Concepts
 
+### Dependency Injection
+
+One container serves the whole application. Anything it builds gets its
+constructor dependencies resolved — controllers, **console commands, queued
+jobs, event listeners and subscribers**:
+
+```typescript
+@Injectable()
+export class SendPurchaseReceipt {
+  constructor(private readonly mailer: MailService) {}
+
+  async handle(payload: { purchaseId: string }) {
+    await this.mailer.send(new ReceiptMail(payload.purchaseId));
+  }
+}
+```
+
+Services and plain data can share a constructor. Parameters the container
+cannot build — a `number`, a `string`, an interface — are passed as
+`undefined`, so their defaults apply:
+
+```typescript
+constructor(private readonly outbox: Outbox, public batchSize = 100) {}
+```
+
+Injected services are never written into a queued job's payload. See
+[`@lara-node/core`](packages/core/README.md#container).
+
 ### Service Providers
 
 Providers bootstrap your application. They run in order:
@@ -389,6 +417,11 @@ async boot(): Promise<void> {
 ### Models
 
 Models extend the `Model` base class. Define your collection/table name, fillable fields, and relationships.
+
+Attributes read as plain properties — `user.email` — from outside the model and
+from inside its own methods and getters alike. A stored attribute takes priority
+over a same-named getter, so name derived accessors distinctly (`environment`,
+not `env`).
 
 ```typescript
 import { Model, HasMany, SoftDeletes, Timestamps, applyTraits } from '@lara-node/db';
