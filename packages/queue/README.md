@@ -70,6 +70,37 @@ export abstract class Job {
 }
 ```
 
+### Dependency injection
+
+A job is rebuilt through the container on its way out of the queue, so it may
+declare the services it needs on its constructor:
+
+```ts
+@Injectable()
+@Queueable({ queue: "outbox", tries: 10 })
+export class RelayOutboxJob extends Job {
+  constructor(
+    private readonly outbox: Outbox,   // injected by the worker
+    public batchSize = 100,            // data: kept in the payload
+  ) { super(); }
+
+  async handle(): Promise<void> {
+    await this.outbox.relay(this.batchSize);
+  }
+}
+
+// Dispatch without supplying the service — the worker provides it.
+await Queue.push(new RelayOutboxJob(undefined as never, 250));
+```
+
+Injected services are **not** serialized. The container marks what it injected,
+and `getSerializableProperties()` leaves those out, so payloads stay data-only.
+Without that, a service would go into the payload and then come back as a plain
+object with none of its methods, silently replacing the injected one.
+
+Parameters the container cannot build — `number`, `string`, an interface — are
+passed as `undefined`, so their defaults apply.
+
 ### `@Queueable(nameOrOptions?)`
 
 Registers a job in the global registry (required for workers to deserialize it) and sets class-level defaults.
@@ -304,6 +335,7 @@ app.register(QueueServiceProvider);
 
 ## Notes
 
-- The `sync` driver executes jobs inline, blocking the current process. Use only for development or testing.
+- The `sync` driver executes jobs inline, blocking the current process. Use only for development or testing. A job it cannot deserialize raises rather than reporting success — an unregistered class is a programming error, and retrying will not conjure it.
+- A job class reaches the registry when the module defining it is evaluated, via `@Queueable`. If a worker reports `Job class "X" not found in registry`, the module was never imported in that process.
 - Job payloads are JSON-serialized. Circular references and non-serializable values (e.g. database connections) in job constructor arguments will cause errors at dispatch time.
 - When `shouldBeEncrypted = true`, the full job payload is AES-256-GCM encrypted using `APP_KEY` before being pushed to the queue. The worker decrypts it transparently.
