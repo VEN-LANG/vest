@@ -150,13 +150,48 @@ static casts = {
 };
 ```
 
+## Reading attributes
+
+A model is returned as a Proxy, so an attribute is read as a plain property —
+both from outside the model and from inside its own methods and getters:
+
+```ts
+const user = await User.find(id);
+user.email;            // from outside
+
+export class Wallet extends Model {
+  get environment(): TddsEnv {
+    return (this.env as TddsEnv) ?? "live";   // from inside
+  }
+
+  isOverdrawn(): boolean {
+    return Number(this.current_balance) < 0;
+  }
+}
+```
+
+`getAttribute("x")` still works and is equivalent, but it is rarely the
+clearer choice. `setAttribute` is what an observer or mutator uses to write.
+
+Two things to know:
+
+- **A stored attribute wins over a same-named getter.** `get status()` reading
+  `this.status` returns the stored attribute rather than recursing — which is
+  what makes plain field access safe inside accessors. It also means a getter
+  named after an existing column will never run; name it something else
+  (`entryStatus`, `environment`, `tierCode`).
+- **Before 0.1.30, getters ran against the raw instance**, so `this.code`
+  inside `get tierCode()` came back `undefined` while `tier.code` worked from
+  outside. Code written around that — `this.getAttribute("code")` everywhere —
+  keeps working unchanged.
+
 ## Accessors and Mutators
 
 ```ts
 export class User extends Model {
   // Accessor: getFullNameAttribute → user.full_name
   getFullNameAttribute() {
-    return `${this.getAttribute("first_name")} ${this.getAttribute("last_name")}`;
+    return `${this.first_name} ${this.last_name}`;
   }
 
   // Mutator: setPasswordAttribute → called when user.password = '...'
